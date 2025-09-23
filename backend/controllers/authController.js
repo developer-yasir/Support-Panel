@@ -37,7 +37,9 @@ exports.register = async (req, res) => {
 
     // Send verification email
     try {
+      console.log('Attempting to send verification email to:', email);
       await sendVerificationEmail(user.email, user.name, verificationToken);
+      console.log('Verification email sent successfully to:', email);
       res.status(201).json({
         message: 'Registration successful. Please check your email for verification code.',
         userId: user._id,
@@ -53,6 +55,7 @@ exports.register = async (req, res) => {
       });
     }
   } catch (error) {
+    console.error('Registration error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
