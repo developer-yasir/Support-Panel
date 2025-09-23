@@ -9,7 +9,7 @@ A MERN stack application for managing support tickets with role-based access con
 - Create, read, update, and delete tickets
 - Add comments to tickets
 - Filter tickets by status and priority
-- Responsive UI with TailwindCSS
+- Responsive UI with custom CSS
 
 ## Project Structure
 
@@ -130,7 +130,7 @@ You can run both servers simultaneously using `concurrently`:
 
 ### Frontend
 - Built with React and Vite
-- TailwindCSS for styling
+- Custom CSS for styling
 - React Router for navigation
 - Axios for API calls
 - React Context for state management

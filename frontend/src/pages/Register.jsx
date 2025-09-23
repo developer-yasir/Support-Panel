@@ -38,33 +38,33 @@ const Register = () => {
   };
 
   return (
-    <div className="min-vh-100 d-flex align-items-center justify-content-center bg-light">
-      <div className="card shadow" style={{ width: '100%', maxWidth: '450px' }}>
-        <div className="card-body p-6">
-          <div className="text-center mb-6">
-            <div className="mb-4">
-              <div className="mx-auto bg-blue-100 rounded-full p-3 d-inline-flex">
-                <svg xmlns="http://www.w3.org/2000/svg" className="icon text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <div className="register">
+      <div className="card register__card">
+        <div className="card__body">
+          <div className="register__header">
+            <div className="register__logo-wrapper">
+              <div className="register__logo">
+                <svg xmlns="http://www.w3.org/2000/svg" className="icon register__logo-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                 </svg>
               </div>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Support Panel</h1>
-            <p className="text-gray-600">Create a new account</p>
+            <h1 className="register__title">Support Panel</h1>
+            <p className="register__subtitle">Create a new account</p>
           </div>
           
           {error && (
-            <div className="alert alert-danger mb-4 d-flex align-items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="icon me-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="alert alert--danger register__error">
+              <svg xmlns="http://www.w3.org/2000/svg" className="icon alert__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               {error}
             </div>
           )}
           
-          <form onSubmit={onSubmit}>
-            <div className="form-group">
-              <label htmlFor="name" className="form-label">Full Name</label>
+          <form onSubmit={onSubmit} className="register__form">
+            <div className="form-group register__form-group">
+              <label htmlFor="name" className="form-label register__label">Full Name</label>
               <input
                 id="name"
                 name="name"
@@ -72,13 +72,13 @@ const Register = () => {
                 required
                 value={name}
                 onChange={onChange}
-                className="form-control"
+                className="form-control register__input"
                 placeholder="John Doe"
               />
             </div>
             
-            <div className="form-group">
-              <label htmlFor="email-address" className="form-label">Email address</label>
+            <div className="form-group register__form-group">
+              <label htmlFor="email-address" className="form-label register__label">Email address</label>
               <input
                 id="email-address"
                 name="email"
@@ -87,13 +87,13 @@ const Register = () => {
                 required
                 value={email}
                 onChange={onChange}
-                className="form-control"
+                className="form-control register__input"
                 placeholder="you@example.com"
               />
             </div>
             
-            <div className="form-group">
-              <label htmlFor="password" className="form-label">Password</label>
+            <div className="form-group register__form-group">
+              <label htmlFor="password" className="form-label register__label">Password</label>
               <input
                 id="password"
                 name="password"
@@ -102,39 +102,39 @@ const Register = () => {
                 required
                 value={password}
                 onChange={onChange}
-                className="form-control"
+                className="form-control register__input"
                 placeholder="••••••••"
               />
             </div>
             
-            <div className="form-group">
-              <label htmlFor="role" className="form-label">Role</label>
+            <div className="form-group register__form-group">
+              <label htmlFor="role" className="form-label register__label">Role</label>
               <select
                 id="role"
                 name="role"
                 value={role}
                 onChange={onChange}
-                className="form-control"
+                className="form-control register__select"
               >
                 <option value="support_agent">Support Agent</option>
                 <option value="admin">Admin</option>
               </select>
             </div>
             
-            <div className="form-group">
+            <div className="form-group register__form-group">
               <button
                 type="submit"
                 disabled={loading}
-                className="btn btn-block d-flex align-items-center justify-content-center"
+                className="btn btn--primary btn--block register__submit-btn"
               >
                 {loading ? (
                   <>
-                    <div className="spinner me-2" style={{ width: '1rem', height: '1rem' }}></div>
+                    <div className="spinner spinner--small" style={{ width: '1rem', height: '1rem' }}></div>
                     Creating account...
                   </>
                 ) : (
                   <>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="icon me-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="icon register__submit-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                     Create account
@@ -144,9 +144,9 @@ const Register = () => {
             </div>
           </form>
           
-          <div className="text-center text-sm text-gray-600">
+          <div className="register__footer">
             Already have an account?{' '}
-            <Link to="/login" className="font-medium text-blue-600 hover:text-blue-800">
+            <Link to="/login" className="register__login-link">
               Sign in
             </Link>
           </div>

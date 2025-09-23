@@ -37,46 +37,46 @@ const CreateTicket = () => {
   };
 
   return (
-    <div className="min-vh-100 bg-light">
+    <div className="create-ticket">
       <Navbar />
-      <div className="container py-4">
-        <div className="create-ticket-header">
+      <div className="container create-ticket__container">
+        <div className="create-ticket__header">
           <button
             onClick={() => navigate('/dashboard')}
-            className="btn btn-outline d-flex align-items-center"
+            className="btn btn--outline create-ticket__back-btn"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="icon me-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="icon create-ticket__back-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
             Back to Dashboard
           </button>
         </div>
 
-        <div className="card shadow-sm">
-          <div className="card-header">
-            <h3 className="mb-0 font-semibold d-flex align-items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="icon me-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="card create-ticket__card">
+          <div className="card__header">
+            <h3 className="card__title">
+              <svg xmlns="http://www.w3.org/2000/svg" className="icon create-ticket__title-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
               Create New Ticket
             </h3>
           </div>
-          <div className="card-body">
+          <div className="card__body">
             {error && (
-              <div className="alert alert-danger mb-4 d-flex align-items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="icon me-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="alert alert--danger create-ticket__error">
+                <svg xmlns="http://www.w3.org/2000/svg" className="icon alert__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 {error}
               </div>
             )}
 
-            <form onSubmit={onSubmit}>
-              <div className="form-group">
-                <label htmlFor="title" className="form-label">Title</label>
+            <form onSubmit={onSubmit} className="create-ticket__form">
+              <div className="form-group create-ticket__form-group">
+                <label htmlFor="title" className="form-label create-ticket__label">Title</label>
                 <input
                   type="text"
-                  className="form-control"
+                  className="form-control create-ticket__input"
                   id="title"
                   name="title"
                   value={title}
@@ -86,10 +86,10 @@ const CreateTicket = () => {
                 />
               </div>
 
-              <div className="form-group">
-                <label htmlFor="description" className="form-label">Description</label>
+              <div className="form-group create-ticket__form-group">
+                <label htmlFor="description" className="form-label create-ticket__label">Description</label>
                 <textarea
-                  className="form-control"
+                  className="form-control create-ticket__textarea"
                   id="description"
                   name="description"
                   rows="6"
@@ -100,10 +100,10 @@ const CreateTicket = () => {
                 ></textarea>
               </div>
 
-              <div className="form-group">
-                <label htmlFor="priority" className="form-label">Priority</label>
+              <div className="form-group create-ticket__form-group">
+                <label htmlFor="priority" className="form-label create-ticket__label">Priority</label>
                 <select
-                  className="form-control"
+                  className="form-control create-ticket__select"
                   id="priority"
                   name="priority"
                   value={priority}
@@ -116,30 +116,30 @@ const CreateTicket = () => {
                 </select>
               </div>
 
-              <div className="d-grid gap-2 d-md-flex justify-content-md-end">
+              <div className="create-ticket__actions">
                 <button
                   type="button"
                   onClick={() => navigate('/dashboard')}
-                  className="btn btn-outline d-flex align-items-center"
+                  className="btn btn--outline create-ticket__cancel-btn"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="icon me-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="icon create-ticket__cancel-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="btn btn-primary d-flex align-items-center"
+                  className="btn btn--primary create-ticket__submit-btn"
                   disabled={loading}
                 >
                   {loading ? (
                     <>
-                      <div className="spinner me-2" style={{ width: '1rem', height: '1rem' }}></div>
+                      <div className="spinner spinner--small" style={{ width: '1rem', height: '1rem' }}></div>
                       Creating...
                     </>
                   ) : (
                     <>
-                      <svg xmlns="http://www.w3.org/2000/svg" className="icon me-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="icon create-ticket__submit-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       Create Ticket

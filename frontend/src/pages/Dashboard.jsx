@@ -62,96 +62,110 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-vh-100 bg-light">
+    <div className="dashboard">
       <Navbar />
-      <div className="container py-4">
-        <div className="dashboard-header d-flex justify-content-between align-items-center">
-          <div>
-            <h1 className="h3 font-semibold text-gray-900 d-flex align-items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="icon me-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+      <div className="container dashboard__container">
+        <div className="dashboard__header">
+          <div className="dashboard-header__content">
+            <div className="dashboard-header__title-wrapper">
+              <h1 className="dashboard-header__title">
+                <svg xmlns="http://www.w3.org/2000/svg" className="icon dashboard-header__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="28" height="28">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                Support Tickets
+              </h1>
+              <p className="dashboard-header__subtitle">Manage and track all support requests</p>
+            </div>
+            <button
+              onClick={() => navigate('/ticket/new')}
+              className="btn btn--primary dashboard-header__create-btn"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="icon dashboard-header__btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
-              Support Tickets
-            </h1>
-            <p className="text-muted mb-0">Manage and track all support requests</p>
+              Create Ticket
+            </button>
           </div>
-          <button
-            onClick={() => navigate('/ticket/new')}
-            className="btn btn-primary d-flex align-items-center"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="icon me-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            Create Ticket
-          </button>
         </div>
 
         {/* Stats */}
-        <div className="row mb-4">
-          <div className="col-md-3 col-6 mb-3 mb-md-0">
-            <div className="card shadow-sm h-100">
-              <div className="card-body">
-                <div className="d-flex justify-content-between align-items-center">
-                  <div>
-                    <p className="text-muted mb-1">Total Tickets</p>
-                    <h4 className="font-semibold">1</h4>
+        <div className="dashboard__stats-grid">
+          <div className="dashboard__stats-col">
+            <div className="stats-card stats-card--total">
+              <div className="stats-card__content">
+                <div className="stats-card__header">
+                  <div className="stats-card__info">
+                    <p className="stats-card__label">Total Tickets</p>
+                    <h4 className="stats-card__value">1</h4>
                   </div>
-                  <div className="bg-blue-100 rounded-full p-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="icon text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div className="stats-card__icon-wrapper stats-card__icon-wrapper--primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="icon stats-card__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="24" height="24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                     </svg>
                   </div>
                 </div>
+                <div className="stats-card__progress">
+                  <div className="progress-bar progress-bar--primary" style={{width: '100%'}}></div>
+                </div>
               </div>
             </div>
           </div>
-          <div className="col-md-3 col-6 mb-3 mb-md-0">
-            <div className="card shadow-sm h-100">
-              <div className="card-body">
-                <div className="d-flex justify-content-between align-items-center">
-                  <div>
-                    <p className="text-muted mb-1">Open Tickets</p>
-                    <h4 className="font-semibold">1</h4>
+          <div className="dashboard__stats-col">
+            <div className="stats-card stats-card--open">
+              <div className="stats-card__content">
+                <div className="stats-card__header">
+                  <div className="stats-card__info">
+                    <p className="stats-card__label">Open Tickets</p>
+                    <h4 className="stats-card__value">1</h4>
                   </div>
-                  <div className="bg-green-100 rounded-full p-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="icon text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div className="stats-card__icon-wrapper stats-card__icon-wrapper--success">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="icon stats-card__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="24" height="24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
-          <div className="col-md-3 col-6">
-            <div className="card shadow-sm h-100">
-              <div className="card-body">
-                <div className="d-flex justify-content-between align-items-center">
-                  <div>
-                    <p className="text-muted mb-1">In Progress</p>
-                    <h4 className="font-semibold">0</h4>
-                  </div>
-                  <div className="bg-yellow-100 rounded-full p-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="icon text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
+                <div className="stats-card__progress">
+                  <div className="progress-bar progress-bar--success" style={{width: '75%'}}></div>
                 </div>
               </div>
             </div>
           </div>
-          <div className="col-md-3 col-6">
-            <div className="card shadow-sm h-100">
-              <div className="card-body">
-                <div className="d-flex justify-content-between align-items-center">
-                  <div>
-                    <p className="text-muted mb-1">High Priority</p>
-                    <h4 className="font-semibold">0</h4>
+          <div className="dashboard__stats-col">
+            <div className="stats-card stats-card--progress">
+              <div className="stats-card__content">
+                <div className="stats-card__header">
+                  <div className="stats-card__info">
+                    <p className="stats-card__label">In Progress</p>
+                    <h4 className="stats-card__value">0</h4>
                   </div>
-                  <div className="bg-red-100 rounded-full p-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="icon text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div className="stats-card__icon-wrapper stats-card__icon-wrapper--warning">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="icon stats-card__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="24" height="24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="stats-card__progress">
+                  <div className="progress-bar progress-bar--warning" style={{width: '0%'}}></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="dashboard__stats-col">
+            <div className="stats-card stats-card--priority">
+              <div className="stats-card__content">
+                <div className="stats-card__header">
+                  <div className="stats-card__info">
+                    <p className="stats-card__label">High Priority</p>
+                    <h4 className="stats-card__value">0</h4>
+                  </div>
+                  <div className="stats-card__icon-wrapper stats-card__icon-wrapper--danger">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="icon stats-card__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="24" height="24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                   </div>
+                </div>
+                <div className="stats-card__progress">
+                  <div className="progress-bar progress-bar--danger" style={{width: '0%'}}></div>
                 </div>
               </div>
             </div>
@@ -159,23 +173,34 @@ const Dashboard = () => {
         </div>
 
         {/* Filters */}
-        <div className="card filters-card shadow-sm">
-          <div className="card-body">
-            <h5 className="font-medium text-gray-900 mb-3 d-flex align-items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="icon me-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-              </svg>
-              Filter Tickets
-            </h5>
-            <div className="row">
-              <div className="col-md-6 mb-3 mb-md-0">
-                <label htmlFor="status" className="form-label">Status</label>
+        <div className="card filters-card">
+          <div className="card__body">
+            <div className="filters-card__header">
+              <h5 className="filters-card__title">
+                <svg xmlns="http://www.w3.org/2000/svg" className="icon filters-card__title-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                Filter Tickets
+              </h5>
+              <button 
+                className="btn btn--secondary btn--small filters-card__reset-btn"
+                onClick={() => setFilters({ status: '', priority: '' })}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="icon filters-card__reset-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Reset Filters
+              </button>
+            </div>
+            <div className="filters-card__form">
+              <div className="filters-card__form-group">
+                <label htmlFor="status" className="form-label filters-card__label">Status</label>
                 <select
                   id="status"
                   name="status"
                   value={filters.status}
                   onChange={handleFilterChange}
-                  className="form-control"
+                  className="form-control form-control--select"
                 >
                   <option value="">All Statuses</option>
                   <option value="open">Open</option>
@@ -184,14 +209,14 @@ const Dashboard = () => {
                   <option value="closed">Closed</option>
                 </select>
               </div>
-              <div className="col-md-6">
-                <label htmlFor="priority" className="form-label">Priority</label>
+              <div className="filters-card__form-group">
+                <label htmlFor="priority" className="form-label filters-card__label">Priority</label>
                 <select
                   id="priority"
                   name="priority"
                   value={filters.priority}
                   onChange={handleFilterChange}
-                  className="form-control"
+                  className="form-control form-control--select"
                 >
                   <option value="">All Priorities</option>
                   <option value="low">Low</option>
@@ -205,81 +230,84 @@ const Dashboard = () => {
         </div>
 
         {/* Tickets Table */}
-        <div className="card shadow-sm">
-          <div className="card-body">
-            {loading ? (
-              <div className="d-flex justify-content-center align-items-center py-5">
-                <div className="spinner"></div>
-              </div>
-            ) : error ? (
-              <div className="alert alert-danger d-flex align-items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="icon me-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                {error}
-              </div>
-            ) : tickets.length === 0 ? (
-              <div className="empty-state">
-                <div className="empty-state-icon">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                  </svg>
+        <div className="card tickets-table-card">
+          <div className="card__body card__body--no-padding">
+            <div className="tickets-table-container">
+              {loading ? (
+                <div className="tickets-table__loading">
+                  <div className="spinner spinner--primary" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
                 </div>
-                <h3 className="empty-state-title">No tickets found</h3>
-                <p className="empty-state-description">There are no tickets matching your current filters.</p>
-                <button
-                  onClick={() => navigate('/ticket/new')}
-                  className="btn btn-primary d-flex align-items-center mx-auto"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="icon me-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              ) : error ? (
+                <div className="alert alert--danger tickets-table__error">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="icon alert__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  Create your first ticket
-                </button>
-              </div>
-            ) : (
-              <div className="table-responsive">
-                <table className="table ticket-table">
-                  <thead>
-                    <tr>
-                      <th>Title</th>
-                      <th>Status</th>
-                      <th>Priority</th>
-                      <th>Created By</th>
-                      <th>Created At</th>
-                      <th>Actions</th>
+                  {error}
+                </div>
+              ) : tickets.length === 0 ? (
+                <div className="empty-state tickets-table__empty">
+                  <div className="empty-state__icon-wrapper">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="icon empty-state__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="48" height="48">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                  </div>
+                  <h3 className="empty-state__title">No tickets found</h3>
+                  <p className="empty-state__description">There are no tickets matching your current filters.</p>
+                  <button
+                    onClick={() => navigate('/ticket/new')}
+                    className="btn btn--primary empty-state__btn"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="icon empty-state__btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="18" height="18">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Create your first ticket
+                  </button>
+                </div>
+              ) : (
+                <table className="table table--hover tickets-table">
+                  <thead className="table__head">
+                    <tr className="table__row">
+                      <th className="table__header">Title</th>
+                      <th className="table__header">Status</th>
+                      <th className="table__header">Priority</th>
+                      <th className="table__header">Created By</th>
+                      <th className="table__header">Created At</th>
+                      <th className="table__header table__header--actions">Actions</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="table__body">
                     {tickets.map((ticket) => (
-                      <tr key={ticket._id}>
-                        <td>
-                          <div className="ticket-title">{ticket.title}</div>
-                          <div className="ticket-description">{ticket.description.substring(0, 50)}...</div>
+                      <tr key={ticket._id} className="table__row">
+                        <td className="table__cell">
+                          <div className="ticket-cell__title">{ticket.title}</div>
+                          <div className="ticket-cell__description">{ticket.description.substring(0, 60)}...</div>
                         </td>
-                        <td>
+                        <td className="table__cell">
                           <span className={getStatusBadgeClass(ticket.status)}>
-                            {ticket.status}
+                            {ticket.status.replace('_', ' ')}
                           </span>
                         </td>
-                        <td>
+                        <td className="table__cell">
                           <span className={getPriorityBadgeClass(ticket.priority)}>
                             {ticket.priority}
                           </span>
                         </td>
-                        <td>
-                          <div className="user-info">{ticket.createdBy?.name}</div>
-                          <div className="text-muted text-sm">{ticket.createdBy?.email}</div>
+                        <td className="table__cell">
+                          <div className="ticket-cell__user-name">{ticket.createdBy?.name}</div>
+                          <div className="ticket-cell__user-email">{ticket.createdBy?.email}</div>
                         </td>
-                        <td>
-                          {new Date(ticket.createdAt).toLocaleDateString()}
+                        <td className="table__cell">
+                          <div className="ticket-cell__date">{new Date(ticket.createdAt).toLocaleDateString()}</div>
+                          <div className="ticket-cell__time">{new Date(ticket.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
                         </td>
-                        <td>
+                        <td className="table__cell table__cell--actions">
                           <button
                             onClick={() => viewTicket(ticket._id)}
-                            className="btn btn-sm btn-outline d-flex align-items-center"
+                            className="btn btn--outline-primary btn--small ticket-actions__view-btn"
                           >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="icon me-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="icon ticket-actions__view-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
@@ -290,8 +318,8 @@ const Dashboard = () => {
                     ))}
                   </tbody>
                 </table>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>

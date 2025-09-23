@@ -6,8 +6,10 @@ const ProtectedRoute = ({ children }) => {
 
   if (loading) {
     return (
-      <div className="min-vh-100 d-flex align-items-center justify-content-center bg-light">
-        <div className="spinner"></div>
+      <div className="protected-route">
+        <div className="protected-route__loading">
+          <div className="spinner spinner--primary"></div>
+        </div>
       </div>
     );
   }

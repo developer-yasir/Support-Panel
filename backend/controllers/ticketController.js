@@ -62,23 +62,35 @@ exports.getTicketById = async (req, res) => {
 // Update ticket
 exports.updateTicket = async (req, res) => {
   try {
+    console.log('Update ticket request:', req.params.id, req.body);
     const { title, description, priority, status, assignedTo } = req.body;
     
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket) {
+      console.log('Ticket not found:', req.params.id);
       return res.status(404).json({ message: 'Ticket not found' });
     }
     
     // Check if user is authorized to update ticket
     if (ticket.createdBy.toString() !== req.user.id && req.user.role !== 'admin') {
+      console.log('Unauthorized update attempt:', req.user.id, ticket.createdBy.toString());
       return res.status(403).json({ message: 'Not authorized to update this ticket' });
     }
     
-    ticket.title = title || ticket.title;
-    ticket.description = description || ticket.description;
-    ticket.priority = priority || ticket.priority;
-    ticket.status = status || ticket.status;
-    ticket.assignedTo = assignedTo || ticket.assignedTo;
+    // Only update fields that are provided
+    if (title !== undefined) ticket.title = title;
+    if (description !== undefined) ticket.description = description;
+    if (priority !== undefined) ticket.priority = priority;
+    if (status !== undefined) ticket.status = status;
+    if (assignedTo !== undefined) ticket.assignedTo = assignedTo;
+    
+    console.log('Updating ticket with data:', {
+      title: ticket.title,
+      description: ticket.description,
+      priority: ticket.priority,
+      status: ticket.status,
+      assignedTo: ticket.assignedTo
+    });
     
     await ticket.save();
     
@@ -86,8 +98,10 @@ exports.updateTicket = async (req, res) => {
     await ticket.populate('createdBy', 'name email');
     await ticket.populate('assignedTo', 'name email');
     
+    console.log('Ticket updated successfully:', ticket._id);
     res.json(ticket);
   } catch (error) {
+    console.error('Error updating ticket:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
