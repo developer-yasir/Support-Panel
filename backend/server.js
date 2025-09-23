@@ -11,6 +11,7 @@ dotenv.config();
 const authRoutes = require('./routes/auth');
 const ticketRoutes = require('./routes/tickets');
 const commentRoutes = require('./routes/comments');
+const userRoutes = require('./routes/users');
 
 // Initialize app
 const app = express();
@@ -27,6 +28,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/comments', commentRoutes);
+app.use('/api/users', userRoutes);
 
 // Health check endpoint
 app.get('/', (req, res) => {

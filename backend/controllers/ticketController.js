@@ -4,16 +4,22 @@ const User = require('../models/User');
 // Create a new ticket
 exports.createTicket = async (req, res) => {
   try {
-    const { title, description, priority } = req.body;
+    const { title, description, priority, dueDate, assignedTo } = req.body;
     
     const ticket = new Ticket({
       title,
       description,
       priority,
+      dueDate,
+      assignedTo,
       createdBy: req.user.id
     });
     
     await ticket.save();
+    
+    // Populate references
+    await ticket.populate('createdBy', 'name email');
+    await ticket.populate('assignedTo', 'name email');
     
     res.status(201).json(ticket);
   } catch (error) {
@@ -24,12 +30,14 @@ exports.createTicket = async (req, res) => {
 // Get all tickets
 exports.getTickets = async (req, res) => {
   try {
-    const { status, priority, assignedTo } = req.query;
+    const { status, priority, assignedTo, dueDate, escalationLevel } = req.query;
     let filter = {};
     
     if (status) filter.status = status;
     if (priority) filter.priority = priority;
     if (assignedTo) filter.assignedTo = assignedTo;
+    if (dueDate) filter.dueDate = dueDate;
+    if (escalationLevel) filter.escalationLevel = escalationLevel;
     
     const tickets = await Ticket.find(filter)
       .populate('createdBy', 'name email')
@@ -63,7 +71,7 @@ exports.getTicketById = async (req, res) => {
 exports.updateTicket = async (req, res) => {
   try {
     console.log('Update ticket request:', req.params.id, req.body);
-    const { title, description, priority, status, assignedTo } = req.body;
+    const { title, description, priority, status, assignedTo, dueDate, escalationLevel } = req.body;
     
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket) {
@@ -83,13 +91,17 @@ exports.updateTicket = async (req, res) => {
     if (priority !== undefined) ticket.priority = priority;
     if (status !== undefined) ticket.status = status;
     if (assignedTo !== undefined) ticket.assignedTo = assignedTo;
+    if (dueDate !== undefined) ticket.dueDate = dueDate;
+    if (escalationLevel !== undefined) ticket.escalationLevel = escalationLevel;
     
     console.log('Updating ticket with data:', {
       title: ticket.title,
       description: ticket.description,
       priority: ticket.priority,
       status: ticket.status,
-      assignedTo: ticket.assignedTo
+      assignedTo: ticket.assignedTo,
+      dueDate: ticket.dueDate,
+      escalationLevel: ticket.escalationLevel
     });
     
     await ticket.save();
@@ -121,6 +133,37 @@ exports.deleteTicket = async (req, res) => {
     
     await ticket.remove();
     res.json({ message: 'Ticket removed' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Escalate ticket
+exports.escalateTicket = async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket) {
+      return res.status(404).json({ message: 'Ticket not found' });
+    }
+    
+    // Check if user is authorized to escalate ticket
+    if (ticket.createdBy.toString() !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Not authorized to escalate this ticket' });
+    }
+    
+    // Increase escalation level (max level is 3)
+    if (ticket.escalationLevel < 3) {
+      ticket.escalationLevel += 1;
+      await ticket.save();
+      
+      // Populate references
+      await ticket.populate('createdBy', 'name email');
+      await ticket.populate('assignedTo', 'name email');
+      
+      res.json(ticket);
+    } else {
+      res.status(400).json({ message: 'Ticket is already at the highest escalation level' });
+    }
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

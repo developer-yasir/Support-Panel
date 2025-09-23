@@ -5,7 +5,8 @@ const {
   getTickets,
   getTicketById,
   updateTicket,
-  deleteTicket
+  deleteTicket,
+  escalateTicket
 } = require('../controllers/ticketController');
 const { protect } = require('../middlewares/authMiddleware');
 
@@ -20,5 +21,8 @@ router.route('/:id')
   .get(getTicketById)
   .put(updateTicket)
   .delete(deleteTicket);
+
+router.route('/:id/escalate')
+  .post(escalateTicket);
 
 module.exports = router;

@@ -109,6 +109,22 @@ const TicketDetail = () => {
     }
   };
 
+  const handleEscalateTicket = async () => {
+    try {
+      setStatusLoading(true);
+      const response = await api.post(`/tickets/${id}/escalate`);
+      setTicket(response.data);
+      
+      // Show success message
+      console.log('Ticket escalated successfully');
+    } catch (err) {
+      console.error('Error escalating ticket:', err);
+      setError('Failed to escalate ticket: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setStatusLoading(false);
+    }
+  };
+
   // Test function to verify API connectivity
   const testApiConnection = async () => {
     try {
@@ -401,12 +417,42 @@ const TicketDetail = () => {
                         )}
                       </div>
                     </div>
+                    {ticket?.dueDate && (
+                      <div className="ticket-detail__info-section">
+                        <p className="ticket-detail__info-label">Due Date</p>
+                        <p className="ticket-detail__due-date">
+                          {new Date(ticket.dueDate).toLocaleDateString()}
+                        </p>
+                      </div>
+                    )}
+                    {ticket?.escalationLevel > 1 && (
+                      <div className="ticket-detail__info-section">
+                        <p className="ticket-detail__info-label">Escalation Level</p>
+                        <p className="ticket-detail__escalation-level">
+                          Level {ticket.escalationLevel}
+                        </p>
+                      </div>
+                    )}
                     <div className="ticket-detail__info-section">
                       <p className="ticket-detail__info-label">Created At</p>
                       <p className="ticket-detail__created-at">
                         {new Date(ticket?.createdAt).toLocaleString()}
                       </p>
                     </div>
+                    {ticket?.escalationLevel < 3 && (
+                      <div className="ticket-detail__info-section">
+                        <button 
+                          className="btn btn--warning ticket-detail__escalate-btn"
+                          onClick={handleEscalateTicket}
+                          disabled={statusLoading}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="icon ticket-detail__escalate-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                          </svg>
+                          Escalate Ticket
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

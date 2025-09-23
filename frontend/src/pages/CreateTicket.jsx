@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { api } from '../services/api';
@@ -7,13 +7,30 @@ const CreateTicket = () => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    priority: 'medium'
+    priority: 'medium',
+    dueDate: '',
+    assignedTo: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [agents, setAgents] = useState([]);
   const navigate = useNavigate();
 
-  const { title, description, priority } = formData;
+  const { title, description, priority, dueDate, assignedTo } = formData;
+
+  useEffect(() => {
+    // Fetch support agents for assignment
+    const fetchAgents = async () => {
+      try {
+        const response = await api.get('/users?role=support_agent');
+        setAgents(response.data);
+      } catch (err) {
+        console.error('Failed to fetch agents:', err);
+      }
+    };
+
+    fetchAgents();
+  }, []);
 
   const onChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -25,7 +42,19 @@ const CreateTicket = () => {
     setError('');
 
     try {
-      const response = await api.post('/tickets', { title, description, priority });
+      const ticketData = { title, description, priority };
+      
+      // Only add dueDate if it's provided
+      if (dueDate) {
+        ticketData.dueDate = dueDate;
+      }
+      
+      // Only add assignedTo if it's provided
+      if (assignedTo) {
+        ticketData.assignedTo = assignedTo;
+      }
+      
+      const response = await api.post('/tickets', ticketData);
       if (response.data._id) {
         navigate(`/ticket/${response.data._id}`);
       }
@@ -113,6 +142,36 @@ const CreateTicket = () => {
                   <option value="medium">Medium</option>
                   <option value="high">High</option>
                   <option value="urgent">Urgent</option>
+                </select>
+              </div>
+
+              <div className="form-group create-ticket__form-group">
+                <label htmlFor="dueDate" className="form-label create-ticket__label">Due Date (Optional)</label>
+                <input
+                  type="date"
+                  className="form-control create-ticket__input"
+                  id="dueDate"
+                  name="dueDate"
+                  value={dueDate}
+                  onChange={onChange}
+                />
+              </div>
+
+              <div className="form-group create-ticket__form-group">
+                <label htmlFor="assignedTo" className="form-label create-ticket__label">Assign To (Optional)</label>
+                <select
+                  className="form-control create-ticket__select"
+                  id="assignedTo"
+                  name="assignedTo"
+                  value={assignedTo}
+                  onChange={onChange}
+                >
+                  <option value="">Unassigned</option>
+                  {agents.map(agent => (
+                    <option key={agent._id} value={agent._id}>
+                      {agent.name} ({agent.email})
+                    </option>
+                  ))}
                 </select>
               </div>
 

@@ -9,7 +9,9 @@ const Dashboard = () => {
   const [error, setError] = useState('');
   const [filters, setFilters] = useState({
     status: '',
-    priority: ''
+    priority: '',
+    dueDate: '',
+    escalationLevel: ''
   });
   const navigate = useNavigate();
 
@@ -23,6 +25,8 @@ const Dashboard = () => {
       const queryParams = new URLSearchParams();
       if (filters.status) queryParams.append('status', filters.status);
       if (filters.priority) queryParams.append('priority', filters.priority);
+      if (filters.dueDate) queryParams.append('dueDate', filters.dueDate);
+      if (filters.escalationLevel) queryParams.append('escalationLevel', filters.escalationLevel);
       
       const response = await api.get(`/tickets?${queryParams.toString()}`);
       setTickets(response.data);
@@ -184,7 +188,7 @@ const Dashboard = () => {
               </h5>
               <button 
                 className="btn btn--secondary btn--small filters-card__reset-btn"
-                onClick={() => setFilters({ status: '', priority: '' })}
+                onClick={() => setFilters({ status: '', priority: '', dueDate: '', escalationLevel: '' })}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="icon filters-card__reset-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -223,6 +227,32 @@ const Dashboard = () => {
                   <option value="medium">Medium</option>
                   <option value="high">High</option>
                   <option value="urgent">Urgent</option>
+                </select>
+              </div>
+              <div className="filters-card__form-group">
+                <label htmlFor="dueDate" className="form-label filters-card__label">Due Date</label>
+                <input
+                  type="date"
+                  id="dueDate"
+                  name="dueDate"
+                  value={filters.dueDate}
+                  onChange={handleFilterChange}
+                  className="form-control"
+                />
+              </div>
+              <div className="filters-card__form-group">
+                <label htmlFor="escalationLevel" className="form-label filters-card__label">Escalation Level</label>
+                <select
+                  id="escalationLevel"
+                  name="escalationLevel"
+                  value={filters.escalationLevel}
+                  onChange={handleFilterChange}
+                  className="form-control form-control--select"
+                >
+                  <option value="">All Levels</option>
+                  <option value="1">Level 1</option>
+                  <option value="2">Level 2</option>
+                  <option value="3">Level 3</option>
                 </select>
               </div>
             </div>
@@ -272,6 +302,8 @@ const Dashboard = () => {
                       <th className="table__header">Title</th>
                       <th className="table__header">Status</th>
                       <th className="table__header">Priority</th>
+                      <th className="table__header">Due Date</th>
+                      <th className="table__header">Escalation</th>
                       <th className="table__header">Created By</th>
                       <th className="table__header">Created At</th>
                       <th className="table__header table__header--actions">Actions</th>
@@ -293,6 +325,12 @@ const Dashboard = () => {
                           <span className={getPriorityBadgeClass(ticket.priority)}>
                             {ticket.priority}
                           </span>
+                        </td>
+                        <td className="table__cell">
+                          {ticket.dueDate ? new Date(ticket.dueDate).toLocaleDateString() : 'No due date'}
+                        </td>
+                        <td className="table__cell">
+                          {ticket.escalationLevel > 1 ? `Level ${ticket.escalationLevel}` : 'Level 1'}
                         </td>
                         <td className="table__cell">
                           <div className="ticket-cell__user-name">{ticket.createdBy?.name}</div>
