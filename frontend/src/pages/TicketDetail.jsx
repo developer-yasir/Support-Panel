@@ -162,7 +162,7 @@ const TicketDetail = () => {
         <Navbar />
         <div className="container ticket-detail__container">
           <div className="ticket-detail__loading-wrapper">
-            <div className="spinner spinner--primary"></div>
+            <div className="loading-text">Loading ticket details...</div>
           </div>
         </div>
       </div>
@@ -247,10 +247,7 @@ const TicketDetail = () => {
                       }}
                     >
                       {statusLoading ? (
-                        <>
-                          <div className="spinner spinner--small" style={{ width: '1rem', height: '1rem' }}></div>
-                          Updating...
-                        </>
+                        'Updating...'
                       ) : (
                         "Change Status"
                       )}
@@ -320,10 +317,7 @@ const TicketDetail = () => {
                       className="btn btn--primary ticket-detail__comment-btn"
                     >
                       {commentLoading ? (
-                        <>
-                          <div className="spinner spinner--small" style={{ width: '1rem', height: '1rem' }}></div>
-                          Adding...
-                        </>
+                        'Adding...'
                       ) : (
                         <>
                           <svg xmlns="http://www.w3.org/2000/svg" className="icon ticket-detail__comment-btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">

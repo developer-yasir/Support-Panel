@@ -276,10 +276,7 @@ const Register = () => {
                   className="btn btn--primary btn--block login-submit-btn"
                 >
                   {loading ? (
-                    <>
-                      <div className="spinner spinner--small"></div>
-                      Creating account...
-                    </>
+                    'Creating account...'
                   ) : (
                     'Create account'
                   )}

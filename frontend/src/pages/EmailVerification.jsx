@@ -171,10 +171,7 @@ const EmailVerification = () => {
                   className="btn btn--primary btn--block login-submit-btn"
                 >
                   {loading ? (
-                    <>
-                      <div className="spinner spinner--small"></div>
-                      Verifying...
-                    </>
+                    'Verifying...'
                   ) : (
                     'Verify Email'
                   )}
@@ -193,10 +190,7 @@ const EmailVerification = () => {
                 className="btn btn--outline btn--block guest-login-btn"
               >
                 {resending ? (
-                  <>
-                    <div className="spinner spinner--small"></div>
-                    Resending...
-                  </>
+                  'Resending...'
                 ) : (
                   'Resend Verification Code'
                 )}

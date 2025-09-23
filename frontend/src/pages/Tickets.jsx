@@ -1,0 +1,302 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Navbar from '../components/Navbar';
+import Sidebar from '../components/Sidebar';
+import { api } from '../services/api';
+
+const Tickets = () => {
+  const [tickets, setTickets] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [filters, setFilters] = useState({
+    status: '',
+    priority: '',
+    dueDate: '',
+    escalationLevel: ''
+  });
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchTickets = async () => {
+      try {
+        setLoading(true);
+        const queryParams = new URLSearchParams();
+        if (filters.status) queryParams.append('status', filters.status);
+        if (filters.priority) queryParams.append('priority', filters.priority);
+        if (filters.dueDate) queryParams.append('dueDate', filters.dueDate);
+        if (filters.escalationLevel) queryParams.append('escalationLevel', filters.escalationLevel);
+        
+        const response = await api.get(`/tickets?${queryParams.toString()}`);
+        setTickets(response.data);
+      } catch (err) {
+        setError('Failed to fetch tickets');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTickets();
+  }, [filters]);
+
+  const handleFilterChange = (e) => {
+    setFilters({ ...filters, [e.target.name]: e.target.value });
+  };
+
+  const viewTicket = (ticketId) => {
+    navigate(`/ticket/${ticketId}`);
+  };
+
+  const getStatusBadgeClass = (status) => {
+    switch (status) {
+      case 'open': return 'badge badge-success';
+      case 'in_progress': return 'badge badge-warning';
+      case 'resolved': return 'badge badge-info';
+      case 'closed': return 'badge badge-secondary';
+      default: return 'badge badge-secondary';
+    }
+  };
+
+  const getPriorityBadgeClass = (priority) => {
+    switch (priority) {
+      case 'low': return 'badge badge-success';
+      case 'medium': return 'badge badge-warning';
+      case 'high': return 'badge badge-danger';
+      case 'urgent': return 'badge badge-danger';
+      default: return 'badge badge-secondary';
+    }
+  };
+
+  return (
+    <div className="dashboard">
+      <Navbar />
+      <div className="dashboard__layout">
+        <Sidebar />
+        <div className="container dashboard__container">
+          <div className="dashboard__header">
+            <div className="dashboard-header__content">
+              <div className="dashboard-header__title-wrapper">
+                <h1 className="dashboard-header__title">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="icon dashboard-header__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="28" height="28">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                  All Tickets
+                </h1>
+                <p className="dashboard-header__subtitle">View and manage all support tickets</p>
+              </div>
+              <button
+                onClick={() => navigate('/ticket/new')}
+                className="btn btn--primary dashboard-header__create-btn"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="icon dashboard-header__btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Create Ticket
+              </button>
+            </div>
+          </div>
+
+          {/* Filters */}
+          <div className="card filters-card">
+            <div className="card__body">
+              <div className="filters-card__header">
+                <h5 className="filters-card__title">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="icon filters-card__title-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                  </svg>
+                  Filter Tickets
+                </h5>
+                <button 
+                  className="btn btn--secondary btn--small filters-card__reset-btn"
+                  onClick={() => setFilters({ status: '', priority: '', dueDate: '', escalationLevel: '' })}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="icon filters-card__reset-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Reset Filters
+                </button>
+              </div>
+              <div className="filters-card__form">
+                <div className="filters-card__form-group">
+                  <label htmlFor="status" className="form-label filters-card__label">Status</label>
+                  <select
+                    id="status"
+                    name="status"
+                    value={filters.status}
+                    onChange={handleFilterChange}
+                    className="form-control form-control--select"
+                  >
+                    <option value="">All Statuses</option>
+                    <option value="open">Open</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="resolved">Resolved</option>
+                    <option value="closed">Closed</option>
+                  </select>
+                </div>
+                <div className="filters-card__form-group">
+                  <label htmlFor="priority" className="form-label filters-card__label">Priority</label>
+                  <select
+                    id="priority"
+                    name="priority"
+                    value={filters.priority}
+                    onChange={handleFilterChange}
+                    className="form-control form-control--select"
+                  >
+                    <option value="">All Priorities</option>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
+                  </select>
+                </div>
+                <div className="filters-card__form-group">
+                  <label htmlFor="dueDate" className="form-label filters-card__label">Due Date</label>
+                  <input
+                    type="date"
+                    id="dueDate"
+                    name="dueDate"
+                    value={filters.dueDate}
+                    onChange={handleFilterChange}
+                    className="form-control"
+                  />
+                </div>
+                <div className="filters-card__form-group">
+                  <label htmlFor="escalationLevel" className="form-label filters-card__label">Escalation Level</label>
+                  <select
+                    id="escalationLevel"
+                    name="escalationLevel"
+                    value={filters.escalationLevel}
+                    onChange={handleFilterChange}
+                    className="form-control form-control--select"
+                  >
+                    <option value="">All Levels</option>
+                    <option value="1">Level 1</option>
+                    <option value="2">Level 2</option>
+                    <option value="3">Level 3</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Tickets Table */}
+          <div className="card tickets-table-card">
+            <div className="card__body card__body--no-padding">
+              <div className="tickets-table-container">
+                {loading ? (
+                  <div className="tickets-table__loading">
+                    <div className="loading-text">Loading tickets...</div>
+                  </div>
+                ) : error ? (
+                  <div className="alert alert--danger tickets-table__error">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="icon alert__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    {error}
+                  </div>
+                ) : tickets.length === 0 ? (
+                  <div className="empty-state tickets-table__empty">
+                    <div className="empty-state__icon-wrapper">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="icon empty-state__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="48" height="48">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                    </div>
+                    <h3 className="empty-state__title">No tickets found</h3>
+                    <p className="empty-state__description">There are no tickets matching your current filters.</p>
+                    <button
+                      onClick={() => navigate('/ticket/new')}
+                      className="btn btn--primary empty-state__btn"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="icon empty-state__btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="18" height="18">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                      Create your first ticket
+                    </button>
+                  </div>
+                ) : (
+                  <table className="table table--hover tickets-table">
+                    <thead className="table__head">
+                      <tr className="table__row">
+                        <th className="table__header">Title</th>
+                        <th className="table__header">Status</th>
+                        <th className="table__header">Priority</th>
+                        <th className="table__header">Due Date</th>
+                        <th className="table__header">Escalation</th>
+                        <th className="table__header">Created By</th>
+                        <th className="table__header">Created At</th>
+                        <th className="table__header table__header--actions">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="table__body">
+                      {tickets.map((ticket) => (
+                        <tr key={ticket._id} className="table__row">
+                          <td className="table__cell">
+                            <div className="ticket-cell__title">{ticket.title}</div>
+                            <div className="ticket-cell__description">
+                              {ticket.description 
+                                ? ticket.description.length > 60 
+                                  ? ticket.description.substring(0, 60) + '...' 
+                                  : ticket.description
+                                : 'No description'}
+                            </div>
+                          </td>
+                          <td className="table__cell">
+                            <span className={getStatusBadgeClass(ticket.status)}>
+                              {ticket.status.replace('_', ' ')}
+                            </span>
+                          </td>
+                          <td className="table__cell">
+                            <span className={getPriorityBadgeClass(ticket.priority)}>
+                              {ticket.priority}
+                            </span>
+                          </td>
+                          <td className="table__cell">
+                            {ticket.dueDate && !isNaN(new Date(ticket.dueDate).getTime()) 
+                              ? new Date(ticket.dueDate).toLocaleDateString() 
+                              : 'No due date'}
+                          </td>
+                          <td className="table__cell">
+                            {ticket.escalationLevel ? `Level ${ticket.escalationLevel}` : 'Level 1'}
+                          </td>
+                          <td className="table__cell">
+                            <div className="ticket-cell__user-name">{ticket.createdBy?.name}</div>
+                            <div className="ticket-cell__user-email">{ticket.createdBy?.email}</div>
+                          </td>
+                          <td className="table__cell">
+                            <div className="ticket-cell__date">
+                              {ticket.createdAt && !isNaN(new Date(ticket.createdAt).getTime()) 
+                                ? new Date(ticket.createdAt).toLocaleDateString() 
+                                : 'Invalid date'}
+                            </div>
+                            <div className="ticket-cell__time">
+                              {ticket.createdAt && !isNaN(new Date(ticket.createdAt).getTime()) 
+                                ? new Date(ticket.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) 
+                                : ''}
+                            </div>
+                          </td>
+                          <td className="table__cell table__cell--actions">
+                            <button
+                              onClick={() => viewTicket(ticket._id)}
+                              className="btn btn--outline-primary btn--small ticket-actions__view-btn"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="icon ticket-actions__view-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                              View
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Tickets;

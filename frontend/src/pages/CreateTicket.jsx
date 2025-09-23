@@ -192,10 +192,7 @@ const CreateTicket = () => {
                   disabled={loading}
                 >
                   {loading ? (
-                    <>
-                      <div className="spinner spinner--small" style={{ width: '1rem', height: '1rem' }}></div>
-                      Creating...
-                    </>
+                    'Creating...'
                   ) : (
                     <>
                       <svg xmlns="http://www.w3.org/2000/svg" className="icon create-ticket__submit-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">

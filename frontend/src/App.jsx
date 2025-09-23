@@ -5,6 +5,9 @@ import Dashboard from './pages/Dashboard';
 import TicketDetail from './pages/TicketDetail';
 import CreateTicket from './pages/CreateTicket';
 import EmailVerification from './pages/EmailVerification';
+import Settings from './pages/Settings';
+import Tickets from './pages/Tickets';
+import Overview from './pages/Overview';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -18,6 +21,21 @@ function App() {
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/overview" element={
+            <ProtectedRoute>
+              <Overview />
+            </ProtectedRoute>
+          } />
+          <Route path="/tickets" element={
+            <ProtectedRoute>
+              <Tickets />
+            </ProtectedRoute>
+          } />
+          <Route path="/settings" element={
+            <ProtectedRoute>
+              <Settings />
             </ProtectedRoute>
           } />
           <Route path="/ticket/new" element={

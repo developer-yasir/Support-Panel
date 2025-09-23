@@ -273,10 +273,7 @@ const Login = () => {
                   className="btn btn--primary btn--block login-submit-btn"
                 >
                   {loading ? (
-                    <>
-                      <div className="btn-spinner"></div>
-                      Signing in...
-                    </>
+                    'Signing in...'
                   ) : (
                     'Sign in'
                   )}
@@ -295,10 +292,7 @@ const Login = () => {
                 className="btn btn--outline btn--block guest-login-btn"
               >
                 {guestLoading ? (
-                  <>
-                    <div className="btn-spinner"></div>
-                    Logging in as Guest...
-                  </>
+                  'Logging in as Guest...'
                 ) : (
                   <>
                     <svg xmlns="http://www.w3.org/2000/svg" className="guest-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
