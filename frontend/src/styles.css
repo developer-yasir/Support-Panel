@@ -441,6 +441,19 @@ a:hover {
   height: 1rem;
 }
 
+/* Button Spinner */
+.btn-spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid #ffffff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+}
+
 @keyframes spin {
   0% {
     transform: rotate(0deg);
@@ -1580,90 +1593,151 @@ a:hover {
   align-items: center;
 }
 
-/* Loading Screen */
-.loading-screen {
+/* Modern Loading Screen */
+.modern-loading-screen {
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 1rem;
+  position: relative;
+  overflow: hidden;
 }
 
-.loading-container {
-  text-align: center;
-  padding: 2rem;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border-radius: 1rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  max-width: 400px;
+.modern-loading-screen::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+  animation: rotate 20s linear infinite;
+  z-index: 0;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-wrapper {
+  position: relative;
+  z-index: 1;
   width: 100%;
+  max-width: 400px;
+  text-align: center;
 }
 
-.loading-logo {
-  display: inline-flex;
+.loading-content {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 20px;
+  padding: 3rem 2rem;
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  position: relative;
+  overflow: hidden;
+}
+
+.loading-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #667eea, #764ba2, #667eea);
+  background-size: 200% 100%;
+  animation: loading-bar 2s linear infinite;
+}
+
+@keyframes loading-bar {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.loading-animation {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+/* Pulse Loader */
+.pulse-loader {
+  width: 80px;
+  height: 80px;
+  display: flex;
   align-items: center;
   justify-content: center;
-  background-color: rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
-  padding: 1.5rem;
-  margin: 0 auto 1.5rem;
 }
 
-.loading-logo-icon {
-  width: 3rem;
-  height: 3rem;
+.pulse-loader-inner {
+  width: 40px;
+  height: 40px;
+  background-color: white;
+  border-radius: 50%;
+  animation: pulse-loader 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-loader {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(0);
+    opacity: 0;
+  }
+}
+
+.loading-logo-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.loading-app-icon {
+  width: 48px;
+  height: 48px;
   color: white;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
 }
 
 .loading-title {
   color: white;
-  font-size: 1.875rem;
+  font-size: 2rem;
   font-weight: 700;
   margin: 0 0 0.5rem;
+  letter-spacing: -0.5px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .loading-subtitle {
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.85);
   margin: 0 0 2rem;
+  font-size: 1.125rem;
+  font-weight: 300;
+}
+
+.loading-progress-text {
+  color: rgba(255, 255, 255, 0.7);
   font-size: 1rem;
-}
-
-.loading-progress {
-  margin-bottom: 2rem;
-}
-
-.loading-progress-bar {
-  height: 6px;
-  background-color: rgba(255, 255, 255, 0.2);
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.loading-progress-fill {
-  height: 100%;
-  width: 60%;
-  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
-  border-radius: 3px;
-  animation: progressAnimation 2s ease-in-out infinite;
-}
-
-@keyframes progressAnimation {
-  0% {
-    width: 30%;
-  }
-  50% {
-    width: 70%;
-  }
-  100% {
-    width: 30%;
-  }
-}
-
-.loading-spinner {
-  display: flex;
-  justify-content: center;
+  font-weight: 400;
 }
 
 /* App */

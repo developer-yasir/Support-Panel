@@ -274,7 +274,7 @@ const Login = () => {
                 >
                   {loading ? (
                     <>
-                      <div className="spinner spinner--small"></div>
+                      <div className="btn-spinner"></div>
                       Signing in...
                     </>
                   ) : (
@@ -296,7 +296,7 @@ const Login = () => {
               >
                 {guestLoading ? (
                   <>
-                    <div className="spinner spinner--small"></div>
+                    <div className="btn-spinner"></div>
                     Logging in as Guest...
                   </>
                 ) : (
