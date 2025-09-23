@@ -6,7 +6,8 @@ const {
   getTicketById,
   updateTicket,
   deleteTicket,
-  escalateTicket
+  escalateTicket,
+  getTicketStats
 } = require('../controllers/ticketController');
 const { protect } = require('../middlewares/authMiddleware');
 
@@ -16,6 +17,9 @@ router.use(protect);
 router.route('/')
   .post(createTicket)
   .get(getTickets);
+
+router.route('/stats')
+  .get(getTicketStats);
 
 router.route('/:id')
   .get(getTicketById)

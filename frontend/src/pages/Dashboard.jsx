@@ -5,7 +5,14 @@ import { api } from '../services/api';
 
 const Dashboard = () => {
   const [tickets, setTickets] = useState([]);
+  const [stats, setStats] = useState({
+    totalTickets: 0,
+    openTickets: 0,
+    inProgressTickets: 0,
+    highPriorityTickets: 0
+  });
   const [loading, setLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(true);
   const [error, setError] = useState('');
   const [filters, setFilters] = useState({
     status: '',
@@ -16,8 +23,21 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    fetchStats();
     fetchTickets();
   }, [filters]);
+
+  const fetchStats = async () => {
+    try {
+      setStatsLoading(true);
+      const response = await api.get('/tickets/stats');
+      setStats(response.data);
+    } catch (err) {
+      setError('Failed to fetch ticket statistics');
+    } finally {
+      setStatsLoading(false);
+    }
+  };
 
   const fetchTickets = async () => {
     try {
@@ -100,7 +120,13 @@ const Dashboard = () => {
                 <div className="stats-card__header">
                   <div className="stats-card__info">
                     <p className="stats-card__label">Total Tickets</p>
-                    <h4 className="stats-card__value">1</h4>
+                    <h4 className="stats-card__value">
+                      {statsLoading ? (
+                        <div className="spinner spinner--small spinner--primary" role="status"></div>
+                      ) : (
+                        stats.totalTickets
+                      )}
+                    </h4>
                   </div>
                   <div className="stats-card__icon-wrapper stats-card__icon-wrapper--primary">
                     <svg xmlns="http://www.w3.org/2000/svg" className="icon stats-card__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="24" height="24">
@@ -120,7 +146,13 @@ const Dashboard = () => {
                 <div className="stats-card__header">
                   <div className="stats-card__info">
                     <p className="stats-card__label">Open Tickets</p>
-                    <h4 className="stats-card__value">1</h4>
+                    <h4 className="stats-card__value">
+                      {statsLoading ? (
+                        <div className="spinner spinner--small spinner--primary" role="status"></div>
+                      ) : (
+                        stats.openTickets
+                      )}
+                    </h4>
                   </div>
                   <div className="stats-card__icon-wrapper stats-card__icon-wrapper--success">
                     <svg xmlns="http://www.w3.org/2000/svg" className="icon stats-card__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="24" height="24">
@@ -129,7 +161,7 @@ const Dashboard = () => {
                   </div>
                 </div>
                 <div className="stats-card__progress">
-                  <div className="progress-bar progress-bar--success" style={{width: '75%'}}></div>
+                  <div className="progress-bar progress-bar--success" style={{width: `${stats.totalTickets > 0 ? (stats.openTickets / stats.totalTickets) * 100 : 0}%`}}></div>
                 </div>
               </div>
             </div>
@@ -140,7 +172,13 @@ const Dashboard = () => {
                 <div className="stats-card__header">
                   <div className="stats-card__info">
                     <p className="stats-card__label">In Progress</p>
-                    <h4 className="stats-card__value">0</h4>
+                    <h4 className="stats-card__value">
+                      {statsLoading ? (
+                        <div className="spinner spinner--small spinner--primary" role="status"></div>
+                      ) : (
+                        stats.inProgressTickets
+                      )}
+                    </h4>
                   </div>
                   <div className="stats-card__icon-wrapper stats-card__icon-wrapper--warning">
                     <svg xmlns="http://www.w3.org/2000/svg" className="icon stats-card__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="24" height="24">
@@ -149,7 +187,7 @@ const Dashboard = () => {
                   </div>
                 </div>
                 <div className="stats-card__progress">
-                  <div className="progress-bar progress-bar--warning" style={{width: '0%'}}></div>
+                  <div className="progress-bar progress-bar--warning" style={{width: `${stats.totalTickets > 0 ? (stats.inProgressTickets / stats.totalTickets) * 100 : 0}%`}}></div>
                 </div>
               </div>
             </div>
@@ -160,7 +198,13 @@ const Dashboard = () => {
                 <div className="stats-card__header">
                   <div className="stats-card__info">
                     <p className="stats-card__label">High Priority</p>
-                    <h4 className="stats-card__value">0</h4>
+                    <h4 className="stats-card__value">
+                      {statsLoading ? (
+                        <div className="spinner spinner--small spinner--primary" role="status"></div>
+                      ) : (
+                        stats.highPriorityTickets
+                      )}
+                    </h4>
                   </div>
                   <div className="stats-card__icon-wrapper stats-card__icon-wrapper--danger">
                     <svg xmlns="http://www.w3.org/2000/svg" className="icon stats-card__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="24" height="24">
@@ -169,7 +213,7 @@ const Dashboard = () => {
                   </div>
                 </div>
                 <div className="stats-card__progress">
-                  <div className="progress-bar progress-bar--danger" style={{width: '0%'}}></div>
+                  <div className="progress-bar progress-bar--danger" style={{width: `${stats.totalTickets > 0 ? (stats.highPriorityTickets / stats.totalTickets) * 100 : 0}%`}}></div>
                 </div>
               </div>
             </div>

@@ -168,3 +168,25 @@ exports.escalateTicket = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
+// Get ticket statistics
+exports.getTicketStats = async (req, res) => {
+  try {
+    const totalTickets = await Ticket.countDocuments();
+    
+    const openTickets = await Ticket.countDocuments({ status: 'open' });
+    const inProgressTickets = await Ticket.countDocuments({ status: 'in_progress' });
+    const highPriorityTickets = await Ticket.countDocuments({ 
+      priority: { $in: ['high', 'urgent'] } 
+    });
+    
+    res.json({
+      totalTickets,
+      openTickets,
+      inProgressTickets,
+      highPriorityTickets
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
