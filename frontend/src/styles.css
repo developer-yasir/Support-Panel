@@ -1641,6 +1641,34 @@ a:hover {
   border-width: 2px;
 }
 
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner {
+  display: inline-block;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-top: 2px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.spinner--primary {
+  border-top-color: #3b82f6;
+}
+
+.spinner--small {
+  width: 1rem;
+  height: 1rem;
+}
+
 /* Responsive Styles */
 @media (max-width: 768px) {
   .login-container {
