@@ -1,6 +1,13 @@
 const nodemailer = require('nodemailer');
 
 const createTransporter = () => {
+  console.log('Creating transporter with config:', {
+    host: process.env.EMAIL_HOST || 'smtp.ethereal.email',
+    port: process.env.EMAIL_PORT || 587,
+    secure: process.env.EMAIL_SECURE === 'true' || false,
+    user: process.env.EMAIL_USER ? '[REDACTED]' : 'NOT SET'
+  });
+  
   return nodemailer.createTransport({
     host: process.env.EMAIL_HOST || 'smtp.ethereal.email',
     port: process.env.EMAIL_PORT || 587,
@@ -13,6 +20,7 @@ const createTransporter = () => {
 };
 
 const sendVerificationEmail = async (email, name, verificationCode) => {
+  console.log('Sending verification email to:', email);
   const transporter = createTransporter();
   
   const mailOptions = {
@@ -38,6 +46,12 @@ const sendVerificationEmail = async (email, name, verificationCode) => {
   };
 
   try {
+    console.log('Sending mail with options:', {
+      from: mailOptions.from,
+      to: mailOptions.to,
+      subject: mailOptions.subject
+    });
+    
     const info = await transporter.sendMail(mailOptions);
     console.log('Verification email sent: %s', info.messageId);
     return info;
