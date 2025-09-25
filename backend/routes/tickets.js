@@ -7,7 +7,10 @@ const {
   updateTicket,
   deleteTicket,
   escalateTicket,
-  getTicketStats
+  getTicketStats,
+  getTicketTrends,
+  getTicketDistribution,
+  getResolutionRates
 } = require('../controllers/ticketController');
 const { protect } = require('../middlewares/authMiddleware');
 
@@ -20,6 +23,15 @@ router.route('/')
 
 router.route('/stats')
   .get(getTicketStats);
+
+router.route('/trends')
+  .get(getTicketTrends);
+
+router.route('/distribution')
+  .get(getTicketDistribution);
+
+router.route('/resolution-rates')
+  .get(getResolutionRates);
 
 router.route('/:id')
   .get(getTicketById)

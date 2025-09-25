@@ -1,10 +1,27 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Responsive, WidthProvider } from 'react-grid-layout';
+import { useDashboardSettings } from '../contexts/DashboardSettingsContext';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
+import Export from '../components/Export';
+import Charts from '../components/Charts';
+import RecentActivity from '../components/Dashboard/RecentActivity';
+import TicketCategories from '../components/Dashboard/TicketCategories';
+import AgentPerformance from '../components/Dashboard/AgentPerformance';
+import CustomerSatisfaction from '../components/Dashboard/CustomerSatisfaction';
+import TicketAgeAnalysis from '../components/Dashboard/TicketAgeAnalysis';
+import ResponseTimeMetrics from '../components/Dashboard/ResponseTimeMetrics';
+import QuickActions from '../components/Dashboard/QuickActions';
+import UpcomingBreaches from '../components/Dashboard/UpcomingBreaches';
+import DepartmentView from '../components/Dashboard/DepartmentView';
 import { api } from '../services/api';
+import WebSocketService from '../services/websocket';
+
+const ResponsiveGridLayout = WidthProvider(Responsive);
 
 const Overview = () => {
+  const { dashboardSettings, updateSetting } = useDashboardSettings();
   const [stats, setStats] = useState({
     totalTickets: 0,
     openTickets: 0,
@@ -13,23 +30,182 @@ const Overview = () => {
   });
   const [loading, setStatsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [newTicketsCount, setNewTicketsCount] = useState(0);
+  const [showSettingsPanel, setShowSettingsPanel] = useState(false);
+  const [layouts, setLayouts] = useState({});
+  const lastTotalTickets = useRef(0);
+  const refreshInterval = useRef(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        setStatsLoading(true);
-        const response = await api.get('/tickets/stats');
-        setStats(response.data);
-      } catch (err) {
-        setError('Failed to fetch ticket statistics');
-      } finally {
-        setStatsLoading(false);
+  // Initial layout for the grid - try to load from localStorage first
+  const initialLayout = () => {
+    try {
+      const savedLayout = localStorage.getItem('dashboardLayout');
+      if (savedLayout) {
+        const parsed = JSON.parse(savedLayout);
+        if (parsed.lg) {
+          // Add min constraints to saved layout
+          return parsed.lg.map(item => ({
+            ...item,
+            minW: item.minW || 2,
+            minH: item.minH || 2
+          }));
+        }
       }
-    };
+    } catch (error) {
+      console.error('Error loading layout from localStorage:', error);
+    }
+    
+    // Default layout with min constraints
+    return [
+      { i: 'charts', x: 0, y: 10, w: 12, h: 6, minW: 4, minH: 4 },
+      { i: 'recentActivity', x: 0, y: 16, w: 6, h: 4, minW: 2, minH: 3 },
+      { i: 'ticketCategories', x: 6, y: 16, w: 6, h: 4, minW: 2, minH: 3 },
+      { i: 'agentPerformance', x: 0, y: 20, w: 6, h: 4, minW: 3, minH: 3 },
+      { i: 'customerSatisfaction', x: 6, y: 20, w: 6, h: 4, minW: 3, minH: 3 },
+      { i: 'ticketAgeAnalysis', x: 0, y: 24, w: 6, h: 4, minW: 3, minH: 3 },
+      { i: 'responseTimeMetrics', x: 6, y: 24, w: 6, h: 4, minW: 3, minH: 3 },
+      { i: 'quickActions', x: 0, y: 28, w: 6, h: 4, minW: 3, minH: 3 },
+      { i: 'upcomingBreaches', x: 6, y: 28, w: 6, h: 4, minW: 3, minH: 3 },
+      { i: 'departmentView', x: 0, y: 32, w: 12, h: 4, minW: 4, minH: 3 }
+    ];
+  };
 
-    fetchStats();
+  // Handle layout changes
+  const onLayoutChange = (currentLayout, allLayouts) => {
+    setLayouts(allLayouts);
+    // Save layout to localStorage so it persists between sessions
+    try {
+      // Save the current layout in the lg breakpoint format
+      const layoutToSave = { lg: currentLayout };
+      localStorage.setItem('dashboardLayout', JSON.stringify(layoutToSave));
+    } catch (error) {
+      console.error('Error saving layout to localStorage:', error);
+    }
+  };
+
+  // Function to calculate date ranges
+  const getDateRange = (range) => {
+    const today = new Date();
+    let start = new Date();
+    
+    switch (range) {
+      case 'today':
+        start.setHours(0, 0, 0, 0);
+        break;
+      case 'week':
+        const day = today.getDay();
+        const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+        start = new Date(today.setDate(diff));
+        start.setHours(0, 0, 0, 0);
+        break;
+      case 'month':
+        start = new Date(today.getFullYear(), today.getMonth(), 1);
+        break;
+      case 'quarter':
+        const quarter = Math.floor(today.getMonth() / 3);
+        start = new Date(today.getFullYear(), quarter * 3, 1);
+        break;
+      default:
+        return { startDate: '', endDate: '' };
+    }
+    
+    return {
+      startDate: start.toISOString().split('T')[0],
+      endDate: today.toISOString().split('T')[0]
+    };
+  };
+
+  // Function to apply date range filter
+  const applyDateRange = (range) => {
+    const { startDate, endDate } = getDateRange(range);
+    setStartDate(startDate);
+    setEndDate(endDate);
+  };
+
+  // Function to clear date filters
+  const clearFilters = () => {
+    setStartDate('');
+    setEndDate('');
+  };
+
+  // Function to fetch stats with date filters
+  const fetchStats = async () => {
+    try {
+      setStatsLoading(true);
+      const queryParams = new URLSearchParams();
+      
+      if (startDate) queryParams.append('startDate', startDate);
+      if (endDate) queryParams.append('endDate', endDate);
+      
+      const url = `/tickets/stats${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      const response = await api.get(url);
+      
+      // Check for new tickets
+      if (lastTotalTickets.current > 0 && response.data.totalTickets > lastTotalTickets.current) {
+        setNewTicketsCount(response.data.totalTickets - lastTotalTickets.current);
+        // Clear notification after 5 seconds
+        setTimeout(() => {
+          setNewTicketsCount(0);
+        }, 5000);
+      }
+      
+      lastTotalTickets.current = response.data.totalTickets;
+      setStats(response.data);
+    } catch (err) {
+      setError('Failed to fetch ticket statistics');
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
+  // Set page title
+  useEffect(() => {
+    document.title = 'Dashboard - Support Panel';
   }, []);
+
+  // WebSocket message handler
+  const handleWebSocketMessage = (data) => {
+    // When we receive a ticket update message, refresh the stats
+    if (data.type === 'ticket_update' || data.type === 'new_ticket') {
+      fetchStats();
+    }
+  };
+
+  // Set up auto-refresh every 30 seconds and WebSocket connection
+  useEffect(() => {
+    // Fetch immediately on component mount
+    fetchStats();
+    
+    // Set up interval for auto-refresh
+    refreshInterval.current = setInterval(() => {
+      fetchStats();
+    }, 30000); // 30 seconds
+    
+    // Set up WebSocket connection
+    const wsUrl = `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'}/ws`.replace('http', 'ws');
+    WebSocketService.connect(wsUrl);
+    WebSocketService.addListener('message', handleWebSocketMessage);
+    
+    // Clean up interval and WebSocket on component unmount
+    return () => {
+      if (refreshInterval.current) {
+        clearInterval(refreshInterval.current);
+      }
+      WebSocketService.removeListener('message', handleWebSocketMessage);
+      WebSocketService.disconnect();
+    };
+  }, [startDate, endDate]);
+
+  // Reset new tickets count when filters change
+  useEffect(() => {
+    setNewTicketsCount(0);
+    lastTotalTickets.current = 0;
+  }, [startDate, endDate]);
+
+  
 
   const getStatusBadgeClass = (status) => {
     switch (status) {
@@ -51,6 +227,36 @@ const Overview = () => {
     }
   };
 
+  const handleSettingToggle = (settingName) => {
+    updateSetting(settingName, !dashboardSettings[settingName]);
+  };
+
+  // Render individual dashboard widgets
+  const renderWidget = (id, title, component, visible) => {
+    if (!visible) return null;
+    
+    return (
+      <div key={id} className="dashboard-widget">
+        <div className="dashboard-widget__header">
+          <div className="drag-handle" style={{display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'move', flex: 1}}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="drag-handle-icon">
+              <circle cx="12" cy="9" r="1"></circle>
+              <circle cx="19" cy="9" r="1"></circle>
+              <circle cx="5" cy="9" r="1"></circle>
+              <circle cx="12" cy="15" r="1"></circle>
+              <circle cx="19" cy="15" r="1"></circle>
+              <circle cx="5" cy="15" r="1"></circle>
+            </svg>
+            <h3 className="dashboard-widget__title">{title}</h3>
+          </div>
+        </div>
+        <div className="dashboard-widget__body">
+          {component}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="dashboard">
       <Navbar />
@@ -62,21 +268,335 @@ const Overview = () => {
               <div className="dashboard-header__title-wrapper">
                 <h1 className="dashboard-header__title">
                   <svg xmlns="http://www.w3.org/2000/svg" className="icon dashboard-header__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="28" height="28">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                   </svg>
-                  Overview
+                  Dashboard
                 </h1>
-                <p className="dashboard-header__subtitle">System overview and statistics</p>
+                <p className="dashboard-header__subtitle">Welcome to your support panel</p>
               </div>
-              <button
-                onClick={() => navigate('/ticket/new')}
-                className="btn btn--primary dashboard-header__create-btn"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="icon dashboard-header__btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                Create Ticket
-              </button>
+              <div className="dashboard-header__actions">
+                {/* Notification badge for new tickets */}
+                {newTicketsCount > 0 && (
+                  <div className="notification-badge">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="icon notification-badge__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    <span className="notification-badge__count">{newTicketsCount} new</span>
+                  </div>
+                )}
+                <button
+                  className="btn btn--outline btn--small"
+                  onClick={() => setShowSettingsPanel(!showSettingsPanel)}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  Settings
+                </button>
+                <Export stats={stats} startDate={startDate} endDate={endDate} />
+                <button
+                  onClick={() => navigate('/ticket/new')}
+                  className="btn btn--primary dashboard-header__create-btn"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="icon dashboard-header__btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Create Ticket
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Dashboard Settings Panel */}
+          {showSettingsPanel && (
+            <div className="dashboard__settings-panel card">
+              <div className="card__body">
+                <div className="dashboard-settings__header">
+                  <h3 className="card__title">Dashboard Settings</h3>
+                  <button 
+                    className="btn btn--secondary btn--small"
+                    onClick={() => setShowSettingsPanel(false)}
+                  >
+                    Close
+                  </button>
+                </div>
+                
+                <div className="dashboard-settings__grid">
+                  <div className="dashboard-setting-item">
+                    <div className="settings__toggle-group">
+                      <label htmlFor="showRecentActivity" className="form-label settings__label">
+                        Recent Activity
+                      </label>
+                      <div className="settings__toggle">
+                        <input
+                          type="checkbox"
+                          id="showRecentActivity"
+                          name="showRecentActivity"
+                          checked={dashboardSettings.showRecentActivity}
+                          onChange={() => handleSettingToggle('showRecentActivity')}
+                          className="settings__toggle-input"
+                        />
+                        <label htmlFor="showRecentActivity" className="settings__toggle-label">
+                          <span className="settings__toggle-slider"></span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="dashboard-setting-item">
+                    <div className="settings__toggle-group">
+                      <label htmlFor="showTicketCategories" className="form-label settings__label">
+                        Ticket Categories
+                      </label>
+                      <div className="settings__toggle">
+                        <input
+                          type="checkbox"
+                          id="showTicketCategories"
+                          name="showTicketCategories"
+                          checked={dashboardSettings.showTicketCategories}
+                          onChange={() => handleSettingToggle('showTicketCategories')}
+                          className="settings__toggle-input"
+                        />
+                        <label htmlFor="showTicketCategories" className="settings__toggle-label">
+                          <span className="settings__toggle-slider"></span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="dashboard-setting-item">
+                    <div className="settings__toggle-group">
+                      <label htmlFor="showAgentPerformance" className="form-label settings__label">
+                        Agent Performance
+                      </label>
+                      <div className="settings__toggle">
+                        <input
+                          type="checkbox"
+                          id="showAgentPerformance"
+                          name="showAgentPerformance"
+                          checked={dashboardSettings.showAgentPerformance}
+                          onChange={() => handleSettingToggle('showAgentPerformance')}
+                          className="settings__toggle-input"
+                        />
+                        <label htmlFor="showAgentPerformance" className="settings__toggle-label">
+                          <span className="settings__toggle-slider"></span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="dashboard-setting-item">
+                    <div className="settings__toggle-group">
+                      <label htmlFor="showCustomerSatisfaction" className="form-label settings__label">
+                        Customer Satisfaction
+                      </label>
+                      <div className="settings__toggle">
+                        <input
+                          type="checkbox"
+                          id="showCustomerSatisfaction"
+                          name="showCustomerSatisfaction"
+                          checked={dashboardSettings.showCustomerSatisfaction}
+                          onChange={() => handleSettingToggle('showCustomerSatisfaction')}
+                          className="settings__toggle-input"
+                        />
+                        <label htmlFor="showCustomerSatisfaction" className="settings__toggle-label">
+                          <span className="settings__toggle-slider"></span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="dashboard-setting-item">
+                    <div className="settings__toggle-group">
+                      <label htmlFor="showTicketAgeAnalysis" className="form-label settings__label">
+                        Ticket Age Analysis
+                      </label>
+                      <div className="settings__toggle">
+                        <input
+                          type="checkbox"
+                          id="showTicketAgeAnalysis"
+                          name="showTicketAgeAnalysis"
+                          checked={dashboardSettings.showTicketAgeAnalysis}
+                          onChange={() => handleSettingToggle('showTicketAgeAnalysis')}
+                          className="settings__toggle-input"
+                        />
+                        <label htmlFor="showTicketAgeAnalysis" className="settings__toggle-label">
+                          <span className="settings__toggle-slider"></span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="dashboard-setting-item">
+                    <div className="settings__toggle-group">
+                      <label htmlFor="showResponseTimeMetrics" className="form-label settings__label">
+                        Response Time Metrics
+                      </label>
+                      <div className="settings__toggle">
+                        <input
+                          type="checkbox"
+                          id="showResponseTimeMetrics"
+                          name="showResponseTimeMetrics"
+                          checked={dashboardSettings.showResponseTimeMetrics}
+                          onChange={() => handleSettingToggle('showResponseTimeMetrics')}
+                          className="settings__toggle-input"
+                        />
+                        <label htmlFor="showResponseTimeMetrics" className="settings__toggle-label">
+                          <span className="settings__toggle-slider"></span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="dashboard-setting-item">
+                    <div className="settings__toggle-group">
+                      <label htmlFor="showQuickActions" className="form-label settings__label">
+                        Quick Actions Panel
+                      </label>
+                      <div className="settings__toggle">
+                        <input
+                          type="checkbox"
+                          id="showQuickActions"
+                          name="showQuickActions"
+                          checked={dashboardSettings.showQuickActions}
+                          onChange={() => handleSettingToggle('showQuickActions')}
+                          className="settings__toggle-input"
+                        />
+                        <label htmlFor="showQuickActions" className="settings__toggle-label">
+                          <span className="settings__toggle-slider"></span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="dashboard-setting-item">
+                    <div className="settings__toggle-group">
+                      <label htmlFor="showUpcomingBreaches" className="form-label settings__label">
+                        Upcoming SLA Breaches
+                      </label>
+                      <div className="settings__toggle">
+                        <input
+                          type="checkbox"
+                          id="showUpcomingBreaches"
+                          name="showUpcomingBreaches"
+                          checked={dashboardSettings.showUpcomingBreaches}
+                          onChange={() => handleSettingToggle('showUpcomingBreaches')}
+                          className="settings__toggle-input"
+                        />
+                        <label htmlFor="showUpcomingBreaches" className="settings__toggle-label">
+                          <span className="settings__toggle-slider"></span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="dashboard-setting-item">
+                    <div className="settings__toggle-group">
+                      <label htmlFor="showDepartmentView" className="form-label settings__label">
+                        Department View
+                      </label>
+                      <div className="settings__toggle">
+                        <input
+                          type="checkbox"
+                          id="showDepartmentView"
+                          name="showDepartmentView"
+                          checked={dashboardSettings.showDepartmentView}
+                          onChange={() => handleSettingToggle('showDepartmentView')}
+                          className="settings__toggle-input"
+                        />
+                        <label htmlFor="showDepartmentView" className="settings__toggle-label">
+                          <span className="settings__toggle-slider"></span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Date Range Filters */}
+          <div className="card date-filters-card">
+            <div className="card__body">
+              <div className="date-filters__header">
+                <h3 className="date-filters__title">Date Range Filters</h3>
+                <div className="date-filters__actions">
+                  <button 
+                    className="btn btn--secondary btn--small date-filters__clear-btn"
+                    onClick={clearFilters}
+                  >
+                    Clear Filters
+                  </button>
+                  <button
+                    className="btn btn--outline btn--small"
+                    onClick={() => {
+                      // Reset layout to default
+                      localStorage.removeItem('dashboardLayout');
+                      window.location.reload(); // Simple way to refresh with default layout
+                    }}
+                  >
+                    Reset Layout
+                  </button>
+                </div>
+              </div>
+              
+              <div className="date-filters__quick-filters">
+                <button 
+                  className="btn btn--outline btn--small date-filters__quick-btn"
+                  onClick={() => applyDateRange('today')}
+                >
+                  Today
+                </button>
+                <button 
+                  className="btn btn--outline btn--small date-filters__quick-btn"
+                  onClick={() => applyDateRange('week')}
+                >
+                  This Week
+                </button>
+                <button 
+                  className="btn btn--outline btn--small date-filters__quick-btn"
+                  onClick={() => applyDateRange('month')}
+                >
+                  This Month
+                </button>
+                <button 
+                  className="btn btn--outline btn--small date-filters__quick-btn"
+                  onClick={() => applyDateRange('quarter')}
+                >
+                  Last Quarter
+                </button>
+              </div>
+              
+              <div className="date-filters__custom">
+                <div className="date-filters__form-group">
+                  <label htmlFor="startDate" className="form-label">Start Date</label>
+                  <input
+                    type="date"
+                    id="startDate"
+                    className="form-control"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                  />
+                </div>
+                <div className="date-filters__form-group">
+                  <label htmlFor="endDate" className="form-label">End Date</label>
+                  <input
+                    type="date"
+                    id="endDate"
+                    className="form-control"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                  />
+                </div>
+                <button 
+                  className="btn btn--primary date-filters__apply-btn"
+                  onClick={fetchStats}
+                  disabled={loading}
+                >
+                  {loading ? 'Loading...' : 'Apply Filters'}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -188,50 +708,119 @@ const Overview = () => {
             </div>
           </div>
 
-          {/* Additional Overview Content */}
-          <div className="card overview-content-card">
-            <div className="card__body">
-              <h3 className="overview-content-card__title">System Overview</h3>
-              <p className="overview-content-card__description">
-                This dashboard provides an overview of your support ticket system. 
-                You can view detailed ticket information in the <a href="/tickets" className="link">Tickets</a> section.
-              </p>
-              
-              <div className="overview-content-card__stats-grid">
-                <div className="overview-content-card__stat-item">
-                  <div className="stat-item__icon-wrapper stat-item__icon-wrapper--info">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="icon stat-item__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          {/* Draggable and Resizable Dashboard Widgets */}
+          <div className="dashboard-interaction-hint">
+            <p className="interaction-hint-text">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: '0.5rem', verticalAlign: 'text-bottom'}}>
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              Drag the header to move • Resize using the handle in the bottom-right corner
+            </p>
+          </div>
+          <ResponsiveGridLayout
+            className="layout"
+            layouts={{lg: initialLayout()}}
+            onLayoutChange={onLayoutChange}
+            onDragStart={() => document.body.classList.add('react-grid-dragging')}
+            onDragStop={() => document.body.classList.remove('react-grid-dragging')}
+            onResizeStart={() => document.body.classList.add('react-grid-resizing')}
+            onResizeStop={() => document.body.classList.remove('react-grid-resizing')}
+            breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
+            cols={{ lg: 12, md: 12, sm: 6, xs: 4, xxs: 2 }}
+            rowHeight={70}
+            isDraggable={true}
+            isResizable={true}
+            isBounded={true}
+            useCSSTransforms={true}
+            compactType="vertical"
+            preventCollision={true}
+            margin={[10, 10]}
+            containerPadding={[10, 10]}
+            resizeHandles={['se']}
+            onResize={onLayoutChange}
+            resizeHandle={
+              <span className="react-resizable-handle react-resizable-handle-se" role="separator" />
+            }
+            draggableHandle=".drag-handle"
+          >
+            <div key="charts" className="dashboard-grid-item" data-grid={{x: 0, y: 10, w: 12, h: 6, minW: 4, minH: 4}}>
+              <div className="dashboard-widget">
+                <div className="dashboard-widget__header">
+                  <div className="drag-handle" style={{display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'move', flex: 1}}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="drag-handle-icon">
+                      <circle cx="12" cy="9" r="1"></circle>
+                      <circle cx="19" cy="9" r="1"></circle>
+                      <circle cx="5" cy="9" r="1"></circle>
+                      <circle cx="12" cy="15" r="1"></circle>
+                      <circle cx="19" cy="15" r="1"></circle>
+                      <circle cx="5" cy="15" r="1"></circle>
                     </svg>
-                  </div>
-                  <div className="stat-item__content">
-                    <h4 className="stat-item__title">Ticket Distribution</h4>
-                    <p className="stat-item__value">
-                      {stats.totalTickets > 0 
-                        ? `${Math.round((stats.openTickets / stats.totalTickets) * 100)}% open tickets` 
-                        : 'No tickets yet'}
-                    </p>
+                    <h3 className="dashboard-widget__title">Data Visualization</h3>
                   </div>
                 </div>
-                
-                <div className="overview-content-card__stat-item">
-                  <div className="stat-item__icon-wrapper stat-item__icon-wrapper--warning">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="icon stat-item__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <div className="stat-item__content">
-                    <h4 className="stat-item__title">Priority Tickets</h4>
-                    <p className="stat-item__value">
-                      {stats.totalTickets > 0 
-                        ? `${Math.round((stats.highPriorityTickets / stats.totalTickets) * 100)}% high priority` 
-                        : 'No tickets yet'}
-                    </p>
-                  </div>
+                <div className="dashboard-widget__body">
+                  <Charts startDate={startDate} endDate={endDate} />
                 </div>
               </div>
             </div>
-          </div>
+            
+            {dashboardSettings.showRecentActivity && (
+              <div key="recentActivity" className="dashboard-grid-item" data-grid={{x: 0, y: 16, w: 6, h: 4, minW: 2, minH: 3}}>
+                {renderWidget('recentActivity', 'Recent Activity', <RecentActivity startDate={startDate} endDate={endDate} />, dashboardSettings.showRecentActivity)}
+              </div>
+            )}
+            
+            {dashboardSettings.showTicketCategories && (
+              <div key="ticketCategories" className="dashboard-grid-item" data-grid={{x: 6, y: 16, w: 6, h: 4, minW: 2, minH: 3}}>
+                {renderWidget('ticketCategories', 'Ticket Categories', <TicketCategories startDate={startDate} endDate={endDate} />, dashboardSettings.showTicketCategories)}
+              </div>
+            )}
+            
+            {dashboardSettings.showAgentPerformance && (
+              <div key="agentPerformance" className="dashboard-grid-item" data-grid={{x: 0, y: 20, w: 6, h: 4, minW: 3, minH: 3}}>
+                {renderWidget('agentPerformance', 'Agent Performance', <AgentPerformance startDate={startDate} endDate={endDate} />, dashboardSettings.showAgentPerformance)}
+              </div>
+            )}
+            
+            {dashboardSettings.showCustomerSatisfaction && (
+              <div key="customerSatisfaction" className="dashboard-grid-item" data-grid={{x: 6, y: 20, w: 6, h: 4, minW: 3, minH: 3}}>
+                {renderWidget('customerSatisfaction', 'Customer Satisfaction', <CustomerSatisfaction startDate={startDate} endDate={endDate} />, dashboardSettings.showCustomerSatisfaction)}
+              </div>
+            )}
+            
+            {dashboardSettings.showTicketAgeAnalysis && (
+              <div key="ticketAgeAnalysis" className="dashboard-grid-item" data-grid={{x: 0, y: 24, w: 6, h: 4, minW: 3, minH: 3}}>
+                {renderWidget('ticketAgeAnalysis', 'Ticket Age Analysis', <TicketAgeAnalysis startDate={startDate} endDate={endDate} />, dashboardSettings.showTicketAgeAnalysis)}
+              </div>
+            )}
+            
+            {dashboardSettings.showResponseTimeMetrics && (
+              <div key="responseTimeMetrics" className="dashboard-grid-item" data-grid={{x: 6, y: 24, w: 6, h: 4, minW: 3, minH: 3}}>
+                {renderWidget('responseTimeMetrics', 'Response Time Metrics', <ResponseTimeMetrics startDate={startDate} endDate={endDate} />, dashboardSettings.showResponseTimeMetrics)}
+              </div>
+            )}
+            
+            {dashboardSettings.showQuickActions && (
+              <div key="quickActions" className="dashboard-grid-item" data-grid={{x: 0, y: 28, w: 6, h: 4, minW: 3, minH: 3}}>
+                {renderWidget('quickActions', 'Quick Actions', <QuickActions startDate={startDate} endDate={endDate} />, dashboardSettings.showQuickActions)}
+              </div>
+            )}
+            
+            {dashboardSettings.showUpcomingBreaches && (
+              <div key="upcomingBreaches" className="dashboard-grid-item" data-grid={{x: 6, y: 28, w: 6, h: 4, minW: 3, minH: 3}}>
+                {renderWidget('upcomingBreaches', 'Upcoming SLA Breaches', <UpcomingBreaches startDate={startDate} endDate={endDate} />, dashboardSettings.showUpcomingBreaches)}
+              </div>
+            )}
+            
+            {dashboardSettings.showDepartmentView && (
+              <div key="departmentView" className="dashboard-grid-item" data-grid={{x: 0, y: 32, w: 12, h: 4, minW: 4, minH: 3}}>
+                {renderWidget('departmentView', 'Department View', <DepartmentView startDate={startDate} endDate={endDate} />, dashboardSettings.showDepartmentView)}
+              </div>
+            )}
+          </ResponsiveGridLayout>
+
         </div>
       </div>
     </div>

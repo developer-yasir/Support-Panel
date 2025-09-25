@@ -12,14 +12,24 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      // In a real app, you would validate the token here
-      // For now, we'll just set a mock user
-      // setUser({ name: 'John Doe', email: 'john@example.com', role: 'admin' });
-    }
-    setLoading(false);
+    const initializeAuth = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+          // Validate the token by making a request to a protected endpoint
+          const response = await api.get('/auth/profile');
+          setUser(response.data);
+        } catch (error) {
+          // Token is invalid, remove it
+          localStorage.removeItem('token');
+          delete api.defaults.headers.common['Authorization'];
+        }
+      }
+      setLoading(false);
+    };
+
+    initializeAuth();
   }, []);
 
   const login = async (email, password) => {

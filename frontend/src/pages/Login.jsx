@@ -31,7 +31,7 @@ const Login = () => {
       const response = await login(email, password);
       
       if (response.success) {
-        navigate('/dashboard');
+        navigate('/overview');
       } else {
         // Check if the error is related to email verification
         if (response.message.includes('verify your email')) {
@@ -58,7 +58,7 @@ const Login = () => {
     const response = await guestLogin();
     
     if (response.success) {
-      navigate('/dashboard');
+      navigate('/overview');
     } else {
       setError(response.message);
     }

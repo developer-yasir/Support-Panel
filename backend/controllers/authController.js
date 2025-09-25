@@ -167,6 +167,12 @@ exports.guestLogin = async (req, res) => {
       });
       
       await user.save();
+    } else {
+      // Ensure existing guest user has email verified
+      if (!user.isEmailVerified) {
+        user.isEmailVerified = true;
+        await user.save();
+      }
     }
     
     // Generate token
@@ -188,4 +194,18 @@ exports.guestLogin = async (req, res) => {
 // Logout user
 exports.logout = (req, res) => {
   res.json({ message: 'Logged out successfully' });
+};
+
+// Get user profile
+exports.getProfile = async (req, res) => {
+  try {
+    // req.user is set by the protect middleware
+    const user = await User.findById(req.user.id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
 };

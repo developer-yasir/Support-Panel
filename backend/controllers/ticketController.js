@@ -172,11 +172,35 @@ exports.escalateTicket = async (req, res) => {
 // Get ticket statistics
 exports.getTicketStats = async (req, res) => {
   try {
-    const totalTickets = await Ticket.countDocuments();
+    const { startDate, endDate } = req.query;
+    let filter = {};
+
+    // Add date range filter if provided
+    if (startDate || endDate) {
+      filter.createdAt = {};
+      if (startDate) {
+        filter.createdAt.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        filter.createdAt.$lte = new Date(endDate);
+      }
+    }
+
+    const totalTickets = await Ticket.countDocuments(filter);
     
-    const openTickets = await Ticket.countDocuments({ status: 'open' });
-    const inProgressTickets = await Ticket.countDocuments({ status: 'in_progress' });
+    // Add the date filter to all other queries
+    const openTickets = await Ticket.countDocuments({ 
+      ...filter,
+      status: 'open' 
+    });
+    
+    const inProgressTickets = await Ticket.countDocuments({ 
+      ...filter,
+      status: 'in_progress' 
+    });
+    
     const highPriorityTickets = await Ticket.countDocuments({ 
+      ...filter,
       priority: { $in: ['high', 'urgent'] } 
     });
     
@@ -186,6 +210,156 @@ exports.getTicketStats = async (req, res) => {
       inProgressTickets,
       highPriorityTickets
     });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Get ticket trends data for charts
+exports.getTicketTrends = async (req, res) => {
+  try {
+    const { days = 30 } = req.query;
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    // Aggregate ticket counts by day
+    const ticketTrends = await Ticket.aggregate([
+      {
+        $match: {
+          createdAt: {
+            $gte: startDate,
+            $lte: endDate
+          }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            $dateToString: {
+              format: "%Y-%m-%d",
+              date: "$createdAt"
+            }
+          },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { _id: 1 }
+      }
+    ]);
+
+    // Create a complete date range
+    const dateRange = [];
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+      dateRange.push(d.toISOString().split('T')[0]);
+    }
+
+    // Fill in missing dates with 0 counts
+    const filledTrends = dateRange.map(date => {
+      const trend = ticketTrends.find(t => t._id === date);
+      return {
+        date,
+        count: trend ? trend.count : 0
+      };
+    });
+
+    res.json(filledTrends);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Get ticket distribution by priority
+exports.getTicketDistribution = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    let dateFilter = {};
+
+    // Add date range filter if provided
+    if (startDate || endDate) {
+      dateFilter.createdAt = {};
+      if (startDate) {
+        dateFilter.createdAt.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        dateFilter.createdAt.$lte = new Date(endDate);
+      }
+    }
+
+    // Aggregate tickets by priority
+    const priorityDistribution = await Ticket.aggregate([
+      {
+        $match: dateFilter
+      },
+      {
+        $group: {
+          _id: "$priority",
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { count: -1 }
+      }
+    ]);
+
+    res.json(priorityDistribution);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Get ticket resolution rates over time
+exports.getResolutionRates = async (req, res) => {
+  try {
+    const { days = 30 } = req.query;
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    // Aggregate resolution rates by day
+    const resolutionRates = await Ticket.aggregate([
+      {
+        $match: {
+          updatedAt: {
+            $gte: startDate,
+            $lte: endDate
+          },
+          status: { $in: ['resolved', 'closed'] }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            $dateToString: {
+              format: "%Y-%m-%d",
+              date: "$updatedAt"
+            }
+          },
+          resolvedCount: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { _id: 1 }
+      }
+    ]);
+
+    // Create a complete date range
+    const dateRange = [];
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+      dateRange.push(d.toISOString().split('T')[0]);
+    }
+
+    // Fill in missing dates with 0 counts
+    const filledRates = dateRange.map(date => {
+      const rate = resolutionRates.find(r => r._id === date);
+      return {
+        date,
+        resolvedCount: rate ? rate.resolvedCount : 0
+      };
+    });
+
+    res.json(filledRates);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

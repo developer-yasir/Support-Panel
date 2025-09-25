@@ -8,6 +8,12 @@ import EmailVerification from './pages/EmailVerification';
 import Settings from './pages/Settings';
 import Tickets from './pages/Tickets';
 import Overview from './pages/Overview';
+import Contacts from './pages/Contacts';
+import Companies from './pages/Companies';
+import KnowledgeBase from './pages/KnowledgeBase';
+import Community from './pages/Community';
+import Reports from './pages/Reports';
+import Chat from './pages/Chat';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -20,7 +26,7 @@ function App() {
           <Route path="/verify-email" element={<EmailVerification />} />
           <Route path="/dashboard" element={
             <ProtectedRoute>
-              <Dashboard />
+              <Overview />
             </ProtectedRoute>
           } />
           <Route path="/overview" element={
@@ -31,6 +37,36 @@ function App() {
           <Route path="/tickets" element={
             <ProtectedRoute>
               <Tickets />
+            </ProtectedRoute>
+          } />
+          <Route path="/contacts" element={
+            <ProtectedRoute>
+              <Contacts />
+            </ProtectedRoute>
+          } />
+          <Route path="/companies" element={
+            <ProtectedRoute>
+              <Companies />
+            </ProtectedRoute>
+          } />
+          <Route path="/knowledge-base" element={
+            <ProtectedRoute>
+              <KnowledgeBase />
+            </ProtectedRoute>
+          } />
+          <Route path="/community" element={
+            <ProtectedRoute>
+              <Community />
+            </ProtectedRoute>
+          } />
+          <Route path="/reports" element={
+            <ProtectedRoute>
+              <Reports />
+            </ProtectedRoute>
+          } />
+          <Route path="/chat" element={
+            <ProtectedRoute>
+              <Chat />
             </ProtectedRoute>
           } />
           <Route path="/settings" element={
@@ -48,7 +84,11 @@ function App() {
               <TicketDetail />
             </ProtectedRoute>
           } />
-          <Route path="/" element={<Login />} />
+          <Route path="/" element={
+            <ProtectedRoute>
+              <Overview />
+            </ProtectedRoute>
+          } />
         </Routes>
       </div>
     </Router>
