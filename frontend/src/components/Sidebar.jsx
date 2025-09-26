@@ -46,26 +46,6 @@ const Sidebar = () => {
       path: '/companies'
     },
     {
-      id: 'knowledge-base',
-      title: 'Knowledge Base',
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="icon sidebar__menu-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-        </svg>
-      ),
-      path: '/knowledge-base'
-    },
-    {
-      id: 'community',
-      title: 'Community',
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="icon sidebar__menu-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
-        </svg>
-      ),
-      path: '/community'
-    },
-    {
       id: 'reports',
       title: 'Reports',
       icon: (
@@ -111,12 +91,6 @@ const Sidebar = () => {
     // Companies route
     if (id === 'companies' && location.pathname === '/companies') return true;
     
-    // Knowledge Base route
-    if (id === 'knowledge-base' && location.pathname === '/knowledge-base') return true;
-    
-    // Community route
-    if (id === 'community' && location.pathname === '/community') return true;
-    
     // Reports route
     if (id === 'reports' && location.pathname === '/reports') return true;
     
@@ -131,6 +105,20 @@ const Sidebar = () => {
 
   return (
     <div className="sidebar">
+      <div className="sidebar__logo">
+        <div className="logo-container" style={{width: '40px', height: '40px'}}>
+          <div className="rotating-border" style={{width: '44px', height: '44px', borderRadius: '12px'}}></div>
+          <div className="logo-aura" style={{width: '50px', height: '50px'}}></div>
+          <div className="logo-aura logo-aura-2" style={{width: '55px', height: '55px'}}></div>
+          <div className="logo-aura logo-aura-3" style={{width: '60px', height: '60px'}}></div>
+          <div className="logo-icon" style={{width: '36px', height: '36px', borderRadius: '10px', fontSize: '1rem'}}>
+            <svg xmlns="http://www.w3.org/2000/svg" className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{width: '18px', height: '18px'}}>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+            </svg>
+          </div>
+        </div>
+        <span className="logo-text" style={{fontSize: '1.1rem', marginLeft: '8px'}}>SupportPanel</span>
+      </div>
       <div className="sidebar__menu">
         {menuItems.map((item) => (
           <button

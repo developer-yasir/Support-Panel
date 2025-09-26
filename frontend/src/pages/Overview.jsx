@@ -12,9 +12,6 @@ import AgentPerformance from '../components/Dashboard/AgentPerformance';
 import CustomerSatisfaction from '../components/Dashboard/CustomerSatisfaction';
 import TicketAgeAnalysis from '../components/Dashboard/TicketAgeAnalysis';
 import ResponseTimeMetrics from '../components/Dashboard/ResponseTimeMetrics';
-import QuickActions from '../components/Dashboard/QuickActions';
-import UpcomingBreaches from '../components/Dashboard/UpcomingBreaches';
-import DepartmentView from '../components/Dashboard/DepartmentView';
 import { api } from '../services/api';
 import WebSocketService from '../services/websocket';
 
@@ -60,16 +57,11 @@ const Overview = () => {
     
     // Default layout with min constraints
     return [
-      { i: 'charts', x: 0, y: 10, w: 12, h: 6, minW: 4, minH: 4 },
-      { i: 'recentActivity', x: 0, y: 16, w: 6, h: 4, minW: 2, minH: 3 },
-      { i: 'ticketCategories', x: 6, y: 16, w: 6, h: 4, minW: 2, minH: 3 },
-      { i: 'agentPerformance', x: 0, y: 20, w: 6, h: 4, minW: 3, minH: 3 },
-      { i: 'customerSatisfaction', x: 6, y: 20, w: 6, h: 4, minW: 3, minH: 3 },
-      { i: 'ticketAgeAnalysis', x: 0, y: 24, w: 6, h: 4, minW: 3, minH: 3 },
-      { i: 'responseTimeMetrics', x: 6, y: 24, w: 6, h: 4, minW: 3, minH: 3 },
-      { i: 'quickActions', x: 0, y: 28, w: 6, h: 4, minW: 3, minH: 3 },
-      { i: 'upcomingBreaches', x: 6, y: 28, w: 6, h: 4, minW: 3, minH: 3 },
-      { i: 'departmentView', x: 0, y: 32, w: 12, h: 4, minW: 4, minH: 3 }
+      { i: 'charts', x: 0, y: 0, w: 12, h: 6, minW: 4, minH: 4 },
+      { i: 'recentActivity', x: 0, y: 6, w: 6, h: 4, minW: 2, minH: 3 },
+      { i: 'ticketCategories', x: 6, y: 6, w: 6, h: 4, minW: 2, minH: 3 },
+      { i: 'agentPerformance', x: 0, y: 10, w: 6, h: 4, minW: 3, minH: 3 },
+      { i: 'customerSatisfaction', x: 6, y: 10, w: 6, h: 4, minW: 3, minH: 3 }
     ];
   };
 
@@ -185,7 +177,13 @@ const Overview = () => {
     }, 30000); // 30 seconds
     
     // Set up WebSocket connection
-    const wsUrl = `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'}/ws`.replace('http', 'ws');
+    // Make sure to connect to the correct WebSocket endpoint (strip /api if present)
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+    const cleanBackendUrl = backendUrl.endsWith('/api') ? backendUrl.slice(0, -4) : backendUrl;
+    const wsProtocol = cleanBackendUrl.startsWith('https') ? 'wss' : 'ws';
+    const wsUrl = `${wsProtocol}://${cleanBackendUrl.replace(/^https?:\/\/|^http?:\/\//, '')}/ws`;
+    
+    console.log('Connecting to WebSocket:', wsUrl); // Debug log
     WebSocketService.connect(wsUrl);
     WebSocketService.addListener('message', handleWebSocketMessage);
     
@@ -205,25 +203,23 @@ const Overview = () => {
     lastTotalTickets.current = 0;
   }, [startDate, endDate]);
 
-  
-
   const getStatusBadgeClass = (status) => {
     switch (status) {
-      case 'open': return 'badge badge-success';
-      case 'in_progress': return 'badge badge-warning';
-      case 'resolved': return 'badge badge-info';
-      case 'closed': return 'badge badge-secondary';
-      default: return 'badge badge-secondary';
+      case 'open': return 'badge badge--success';
+      case 'in_progress': return 'badge badge--warning';
+      case 'resolved': return 'badge badge--info';
+      case 'closed': return 'badge badge--secondary';
+      default: return 'badge badge--secondary';
     }
   };
 
   const getPriorityBadgeClass = (priority) => {
     switch (priority) {
-      case 'low': return 'badge badge-success';
-      case 'medium': return 'badge badge-warning';
-      case 'high': return 'badge badge-danger';
-      case 'urgent': return 'badge badge-danger';
-      default: return 'badge badge-secondary';
+      case 'low': return 'badge badge--success';
+      case 'medium': return 'badge badge--warning';
+      case 'high': return 'badge badge--danger';
+      case 'urgent': return 'badge badge--danger';
+      default: return 'badge badge--secondary';
     }
   };
 
@@ -428,89 +424,7 @@ const Overview = () => {
                     </div>
                   </div>
                   
-                  <div className="dashboard-setting-item">
-                    <div className="settings__toggle-group">
-                      <label htmlFor="showResponseTimeMetrics" className="form-label settings__label">
-                        Response Time Metrics
-                      </label>
-                      <div className="settings__toggle">
-                        <input
-                          type="checkbox"
-                          id="showResponseTimeMetrics"
-                          name="showResponseTimeMetrics"
-                          checked={dashboardSettings.showResponseTimeMetrics}
-                          onChange={() => handleSettingToggle('showResponseTimeMetrics')}
-                          className="settings__toggle-input"
-                        />
-                        <label htmlFor="showResponseTimeMetrics" className="settings__toggle-label">
-                          <span className="settings__toggle-slider"></span>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="dashboard-setting-item">
-                    <div className="settings__toggle-group">
-                      <label htmlFor="showQuickActions" className="form-label settings__label">
-                        Quick Actions Panel
-                      </label>
-                      <div className="settings__toggle">
-                        <input
-                          type="checkbox"
-                          id="showQuickActions"
-                          name="showQuickActions"
-                          checked={dashboardSettings.showQuickActions}
-                          onChange={() => handleSettingToggle('showQuickActions')}
-                          className="settings__toggle-input"
-                        />
-                        <label htmlFor="showQuickActions" className="settings__toggle-label">
-                          <span className="settings__toggle-slider"></span>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="dashboard-setting-item">
-                    <div className="settings__toggle-group">
-                      <label htmlFor="showUpcomingBreaches" className="form-label settings__label">
-                        Upcoming SLA Breaches
-                      </label>
-                      <div className="settings__toggle">
-                        <input
-                          type="checkbox"
-                          id="showUpcomingBreaches"
-                          name="showUpcomingBreaches"
-                          checked={dashboardSettings.showUpcomingBreaches}
-                          onChange={() => handleSettingToggle('showUpcomingBreaches')}
-                          className="settings__toggle-input"
-                        />
-                        <label htmlFor="showUpcomingBreaches" className="settings__toggle-label">
-                          <span className="settings__toggle-slider"></span>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="dashboard-setting-item">
-                    <div className="settings__toggle-group">
-                      <label htmlFor="showDepartmentView" className="form-label settings__label">
-                        Department View
-                      </label>
-                      <div className="settings__toggle">
-                        <input
-                          type="checkbox"
-                          id="showDepartmentView"
-                          name="showDepartmentView"
-                          checked={dashboardSettings.showDepartmentView}
-                          onChange={() => handleSettingToggle('showDepartmentView')}
-                          className="settings__toggle-input"
-                        />
-                        <label htmlFor="showDepartmentView" className="settings__toggle-label">
-                          <span className="settings__toggle-slider"></span>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
+                  {/* Removed less essential components for cleaner UI */}
                 </div>
               </div>
             </div>
@@ -727,25 +641,21 @@ const Overview = () => {
             onDragStop={() => document.body.classList.remove('react-grid-dragging')}
             onResizeStart={() => document.body.classList.add('react-grid-resizing')}
             onResizeStop={() => document.body.classList.remove('react-grid-resizing')}
-            breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-            cols={{ lg: 12, md: 12, sm: 6, xs: 4, xxs: 2 }}
+            breakpoints={{lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0}}
+            cols={{lg: 12, md: 10, sm: 6, xs: 4, xxs: 2}}
             rowHeight={70}
             isDraggable={true}
             isResizable={true}
-            isBounded={true}
+            isBounded={false}
             useCSSTransforms={true}
             compactType="vertical"
-            preventCollision={true}
+            preventCollision={false}
             margin={[10, 10]}
-            containerPadding={[10, 10]}
+            containerPadding={[0, 0]}
             resizeHandles={['se']}
-            onResize={onLayoutChange}
-            resizeHandle={
-              <span className="react-resizable-handle react-resizable-handle-se" role="separator" />
-            }
             draggableHandle=".drag-handle"
           >
-            <div key="charts" className="dashboard-grid-item" data-grid={{x: 0, y: 10, w: 12, h: 6, minW: 4, minH: 4}}>
+            <div key="charts" data-grid={{x: 0, y: 0, w: 12, h: 6, minW: 4, minH: 4}}>
               <div className="dashboard-widget">
                 <div className="dashboard-widget__header">
                   <div className="drag-handle" style={{display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'move', flex: 1}}>
@@ -767,58 +677,30 @@ const Overview = () => {
             </div>
             
             {dashboardSettings.showRecentActivity && (
-              <div key="recentActivity" className="dashboard-grid-item" data-grid={{x: 0, y: 16, w: 6, h: 4, minW: 2, minH: 3}}>
+              <div key="recentActivity" data-grid={{x: 0, y: 6, w: 6, h: 4, minW: 2, minH: 3}}>
                 {renderWidget('recentActivity', 'Recent Activity', <RecentActivity startDate={startDate} endDate={endDate} />, dashboardSettings.showRecentActivity)}
               </div>
             )}
             
             {dashboardSettings.showTicketCategories && (
-              <div key="ticketCategories" className="dashboard-grid-item" data-grid={{x: 6, y: 16, w: 6, h: 4, minW: 2, minH: 3}}>
+              <div key="ticketCategories" data-grid={{x: 6, y: 6, w: 6, h: 4, minW: 2, minH: 3}}>
                 {renderWidget('ticketCategories', 'Ticket Categories', <TicketCategories startDate={startDate} endDate={endDate} />, dashboardSettings.showTicketCategories)}
               </div>
             )}
             
             {dashboardSettings.showAgentPerformance && (
-              <div key="agentPerformance" className="dashboard-grid-item" data-grid={{x: 0, y: 20, w: 6, h: 4, minW: 3, minH: 3}}>
+              <div key="agentPerformance" data-grid={{x: 0, y: 10, w: 6, h: 4, minW: 3, minH: 3}}>
                 {renderWidget('agentPerformance', 'Agent Performance', <AgentPerformance startDate={startDate} endDate={endDate} />, dashboardSettings.showAgentPerformance)}
               </div>
             )}
             
             {dashboardSettings.showCustomerSatisfaction && (
-              <div key="customerSatisfaction" className="dashboard-grid-item" data-grid={{x: 6, y: 20, w: 6, h: 4, minW: 3, minH: 3}}>
+              <div key="customerSatisfaction" data-grid={{x: 6, y: 10, w: 6, h: 4, minW: 3, minH: 3}}>
                 {renderWidget('customerSatisfaction', 'Customer Satisfaction', <CustomerSatisfaction startDate={startDate} endDate={endDate} />, dashboardSettings.showCustomerSatisfaction)}
               </div>
             )}
             
-            {dashboardSettings.showTicketAgeAnalysis && (
-              <div key="ticketAgeAnalysis" className="dashboard-grid-item" data-grid={{x: 0, y: 24, w: 6, h: 4, minW: 3, minH: 3}}>
-                {renderWidget('ticketAgeAnalysis', 'Ticket Age Analysis', <TicketAgeAnalysis startDate={startDate} endDate={endDate} />, dashboardSettings.showTicketAgeAnalysis)}
-              </div>
-            )}
-            
-            {dashboardSettings.showResponseTimeMetrics && (
-              <div key="responseTimeMetrics" className="dashboard-grid-item" data-grid={{x: 6, y: 24, w: 6, h: 4, minW: 3, minH: 3}}>
-                {renderWidget('responseTimeMetrics', 'Response Time Metrics', <ResponseTimeMetrics startDate={startDate} endDate={endDate} />, dashboardSettings.showResponseTimeMetrics)}
-              </div>
-            )}
-            
-            {dashboardSettings.showQuickActions && (
-              <div key="quickActions" className="dashboard-grid-item" data-grid={{x: 0, y: 28, w: 6, h: 4, minW: 3, minH: 3}}>
-                {renderWidget('quickActions', 'Quick Actions', <QuickActions startDate={startDate} endDate={endDate} />, dashboardSettings.showQuickActions)}
-              </div>
-            )}
-            
-            {dashboardSettings.showUpcomingBreaches && (
-              <div key="upcomingBreaches" className="dashboard-grid-item" data-grid={{x: 6, y: 28, w: 6, h: 4, minW: 3, minH: 3}}>
-                {renderWidget('upcomingBreaches', 'Upcoming SLA Breaches', <UpcomingBreaches startDate={startDate} endDate={endDate} />, dashboardSettings.showUpcomingBreaches)}
-              </div>
-            )}
-            
-            {dashboardSettings.showDepartmentView && (
-              <div key="departmentView" className="dashboard-grid-item" data-grid={{x: 0, y: 32, w: 12, h: 4, minW: 4, minH: 3}}>
-                {renderWidget('departmentView', 'Department View', <DepartmentView startDate={startDate} endDate={endDate} />, dashboardSettings.showDepartmentView)}
-              </div>
-            )}
+            {/* Removed less essential components for cleaner UI */}
           </ResponsiveGridLayout>
 
         </div>

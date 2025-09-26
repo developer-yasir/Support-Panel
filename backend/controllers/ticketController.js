@@ -21,6 +21,11 @@ exports.createTicket = async (req, res) => {
     await ticket.populate('createdBy', 'name email');
     await ticket.populate('assignedTo', 'name email');
     
+    // Broadcast new ticket to WebSocket clients
+    if (global.broadcastNewTicket) {
+      global.broadcastNewTicket(ticket);
+    }
+    
     res.status(201).json(ticket);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -111,6 +116,12 @@ exports.updateTicket = async (req, res) => {
     await ticket.populate('assignedTo', 'name email');
     
     console.log('Ticket updated successfully:', ticket._id);
+    
+    // Broadcast ticket update to WebSocket clients
+    if (global.broadcastTicketUpdate) {
+      global.broadcastTicketUpdate(ticket);
+    }
+    
     res.json(ticket);
   } catch (error) {
     console.error('Error updating ticket:', error);
@@ -132,6 +143,12 @@ exports.deleteTicket = async (req, res) => {
     }
     
     await ticket.remove();
+    
+    // Broadcast ticket deletion to WebSocket clients
+    if (global.broadcastTicketUpdate) {
+      global.broadcastTicketUpdate({ id: req.params.id, deleted: true });
+    }
+    
     res.json({ message: 'Ticket removed' });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

@@ -10,8 +10,7 @@ import Tickets from './pages/Tickets';
 import Overview from './pages/Overview';
 import Contacts from './pages/Contacts';
 import Companies from './pages/Companies';
-import KnowledgeBase from './pages/KnowledgeBase';
-import Community from './pages/Community';
+{/* Removed KnowledgeBase and Community imports */}
 import Reports from './pages/Reports';
 import Chat from './pages/Chat';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -49,16 +48,7 @@ function App() {
               <Companies />
             </ProtectedRoute>
           } />
-          <Route path="/knowledge-base" element={
-            <ProtectedRoute>
-              <KnowledgeBase />
-            </ProtectedRoute>
-          } />
-          <Route path="/community" element={
-            <ProtectedRoute>
-              <Community />
-            </ProtectedRoute>
-          } />
+          {/* Removed Knowledge Base and Community routes */}
           <Route path="/reports" element={
             <ProtectedRoute>
               <Reports />

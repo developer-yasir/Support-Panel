@@ -6,10 +6,12 @@ class WebSocketService {
     this.maxReconnectAttempts = 5;
     this.reconnectAttempts = 0;
     this.listeners = {};
+    this.url = null; // Store the URL for reconnection
   }
 
   connect(url) {
     try {
+      this.url = url; // Store the URL for reconnection
       this.ws = new WebSocket(url);
       
       this.ws.onopen = () => {
@@ -27,8 +29,8 @@ class WebSocketService {
         }
       };
       
-      this.ws.onclose = () => {
-        console.log('WebSocket disconnected');
+      this.ws.onclose = (event) => {
+        console.log('WebSocket disconnected', event);
         this.notifyListeners('close');
         this.attemptReconnect();
       };
@@ -48,8 +50,10 @@ class WebSocketService {
       console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
       
       setTimeout(() => {
-        // Try to reconnect
-        this.connect(this.ws.url);
+        // Use the stored URL for reconnection
+        if (this.url) {
+          this.connect(this.url);
+        }
       }, this.reconnectInterval);
     } else {
       console.error('Max reconnection attempts reached');
@@ -87,6 +91,8 @@ class WebSocketService {
     if (this.ws) {
       this.ws.close();
     }
+    this.url = null;
+    this.reconnectAttempts = 0;
   }
 }
 

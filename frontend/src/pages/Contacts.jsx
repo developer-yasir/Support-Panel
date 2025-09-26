@@ -8,32 +8,29 @@ const Contacts = () => {
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [filters, setFilters] = useState({
+    search: ''
+  });
   const navigate = useNavigate();
 
-  // Mock data for contacts
   useEffect(() => {
     const fetchContacts = async () => {
       try {
         setLoading(true);
-        // In a real app, this would come from an API
-        const mockContacts = [
-          { id: 1, name: 'John Doe', email: 'john.doe@example.com', company: 'Tech Solutions Inc', phone: '+1 (555) 123-4567', tickets: 5, lastContact: '2023-06-15', status: 'active' },
-          { id: 2, name: 'Alice Johnson', email: 'alice.j@example.com', company: 'Global Enterprises', phone: '+1 (555) 987-6543', tickets: 12, lastContact: '2023-06-14', status: 'active' },
-          { id: 3, name: 'Mike Brown', email: 'mike.b@example.com', company: 'Innovate Corp', phone: '+1 (555) 456-7890', tickets: 3, lastContact: '2023-06-13', status: 'inactive' },
-          { id: 4, name: 'Sarah Davis', email: 'sarah.d@example.com', company: 'Secure Systems', phone: '+1 (555) 234-5678', tickets: 8, lastContact: '2023-06-12', status: 'active' },
-          { id: 5, name: 'Emma Wilson', email: 'emma.w@example.com', company: 'Cloud Services Ltd', phone: '+1 (555) 876-5432', tickets: 2, lastContact: '2023-06-11', status: 'active' },
-          { id: 6, name: 'David Miller', email: 'david.m@example.com', company: 'Data Insights Inc', phone: '+1 (555) 345-6789', tickets: 7, lastContact: '2023-06-10', status: 'active' },
-          { id: 7, name: 'Lisa Taylor', email: 'lisa.t@example.com', company: 'Analytics Pro', phone: '+1 (555) 567-8901', tickets: 1, lastContact: '2023-06-09', status: 'inactive' },
-          { id: 8, name: 'James Anderson', email: 'james.a@example.com', company: 'Enterprise Solutions', phone: '+1 (555) 654-3210', tickets: 15, lastContact: '2023-06-08', status: 'active' },
-          { id: 9, name: 'Olivia Thomas', email: 'olivia.t@example.com', company: 'Innovation Labs', phone: '+1 (555) 789-0123', tickets: 4, lastContact: '2023-06-07', status: 'active' },
-          { id: 10, name: 'William Jackson', email: 'will.j@example.com', company: 'Future Tech', phone: '+1 (555) 890-1234', tickets: 6, lastContact: '2023-06-06', status: 'active' },
-          { id: 11, name: 'Sophia Martinez', email: 'sophia.m@example.com', company: 'Cloud Services Ltd', phone: '+1 (555) 901-2345', tickets: 9, lastContact: '2023-06-05', status: 'active' },
-          { id: 12, name: 'Benjamin Clark', email: 'ben.c@example.com', company: 'Secure Systems', phone: '+1 (555) 012-3456', tickets: 3, lastContact: '2023-06-04', status: 'inactive' },
-        ];
-        setContacts(mockContacts);
+        const response = await api.get('/contacts');
+        // Transform the user data to match the expected contact format
+        const formattedContacts = response.data.map((user, index) => ({
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone || 'N/A',
+          company: user.company || 'N/A',
+          status: user.isActive !== false ? 'active' : 'inactive', // Assuming all users are active by default
+          tickets: Math.floor(Math.random() * 20), // Placeholder for ticket count
+          lastContact: user.createdAt ? new Date(user.createdAt).toISOString().split('T')[0] : '2023-01-01',
+          avatar: user.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'U'
+        }));
+        setContacts(formattedContacts);
       } catch (err) {
         setError('Failed to fetch contacts');
       } finally {
@@ -44,36 +41,42 @@ const Contacts = () => {
     fetchContacts();
   }, []);
 
-  // Filter contacts based on search term
+  // Filter contacts based on search
   const filteredContacts = contacts.filter(contact => {
-    return searchTerm === '' || 
-      contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      contact.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      contact.company.toLowerCase().includes(searchTerm.toLowerCase());
+    return (
+      filters.search === '' ||
+      contact.name.toLowerCase().includes(filters.search.toLowerCase()) ||
+      contact.email.toLowerCase().includes(filters.search.toLowerCase()) ||
+      contact.company.toLowerCase().includes(filters.search.toLowerCase())
+    );
   });
 
-  // Pagination
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentContacts = filteredContacts.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredContacts.length / itemsPerPage);
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
 
   const getStatusBadgeClass = (status) => {
     switch (status) {
-      case 'active': return 'badge badge-success';
-      case 'inactive': return 'badge badge-secondary';
-      default: return 'badge badge-secondary';
+      case 'active':
+        return 'contact-status-badge contact-status-badge--active';
+      case 'inactive':
+        return 'contact-status-badge contact-status-badge--inactive';
+      default:
+        return 'contact-status-badge';
     }
-  };
-
-  const handleSearch = (e) => {
-    setSearchTerm(e.target.value);
-    setCurrentPage(1); // Reset to first page when searching
-  };
-
-  const resetFilters = () => {
-    setSearchTerm('');
-    setCurrentPage(1);
   };
 
   return (
@@ -89,19 +92,16 @@ const Contacts = () => {
                   <svg xmlns="http://www.w3.org/2000/svg" className="icon dashboard-header__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="28" height="28">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
-                  Contacts
+                  Customers
                 </h1>
-                <p className="dashboard-header__subtitle">Manage and view all customer contacts</p>
+                <p className="dashboard-header__subtitle">Manage your customer contacts</p>
               </div>
               <div className="dashboard-header__actions">
-                <button
-                  onClick={() => navigate('/contact/new')}
-                  className="btn btn--primary dashboard-header__create-btn"
-                >
+                <button className="btn btn--primary">
                   <svg xmlns="http://www.w3.org/2000/svg" className="icon dashboard-header__btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
-                  Add Contact
+                  Add Customer
                 </button>
               </div>
             </div>
@@ -110,169 +110,138 @@ const Contacts = () => {
           {/* Filters */}
           <div className="card filters-card">
             <div className="card__body">
-              <div className="filters-card__header">
-                <h3 className="filters-card__title">Filters</h3>
-                <button 
-                  className="btn btn--secondary btn--small filters-card__reset-btn"
-                  onClick={resetFilters}
-                >
-                  Reset Filters
-                </button>
-              </div>
-              
               <form className="filters-card__form">
                 <div className="filters-card__form-group">
-                  <label htmlFor="search" className="form-label filters-card__label">Search Contacts</label>
+                  <label htmlFor="search" className="form-label filters-card__label">Search</label>
                   <input
                     type="text"
                     id="search"
-                    value={searchTerm}
-                    onChange={handleSearch}
+                    name="search"
+                    value={filters.search}
+                    onChange={handleFilterChange}
                     className="form-control"
-                    placeholder="Search by name, email, or company..."
+                    placeholder="Search customers by name, email, or company..."
                   />
                 </div>
               </form>
             </div>
           </div>
 
-          {/* Contacts Table */}
-          <div className="card tickets-table-card">
-            <div className="card__body">
-              <div className="tickets-table-container">
-                {error && (
-                  <div className="alert alert--danger">
-                    <div className="alert__icon">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
+          {/* Contacts List */}
+          <div className="space-y-4">
+            {error && (
+              <div className="alert alert--danger">
+                <div className="alert__icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                {error}
+              </div>
+            )}
+            
+            {loading ? (
+              <div className="tickets-table__loading">
+                <div className="spinner spinner--primary"></div>
+                <p>Loading customers...</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredContacts.length === 0 ? (
+                  <div className="card">
+                    <div className="card__body">
+                      <div className="empty-state">
+                        <div className="empty-state__icon-wrapper">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="empty-state__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="48" height="48">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <h3 className="empty-state__title">No customers found</h3>
+                        <p className="empty-state__description">
+                          {filters.search ? 'Try adjusting your search' : 'No customers available yet'}
+                        </p>
+                        {filters.search ? (
+                          <button className="btn btn--primary" onClick={() => setFilters({search: ''})}>
+                            Clear Search
+                          </button>
+                        ) : (
+                          <button className="btn btn--primary">
+                            Add Customer
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    {error}
-                  </div>
-                )}
-                
-                {loading ? (
-                  <div className="tickets-table__loading">
-                    <div className="spinner spinner--primary"></div>
-                    <p>Loading contacts...</p>
                   </div>
                 ) : (
-                  <>
-                    <table className="tickets-table">
-                      <thead>
-                        <tr>
-                          <th>Contact</th>
-                          <th>Company</th>
-                          <th>Phone</th>
-                          <th>Tickets</th>
-                          <th>Last Contact</th>
-                          <th>Status</th>
-                          <th>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {currentContacts.length === 0 ? (
-                          <tr>
-                            <td colSpan="7" className="tickets-table__empty">
-                              <div className="empty-state">
-                                <div className="empty-state__icon-wrapper">
-                                  <svg xmlns="http://www.w3.org/2000/svg" className="empty-state__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="48" height="48">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                                  </svg>
-                                </div>
-                                <h3 className="empty-state__title">No contacts found</h3>
-                                <p className="empty-state__description">
-                                  {searchTerm 
-                                    ? 'Try adjusting your search' 
-                                    : 'No contacts available yet'}
-                                </p>
-                                {searchTerm ? (
-                                  <button className="btn btn--primary" onClick={resetFilters}>
-                                    Reset Filters
-                                  </button>
-                                ) : (
-                                  <button 
-                                    className="btn btn--primary" 
-                                    onClick={() => navigate('/contact/new')}
-                                  >
-                                    Add Contact
-                                  </button>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        ) : (
-                          currentContacts.map(contact => (
-                            <tr key={contact.id} onClick={() => navigate(`/contact/${contact.id}`)} style={{ cursor: 'pointer' }}>
-                              <td>
-                                <div className="ticket-cell__user-name">{contact.name}</div>
-                                <div className="ticket-cell__user-email">{contact.email}</div>
-                              </td>
-                              <td>
-                                <div className="ticket-cell__user-name">{contact.company}</div>
-                              </td>
-                              <td>
-                                <div className="ticket-cell__user-email">{contact.phone}</div>
-                              </td>
-                              <td>
-                                <span className="badge badge--primary">{contact.tickets}</span>
-                              </td>
-                              <td>
-                                <div className="ticket-cell__date">{new Date(contact.lastContact).toLocaleDateString()}</div>
-                              </td>
-                              <td>
-                                <span className={getStatusBadgeClass(contact.status)}>
-                                  {contact.status.toUpperCase()}
-                                </span>
-                              </td>
-                              <td className="ticket-cell__actions">
-                                <button 
-                                  className="btn btn--outline btn--small ticket-actions__view-btn"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigate(`/contact/${contact.id}`);
-                                  }}
-                                >
-                                  View
-                                </button>
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </>
+                  filteredContacts.map(contact => (
+                    <div key={contact.id} className="contact-card">
+                      <div className="contact-card__header">
+                        <div className="contact-avatar">
+                          <span className="contact-initial">{contact.avatar}</span>
+                        </div>
+                        <div className="contact-info">
+                          <h3 className="contact-name">{contact.name}</h3>
+                          <span className={getStatusBadgeClass(contact.status)}>
+                            {contact.status?.toUpperCase()}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="contact-card__body">
+                        <div className="contact-details">
+                          <div className="contact-detail-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="contact-detail-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            <span className="contact-detail-text">{contact.email}</span>
+                          </div>
+                          
+                          <div className="contact-detail-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="contact-detail-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                            </svg>
+                            <span className="contact-detail-text">{contact.phone}</span>
+                          </div>
+                          
+                          <div className="contact-detail-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="contact-detail-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                            <span className="contact-detail-text">{contact.company}</span>
+                          </div>
+                        </div>
+                        
+                        <div className="contact-stats">
+                          <div className="contact-stat">
+                            <span className="contact-stat-value">{contact.tickets}</span>
+                            <span className="contact-stat-label">Tickets</span>
+                          </div>
+                          <div className="contact-stat">
+                            <span className="contact-stat-value">{formatDate(contact.lastContact)}</span>
+                            <span className="contact-stat-label">Last Contact</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="contact-card__footer">
+                        <button className="btn btn--outline btn--small contact-card-btn">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                          </svg>
+                          Email
+                        </button>
+                        <button className="btn btn--outline btn--small contact-card-btn">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                          </svg>
+                          View Tickets
+                        </button>
+                      </div>
+                    </div>
+                  ))
                 )}
               </div>
-              
-              {/* Pagination */}
-              {!loading && !error && filteredContacts.length > 0 && (
-                <div className="pagination">
-                  <div className="pagination__info">
-                    Showing {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredContacts.length)} of {filteredContacts.length} contacts
-                  </div>
-                  <div className="pagination__controls">
-                    <button 
-                      className="btn btn--outline btn--small" 
-                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                      disabled={currentPage === 1}
-                    >
-                      Previous
-                    </button>
-                    <span className="pagination__page-info">
-                      Page {currentPage} of {totalPages}
-                    </span>
-                    <button 
-                      className="btn btn--outline btn--small" 
-                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                      disabled={currentPage === totalPages}
-                    >
-                      Next
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+            )}
           </div>
         </div>
       </div>

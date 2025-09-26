@@ -2,19 +2,19 @@ const nodemailer = require('nodemailer');
 
 const createTransporter = () => {
   console.log('Creating transporter with config:', {
-    host: process.env.EMAIL_HOST || 'smtp.ethereal.email',
+    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
     port: process.env.EMAIL_PORT || 587,
     secure: process.env.EMAIL_SECURE === 'true' || false,
     user: process.env.EMAIL_USER ? '[REDACTED]' : 'NOT SET'
   });
   
   return nodemailer.createTransport({
-    host: process.env.EMAIL_HOST || 'smtp.ethereal.email',
+    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
     port: process.env.EMAIL_PORT || 587,
     secure: process.env.EMAIL_SECURE === 'true' || false,
     auth: {
-      user: process.env.EMAIL_USER || 'your@email.com',
-      pass: process.env.EMAIL_PASS || 'your_password'
+      user: process.env.EMAIL_USER || 'yasirraeesit@gmail.com',
+      pass: process.env.EMAIL_PASS || 'luqp cvlv vfun ovfq'
     }
   });
 };
