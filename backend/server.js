@@ -15,6 +15,7 @@ const commentRoutes = require('./routes/comments');
 const userRoutes = require('./routes/users');
 const contactsRoutes = require('./routes/contacts');
 const companiesRoutes = require('./routes/companies');
+const chatRoutes = require('./routes/chat');
 
 // Initialize app
 const app = express();
@@ -34,6 +35,7 @@ app.use('/api/comments', commentRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/contacts', contactsRoutes);
 app.use('/api/companies', companiesRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Health check endpoint
 app.get('/', (req, res) => {
@@ -61,8 +63,29 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/supportpa
       clients.add(ws);
       
       ws.on('message', (message) => {
-        // Handle incoming messages from clients if needed
-        console.log('Received message from client:', message.toString());
+        try {
+          const parsedMessage = JSON.parse(message.toString());
+          console.log('Received message from client:', parsedMessage);
+          
+          // Handle chat messages
+          if (parsedMessage.type === 'chat_message' && parsedMessage.message) {
+            // Broadcast the message to all connected clients except the sender
+            // In a real implementation, you would only send to participants in the conversation
+            const json = JSON.stringify(parsedMessage);
+            clients.forEach((client) => {
+              if (client !== ws && client.readyState === WebSocket.OPEN) {
+                client.send(json);
+              }
+            });
+            
+            // Also broadcast to the sender so they see their message reflected
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send(json);
+            }
+          }
+        } catch (error) {
+          console.error('Error parsing received message:', error);
+        }
       });
       
       ws.on('close', () => {
@@ -79,9 +102,25 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/supportpa
       ws.send(JSON.stringify({ type: 'connected', message: 'Connected to WebSocket server' }));
     });
     
+    // Store WebSocket connections by user ID
+    const userConnections = new Map(); // userId -> Set of WebSocket connections
+    
     // Function to broadcast updates to all connected clients
     global.broadcastUpdate = (data) => {
       const json = JSON.stringify(data);
+      clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(json);
+        }
+      });
+    };
+    
+    // Function to broadcast chat messages to specific conversation participants
+    global.broadcastChatMessage = async (conversationId, messageData) => {
+      const json = JSON.stringify(messageData);
+      
+      // For now, broadcast to all clients
+      // In a real implementation, you would check who's in the conversation
       clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
           client.send(json);

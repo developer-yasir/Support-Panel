@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
@@ -11,7 +10,6 @@ const Contacts = () => {
   const [filters, setFilters] = useState({
     search: ''
   });
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchContacts = async () => {
@@ -19,7 +17,7 @@ const Contacts = () => {
         setLoading(true);
         const response = await api.get('/contacts');
         // Transform the user data to match the expected contact format
-        const formattedContacts = response.data.map((user, index) => ({
+        const formattedContacts = response.data.map(user => ({
           id: user._id,
           name: user.name,
           email: user.email,
@@ -32,6 +30,7 @@ const Contacts = () => {
         }));
         setContacts(formattedContacts);
       } catch (err) {
+        console.error('Failed to fetch contacts:', err);
         setError('Failed to fetch contacts');
       } finally {
         setLoading(false);

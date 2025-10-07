@@ -58,7 +58,13 @@ exports.getTickets = async (req, res) => {
 // Get ticket by ID
 exports.getTicketById = async (req, res) => {
   try {
-    const ticket = await Ticket.findById(req.params.id)
+    // First try to find by the custom ticketId, then by MongoDB _id for backward compatibility
+    const ticket = await Ticket.findOne({
+      $or: [
+        { ticketId: req.params.id },
+        { _id: req.params.id }
+      ]
+    })
       .populate('createdBy', 'name email')
       .populate('assignedTo', 'name email');
     
@@ -78,7 +84,14 @@ exports.updateTicket = async (req, res) => {
     console.log('Update ticket request:', req.params.id, req.body);
     const { title, description, priority, status, assignedTo, dueDate, escalationLevel } = req.body;
     
-    const ticket = await Ticket.findById(req.params.id);
+    // Find ticket by custom ticketId or MongoDB _id
+    const ticket = await Ticket.findOne({
+      $or: [
+        { ticketId: req.params.id },
+        { _id: req.params.id }
+      ]
+    });
+    
     if (!ticket) {
       console.log('Ticket not found:', req.params.id);
       return res.status(404).json({ message: 'Ticket not found' });
@@ -132,7 +145,14 @@ exports.updateTicket = async (req, res) => {
 // Delete ticket
 exports.deleteTicket = async (req, res) => {
   try {
-    const ticket = await Ticket.findById(req.params.id);
+    // Find ticket by custom ticketId or MongoDB _id
+    const ticket = await Ticket.findOne({
+      $or: [
+        { ticketId: req.params.id },
+        { _id: req.params.id }
+      ]
+    });
+    
     if (!ticket) {
       return res.status(404).json({ message: 'Ticket not found' });
     }
@@ -158,7 +178,14 @@ exports.deleteTicket = async (req, res) => {
 // Escalate ticket
 exports.escalateTicket = async (req, res) => {
   try {
-    const ticket = await Ticket.findById(req.params.id);
+    // Find ticket by custom ticketId or MongoDB _id
+    const ticket = await Ticket.findOne({
+      $or: [
+        { ticketId: req.params.id },
+        { _id: req.params.id }
+      ]
+    });
+    
     if (!ticket) {
       return res.status(404).json({ message: 'Ticket not found' });
     }
@@ -377,6 +404,396 @@ exports.getResolutionRates = async (req, res) => {
     });
 
     res.json(filledRates);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Get agent performance data
+exports.getAgentPerformance = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    let dateFilter = {};
+
+    // Add date range filter if provided
+    if (startDate || endDate) {
+      dateFilter.createdAt = {};
+      if (startDate) {
+        dateFilter.createdAt.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        dateFilter.createdAt.$lte = new Date(endDate);
+      }
+    }
+
+    // Aggregate ticket data by assigned agent
+    const agentPerformance = await Ticket.aggregate([
+      {
+        $match: dateFilter
+      },
+      {
+        $group: {
+          _id: "$assignedTo",
+          ticketsHandled: { $sum: 1 },
+          resolvedTickets: {
+            $sum: {
+              $cond: [{ $in: ["$status", ["resolved", "closed"]] }, 1, 0]
+            }
+          },
+          avgResolutionTime: {
+            $avg: {
+              $cond: [
+                { $in: ["$status", ["resolved", "closed"]] },
+                {
+                  $divide: [
+                    { $subtract: ["$updatedAt", "$createdAt"] }, // Time difference in milliseconds
+                    1000 * 60 * 60 // Convert to hours
+                  ]
+                },
+                null
+              ]
+            }
+          }
+        }
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'agentInfo'
+        }
+      },
+      {
+        $unwind: '$agentInfo'
+      },
+      {
+        $project: {
+          _id: 0,
+          agentId: "$_id",
+          name: "$agentInfo.name",
+          email: "$agentInfo.email",
+          ticketsHandled: 1,
+          resolvedTickets: 1,
+          avgResolutionTime: 1
+        }
+      },
+      {
+        $sort: { ticketsHandled: -1 }
+      }
+    ]);
+
+    // Calculate satisfaction for each agent (if feedback data exists)
+    // For now, we'll add mock satisfaction data as it requires additional feedback collection
+    const result = agentPerformance.map(agent => ({
+      ...agent,
+      avgResolutionTime: agent.avgResolutionTime ? agent.avgResolutionTime.toFixed(1) + 'h' : 'N/A',
+      satisfaction: Math.min(5, Math.max(3, Math.round(4 + Math.random() * 0.5) * 10) / 10) // Random value between 3-5 for demo
+    }));
+
+    res.json(result);
+  } catch (error) {
+    console.error('Error fetching agent performance:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Get recent activity
+exports.getRecentActivity = async (req, res) => {
+  try {
+    // Get the 10 most recently created tickets
+    const recentTickets = await Ticket.find()
+      .populate('createdBy', 'name email')
+      .populate('assignedTo', 'name email')
+      .sort({ createdAt: -1 })
+      .limit(10);
+
+    res.json(recentTickets);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Get company ticket statistics
+exports.getCompanyTicketStats = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    let dateFilter = {};
+
+    // Add date range filter if provided
+    if (startDate || endDate) {
+      dateFilter.createdAt = {};
+      if (startDate) {
+        dateFilter.createdAt.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        dateFilter.createdAt.$lte = new Date(endDate);
+      }
+    }
+
+    // Get overall company statistics
+    const totalTickets = await Ticket.countDocuments(dateFilter);
+    const openTickets = await Ticket.countDocuments({ 
+      ...dateFilter,
+      status: 'open' 
+    });
+    const resolvedTickets = await Ticket.countDocuments({ 
+      ...dateFilter,
+      status: 'resolved' 
+    });
+    const closedTickets = await Ticket.countDocuments({ 
+      ...dateFilter,
+      status: 'closed' 
+    });
+
+    // Calculate average resolution time for resolved tickets
+    const resolvedTicketsWithTime = await Ticket.aggregate([
+      {
+        $match: {
+          ...dateFilter,
+          status: { $in: ['resolved', 'closed'] },
+          resolvedAt: { $exists: true }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          avgResolutionTime: { $avg: { $subtract: ["$resolvedAt", "$createdAt"] } }
+        }
+      }
+    ]);
+
+    const avgResolutionTime = resolvedTicketsWithTime[0] ? 
+      Math.round(resolvedTicketsWithTime[0].avgResolutionTime / (1000 * 60 * 60 * 24)) : 0; // Days
+
+    res.json({
+      totalTickets,
+      openTickets,
+      resolvedTickets,
+      closedTickets,
+      avgResolutionTime
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Get customer satisfaction metrics
+exports.getCustomerSatisfaction = async (req, res) => {
+  try {
+    // In a real application, this would pull from actual customer feedback/satisfaction surveys
+    // For now, we'll return mock data
+    const satisfactionData = {
+      overallSatisfaction: Math.round(4 + Math.random() * 0.5 * 10) / 10, // Random value between 4.0-4.5
+      satisfactionTrends: [
+        { date: '2023-01-01', rating: 4.1 },
+        { date: '2023-02-01', rating: 4.3 },
+        { date: '2023-03-01', rating: 4.2 },
+        { date: '2023-04-01', rating: 4.4 },
+        { date: '2023-05-01', rating: 4.5 },
+      ],
+      ticketResolutionSatisfaction: Math.round(4 + Math.random() * 0.5 * 10) / 10, // Random value
+      supportInteractionSatisfaction: Math.round(4 + Math.random() * 0.5 * 10) / 10, // Random value
+    };
+
+    res.json(satisfactionData);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Get department statistics
+exports.getDepartmentStats = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    let dateFilter = {};
+
+    // Add date range filter if provided
+    if (startDate || endDate) {
+      dateFilter.createdAt = {};
+      if (startDate) {
+        dateFilter.createdAt.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        dateFilter.createdAt.$lte = new Date(endDate);
+      }
+    }
+
+    // In a real application, this would pull from department information
+    // For now, we'll return mock data showing ticket distribution by department
+    const departmentStats = [
+      { department: 'Technical Support', ticketCount: Math.floor(Math.random() * 100) + 50, resolvedCount: Math.floor(Math.random() * 100) + 40 },
+      { department: 'Billing', ticketCount: Math.floor(Math.random() * 80) + 30, resolvedCount: Math.floor(Math.random() * 80) + 25 },
+      { department: 'Account Management', ticketCount: Math.floor(Math.random() * 60) + 20, resolvedCount: Math.floor(Math.random() * 60) + 18 },
+      { department: 'Sales', ticketCount: Math.floor(Math.random() * 40) + 10, resolvedCount: Math.floor(Math.random() * 40) + 8 },
+    ];
+
+    res.json(departmentStats);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Get response time metrics
+exports.getResponseTimeMetrics = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    let dateFilter = {};
+
+    // Add date range filter if provided
+    if (startDate || endDate) {
+      dateFilter.createdAt = {};
+      if (startDate) {
+        dateFilter.createdAt.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        dateFilter.createdAt.$lte = new Date(endDate);
+      }
+    }
+
+    // Calculate average first response time
+    const ticketsWithResponse = await Ticket.aggregate([
+      {
+        $match: {
+          ...dateFilter,
+          firstResponseAt: { $exists: true }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          avgFirstResponseTime: { $avg: { $subtract: ["$firstResponseAt", "$createdAt"] } }
+        }
+      }
+    ]);
+
+    // Calculate response time by priority
+    const responseTimeByPriority = await Ticket.aggregate([
+      {
+        $match: {
+          ...dateFilter,
+          firstResponseAt: { $exists: true }
+        }
+      },
+      {
+        $group: {
+          _id: "$priority",
+          avgResponseTime: { $avg: { $subtract: ["$firstResponseAt", "$createdAt"] } }
+        }
+      }
+    ]);
+
+    const avgFirstResponseTime = ticketsWithResponse[0] ? 
+      Math.round(ticketsWithResponse[0].avgFirstResponseTime / (1000 * 60 * 60)) : 0; // Hours
+
+    res.json({
+      avgFirstResponseTime: avgFirstResponseTime > 0 ? `${avgFirstResponseTime}h` : 'N/A',
+      responseTimeByPriority: responseTimeByPriority.map(item => ({
+        priority: item._id,
+        avgResponseTime: `${Math.round(item.avgResponseTime / (1000 * 60 * 60))}h`
+      }))
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Get ticket age analysis
+exports.getTicketAgeAnalysis = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    let dateFilter = {};
+
+    // Add date range filter if provided
+    if (startDate || endDate) {
+      dateFilter.createdAt = {};
+      if (startDate) {
+        dateFilter.createdAt.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        dateFilter.createdAt.$lte = new Date(endDate);
+      }
+    }
+
+    // Calculate ticket age for open tickets
+    const openTickets = await Ticket.find({ 
+      ...dateFilter, 
+      status: { $in: ['open', 'in_progress'] } 
+    });
+
+    // Create age buckets
+    const now = new Date();
+    const ageBuckets = {
+      'less_than_1_day': 0,
+      '1_to_3_days': 0,
+      '3_to_7_days': 0,
+      'more_than_7_days': 0,
+      'more_than_30_days': 0
+    };
+
+    openTickets.forEach(ticket => {
+      const ageInMs = now - ticket.createdAt;
+      const ageInDays = Math.floor(ageInMs / (1000 * 60 * 60 * 24));
+
+      if (ageInDays < 1) {
+        ageBuckets['less_than_1_day']++;
+      } else if (ageInDays < 3) {
+        ageBuckets['1_to_3_days']++;
+      } else if (ageInDays < 7) {
+        ageBuckets['3_to_7_days']++;
+      } else if (ageInDays < 30) {
+        ageBuckets['more_than_7_days']++;
+      } else {
+        ageBuckets['more_than_30_days']++;
+      }
+    });
+
+    res.json({
+      totalOpenTickets: openTickets.length,
+      ageDistribution: ageBuckets
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Get ticket categories
+exports.getTicketCategories = async (req, res) => {
+  try {
+    // In a real application, this would pull from actual categories 
+    // For now, we'll return mock data showing ticket distribution by category
+    const categories = [
+      { category: 'Technical Issue', count: Math.floor(Math.random() * 100) + 50 },
+      { category: 'Billing Question', count: Math.floor(Math.random() * 60) + 30 },
+      { category: 'Feature Request', count: Math.floor(Math.random() * 40) + 20 },
+      { category: 'Account Issue', count: Math.floor(Math.random() * 50) + 25 },
+      { category: 'General Inquiry', count: Math.floor(Math.random() * 30) + 15 },
+    ];
+
+    res.json(categories);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Get upcoming breaches
+exports.getUpcomingBreaches = async (req, res) => {
+  try {
+    // Find tickets that are approaching their due date (within 24 hours)
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const ticketsAtRisk = await Ticket.find({
+      status: { $in: ['open', 'in_progress'] },
+      dueDate: { 
+        $gte: now,
+        $lte: tomorrow
+      }
+    }).populate('createdBy', 'name email')
+      .populate('assignedTo', 'name email');
+
+    res.json(ticketsAtRisk);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

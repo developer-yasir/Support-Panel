@@ -41,32 +41,39 @@ const DepartmentView = ({ startDate, endDate }) => {
     <div className="card">
       <div className="card__body">
         <h3 className="card__title">Department View</h3>
-        <div className="table-container">
-          <table className="table table--striped">
-            <thead>
-              <tr>
-                <th>Department</th>
-                <th>Total</th>
-                <th>Open</th>
-                <th>In Progress</th>
-                <th>Resolved</th>
-                <th>Avg. Time</th>
-              </tr>
-            </thead>
-            <tbody>
-              {departments.map((dept, index) => (
-                <tr key={index}>
-                  <td>{dept.name}</td>
-                  <td>{dept.tickets}</td>
-                  <td>{dept.open}</td>
-                  <td>{dept.inProgress}</td>
-                  <td>{dept.resolved}</td>
-                  <td>{dept.avgTime}</td>
+        {loading ? (
+          <div className="loading-placeholder">
+            <div className="spinner spinner--primary"></div>
+            <p>Loading department data...</p>
+          </div>
+        ) : (
+          <div className="table-container">
+            <table className="table table--striped">
+              <thead>
+                <tr>
+                  <th>Department</th>
+                  <th>Total</th>
+                  <th>Open</th>
+                  <th>In Progress</th>
+                  <th>Resolved</th>
+                  <th>Avg. Time</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {departments.map((dept, index) => (
+                  <tr key={index}>
+                    <td>{dept.name}</td>
+                    <td>{dept.tickets}</td>
+                    <td>{dept.open}</td>
+                    <td>{dept.inProgress}</td>
+                    <td>{dept.resolved}</td>
+                    <td>{dept.avgTime}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

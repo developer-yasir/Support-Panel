@@ -10,7 +10,16 @@ const {
   getTicketStats,
   getTicketTrends,
   getTicketDistribution,
-  getResolutionRates
+  getResolutionRates,
+  getAgentPerformance,
+  getRecentActivity,
+  getCompanyTicketStats,
+  getCustomerSatisfaction,
+  getDepartmentStats,
+  getResponseTimeMetrics,
+  getTicketAgeAnalysis,
+  getTicketCategories,
+  getUpcomingBreaches
 } = require('../controllers/ticketController');
 const { protect } = require('../middlewares/authMiddleware');
 
@@ -32,6 +41,33 @@ router.route('/distribution')
 
 router.route('/resolution-rates')
   .get(getResolutionRates);
+
+router.route('/agents')
+  .get(getAgentPerformance);
+
+router.route('/activity')
+  .get(getRecentActivity);
+
+router.route('/company-stats')
+  .get(getCompanyTicketStats);
+
+router.route('/satisfaction')
+  .get(getCustomerSatisfaction);
+
+router.route('/departments')
+  .get(getDepartmentStats);
+
+router.route('/response-time')
+  .get(getResponseTimeMetrics);
+
+router.route('/age-analysis')
+  .get(getTicketAgeAnalysis);
+
+router.route('/categories')
+  .get(getTicketCategories);
+
+router.route('/breaches')
+  .get(getUpcomingBreaches);
 
 router.route('/:id')
   .get(getTicketById)

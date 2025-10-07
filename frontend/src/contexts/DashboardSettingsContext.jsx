@@ -8,15 +8,7 @@ export const useDashboardSettings = () => {
 
 export const DashboardSettingsProvider = ({ children }) => {
   const [dashboardSettings, setDashboardSettings] = useState({
-    showRecentActivity: true,
-    showTicketCategories: true,
-    showAgentPerformance: true,
-    showCustomerSatisfaction: true,
-    showTicketAgeAnalysis: true,
-    showResponseTimeMetrics: true,
-    showQuickActions: true,
-    showUpcomingBreaches: true,
-    showDepartmentView: true
+    showCompanyTickets: true
   });
 
   // Load settings from localStorage on component mount
@@ -24,9 +16,16 @@ export const DashboardSettingsProvider = ({ children }) => {
     const savedSettings = localStorage.getItem('dashboardSettings');
     if (savedSettings) {
       try {
-        setDashboardSettings(JSON.parse(savedSettings));
+        const parsedSettings = JSON.parse(savedSettings);
+        // Filter out deprecated settings and only keep valid ones
+        const validSettings = {
+          showCompanyTickets: parsedSettings.showCompanyTickets ?? true
+        };
+        setDashboardSettings(validSettings);
       } catch (error) {
         console.error('Error loading dashboard settings:', error);
+        // Set default settings if parsing fails
+        setDashboardSettings({ showCompanyTickets: true });
       }
     }
   }, []);

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '../services/api';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
 import Charts from '../components/Charts'; // Reusing the existing Charts component
@@ -35,6 +34,7 @@ const Reports = () => {
         };
         setStats(mockStats);
       } catch (err) {
+        console.error('Failed to fetch reports data:', err);
         setError('Failed to fetch reports data');
       } finally {
         setLoading(false);

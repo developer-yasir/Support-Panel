@@ -1,21 +1,16 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Responsive, WidthProvider } from 'react-grid-layout';
 import { useDashboardSettings } from '../contexts/DashboardSettingsContext';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
 import Export from '../components/Export';
 import Charts from '../components/Charts';
 import RecentActivity from '../components/Dashboard/RecentActivity';
-import TicketCategories from '../components/Dashboard/TicketCategories';
 import AgentPerformance from '../components/Dashboard/AgentPerformance';
-import CustomerSatisfaction from '../components/Dashboard/CustomerSatisfaction';
-import TicketAgeAnalysis from '../components/Dashboard/TicketAgeAnalysis';
-import ResponseTimeMetrics from '../components/Dashboard/ResponseTimeMetrics';
+import CompanyTickets from '../components/Dashboard/CompanyTickets';
+
 import { api } from '../services/api';
 import WebSocketService from '../services/websocket';
-
-const ResponsiveGridLayout = WidthProvider(Responsive);
 
 const Overview = () => {
   const { dashboardSettings, updateSetting } = useDashboardSettings();
@@ -31,52 +26,16 @@ const Overview = () => {
   const [endDate, setEndDate] = useState('');
   const [newTicketsCount, setNewTicketsCount] = useState(0);
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
-  const [layouts, setLayouts] = useState({});
   const lastTotalTickets = useRef(0);
+  const previousStats = useRef({
+    totalTickets: 0,
+    openTickets: 0,
+    inProgressTickets: 0,
+    highPriorityTickets: 0
+  });
   const refreshInterval = useRef(null);
+  const statsTimeoutRef = useRef(null);
   const navigate = useNavigate();
-
-  // Initial layout for the grid - try to load from localStorage first
-  const initialLayout = () => {
-    try {
-      const savedLayout = localStorage.getItem('dashboardLayout');
-      if (savedLayout) {
-        const parsed = JSON.parse(savedLayout);
-        if (parsed.lg) {
-          // Add min constraints to saved layout
-          return parsed.lg.map(item => ({
-            ...item,
-            minW: item.minW || 2,
-            minH: item.minH || 2
-          }));
-        }
-      }
-    } catch (error) {
-      console.error('Error loading layout from localStorage:', error);
-    }
-    
-    // Default layout with min constraints
-    return [
-      { i: 'charts', x: 0, y: 0, w: 12, h: 6, minW: 4, minH: 4 },
-      { i: 'recentActivity', x: 0, y: 6, w: 6, h: 4, minW: 2, minH: 3 },
-      { i: 'ticketCategories', x: 6, y: 6, w: 6, h: 4, minW: 2, minH: 3 },
-      { i: 'agentPerformance', x: 0, y: 10, w: 6, h: 4, minW: 3, minH: 3 },
-      { i: 'customerSatisfaction', x: 6, y: 10, w: 6, h: 4, minW: 3, minH: 3 }
-    ];
-  };
-
-  // Handle layout changes
-  const onLayoutChange = (currentLayout, allLayouts) => {
-    setLayouts(allLayouts);
-    // Save layout to localStorage so it persists between sessions
-    try {
-      // Save the current layout in the lg breakpoint format
-      const layoutToSave = { lg: currentLayout };
-      localStorage.setItem('dashboardLayout', JSON.stringify(layoutToSave));
-    } catch (error) {
-      console.error('Error saving layout to localStorage:', error);
-    }
-  };
 
   // Function to calculate date ranges
   const getDateRange = (range) => {
@@ -135,23 +94,49 @@ const Overview = () => {
       const url = `/tickets/stats${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
       const response = await api.get(url);
       
-      // Check for new tickets
-      if (lastTotalTickets.current > 0 && response.data.totalTickets > lastTotalTickets.current) {
-        setNewTicketsCount(response.data.totalTickets - lastTotalTickets.current);
-        // Clear notification after 5 seconds
-        setTimeout(() => {
-          setNewTicketsCount(0);
-        }, 5000);
-      }
+      const newStats = response.data;
       
-      lastTotalTickets.current = response.data.totalTickets;
-      setStats(response.data);
+      // Compare new stats with current stats to determine if update is needed
+      const shouldUpdate = 
+        stats.totalTickets !== newStats.totalTickets ||
+        stats.openTickets !== newStats.openTickets ||
+        stats.inProgressTickets !== newStats.inProgressTickets ||
+        stats.highPriorityTickets !== newStats.highPriorityTickets;
+      
+      if (shouldUpdate) {
+        // Check for new tickets
+        if (lastTotalTickets.current > 0 && newStats.totalTickets > lastTotalTickets.current) {
+          setNewTicketsCount(newStats.totalTickets - lastTotalTickets.current);
+          // Clear notification after 5 seconds
+          setTimeout(() => {
+            setNewTicketsCount(0);
+          }, 5000);
+        }
+        
+        lastTotalTickets.current = newStats.totalTickets;
+        setStats(newStats);
+        // Update previous stats ref to track for next comparison
+        previousStats.current = { ...newStats };
+      }
     } catch (err) {
+      console.error('Failed to fetch ticket statistics:', err);
       setError('Failed to fetch ticket statistics');
     } finally {
       setStatsLoading(false);
     }
   };
+
+  const debouncedFetchStats = useCallback(() => {
+    // Clear any existing timeout to debounce the request
+    if (statsTimeoutRef.current) {
+      clearTimeout(statsTimeoutRef.current);
+    }
+    
+    // Set a new timeout that will execute the fetch after 1000ms (1 second)
+    statsTimeoutRef.current = setTimeout(() => {
+      fetchStats();
+    }, 1000);
+  }, [fetchStats, startDate, endDate]);
 
   // Set page title
   useEffect(() => {
@@ -159,12 +144,21 @@ const Overview = () => {
   }, []);
 
   // WebSocket message handler
-  const handleWebSocketMessage = (data) => {
+  const handleWebSocketMessage = useCallback((data) => {
     // When we receive a ticket update message, refresh the stats
     if (data.type === 'ticket_update' || data.type === 'new_ticket') {
-      fetchStats();
+      debouncedFetchStats();
     }
-  };
+  }, [debouncedFetchStats]);
+
+  // Define stable WebSocket event handlers for proper cleanup
+  const handleWebSocketError = useCallback((error) => {
+    console.error('WebSocket error:', error);
+  }, []);
+
+  const handleWebSocketClose = useCallback((event) => {
+    console.log('WebSocket closed:', event);
+  }, []);
 
   // Set up auto-refresh every 30 seconds and WebSocket connection
   useEffect(() => {
@@ -173,7 +167,7 @@ const Overview = () => {
     
     // Set up interval for auto-refresh
     refreshInterval.current = setInterval(() => {
-      fetchStats();
+      debouncedFetchStats();
     }, 30000); // 30 seconds
     
     // Set up WebSocket connection
@@ -186,16 +180,48 @@ const Overview = () => {
     console.log('Connecting to WebSocket:', wsUrl); // Debug log
     WebSocketService.connect(wsUrl);
     WebSocketService.addListener('message', handleWebSocketMessage);
+    WebSocketService.addListener('error', handleWebSocketError);
+    WebSocketService.addListener('close', handleWebSocketClose);
     
     // Clean up interval and WebSocket on component unmount
     return () => {
       if (refreshInterval.current) {
         clearInterval(refreshInterval.current);
       }
+      // Clear any pending timeout
+      if (statsTimeoutRef.current) {
+        clearTimeout(statsTimeoutRef.current);
+      }
       WebSocketService.removeListener('message', handleWebSocketMessage);
+      WebSocketService.removeListener('error', handleWebSocketError);
+      WebSocketService.removeListener('close', handleWebSocketClose);
       WebSocketService.disconnect();
     };
-  }, [startDate, endDate]);
+  }, [startDate, endDate, debouncedFetchStats]);
+
+  // Set up WebSocket connection separately to avoid reconnection on filter changes
+  useEffect(() => {
+    // Set up WebSocket connection
+    // Make sure to connect to the correct WebSocket endpoint (strip /api if present)
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+    const cleanBackendUrl = backendUrl.endsWith('/api') ? backendUrl.slice(0, -4) : backendUrl;
+    const wsProtocol = cleanBackendUrl.startsWith('https') ? 'wss' : 'ws';
+    const wsUrl = `${wsProtocol}://${cleanBackendUrl.replace(/^https?:\/\/|^http?:\/\//, '')}/ws`;
+    
+    console.log('Connecting to WebSocket (separate effect):', wsUrl); // Debug log
+    WebSocketService.connect(wsUrl);
+    WebSocketService.addListener('message', handleWebSocketMessage);
+    WebSocketService.addListener('error', handleWebSocketError);
+    WebSocketService.addListener('close', handleWebSocketClose);
+    
+    // Clean up WebSocket on component unmount
+    return () => {
+      WebSocketService.removeListener('message', handleWebSocketMessage);
+      WebSocketService.removeListener('error', handleWebSocketError);
+      WebSocketService.removeListener('close', handleWebSocketClose);
+      WebSocketService.disconnect();
+    };
+  }, [handleWebSocketMessage, handleWebSocketError, handleWebSocketClose]); // Only re-run if callbacks change
 
   // Reset new tickets count when filters change
   useEffect(() => {
@@ -203,55 +229,11 @@ const Overview = () => {
     lastTotalTickets.current = 0;
   }, [startDate, endDate]);
 
-  const getStatusBadgeClass = (status) => {
-    switch (status) {
-      case 'open': return 'badge badge--success';
-      case 'in_progress': return 'badge badge--warning';
-      case 'resolved': return 'badge badge--info';
-      case 'closed': return 'badge badge--secondary';
-      default: return 'badge badge--secondary';
-    }
-  };
 
-  const getPriorityBadgeClass = (priority) => {
-    switch (priority) {
-      case 'low': return 'badge badge--success';
-      case 'medium': return 'badge badge--warning';
-      case 'high': return 'badge badge--danger';
-      case 'urgent': return 'badge badge--danger';
-      default: return 'badge badge--secondary';
-    }
-  };
 
-  const handleSettingToggle = (settingName) => {
-    updateSetting(settingName, !dashboardSettings[settingName]);
-  };
 
-  // Render individual dashboard widgets
-  const renderWidget = (id, title, component, visible) => {
-    if (!visible) return null;
-    
-    return (
-      <div key={id} className="dashboard-widget">
-        <div className="dashboard-widget__header">
-          <div className="drag-handle" style={{display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'move', flex: 1}}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="drag-handle-icon">
-              <circle cx="12" cy="9" r="1"></circle>
-              <circle cx="19" cy="9" r="1"></circle>
-              <circle cx="5" cy="9" r="1"></circle>
-              <circle cx="12" cy="15" r="1"></circle>
-              <circle cx="19" cy="15" r="1"></circle>
-              <circle cx="5" cy="15" r="1"></circle>
-            </svg>
-            <h3 className="dashboard-widget__title">{title}</h3>
-          </div>
-        </div>
-        <div className="dashboard-widget__body">
-          {component}
-        </div>
-      </div>
-    );
-  };
+
+
 
   return (
     <div className="dashboard">
@@ -259,6 +241,16 @@ const Overview = () => {
       <div className="dashboard__layout">
         <Sidebar />
         <div className="container dashboard__container">
+          {error && (
+            <div className="alert alert--danger">
+              <div className="alert__icon">
+                <svg xmlns="http://www.w3.org/2000/svg" className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              {error}
+            </div>
+          )}
           <div className="dashboard__header">
             <div className="dashboard-header__content">
               <div className="dashboard-header__title-wrapper">
@@ -340,26 +332,7 @@ const Overview = () => {
                     </div>
                   </div>
                   
-                  <div className="dashboard-setting-item">
-                    <div className="settings__toggle-group">
-                      <label htmlFor="showTicketCategories" className="form-label settings__label">
-                        Ticket Categories
-                      </label>
-                      <div className="settings__toggle">
-                        <input
-                          type="checkbox"
-                          id="showTicketCategories"
-                          name="showTicketCategories"
-                          checked={dashboardSettings.showTicketCategories}
-                          onChange={() => handleSettingToggle('showTicketCategories')}
-                          className="settings__toggle-input"
-                        />
-                        <label htmlFor="showTicketCategories" className="settings__toggle-label">
-                          <span className="settings__toggle-slider"></span>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
+
                   
                   <div className="dashboard-setting-item">
                     <div className="settings__toggle-group">
@@ -382,26 +355,7 @@ const Overview = () => {
                     </div>
                   </div>
                   
-                  <div className="dashboard-setting-item">
-                    <div className="settings__toggle-group">
-                      <label htmlFor="showCustomerSatisfaction" className="form-label settings__label">
-                        Customer Satisfaction
-                      </label>
-                      <div className="settings__toggle">
-                        <input
-                          type="checkbox"
-                          id="showCustomerSatisfaction"
-                          name="showCustomerSatisfaction"
-                          checked={dashboardSettings.showCustomerSatisfaction}
-                          onChange={() => handleSettingToggle('showCustomerSatisfaction')}
-                          className="settings__toggle-input"
-                        />
-                        <label htmlFor="showCustomerSatisfaction" className="settings__toggle-label">
-                          <span className="settings__toggle-slider"></span>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
+
                   
                   <div className="dashboard-setting-item">
                     <div className="settings__toggle-group">
@@ -445,12 +399,12 @@ const Overview = () => {
                   <button
                     className="btn btn--outline btn--small"
                     onClick={() => {
-                      // Reset layout to default
-                      localStorage.removeItem('dashboardLayout');
-                      window.location.reload(); // Simple way to refresh with default layout
+                      // Clear date filters
+                      setStartDate('');
+                      setEndDate('');
                     }}
                   >
-                    Reset Layout
+                    Clear Filters
                   </button>
                 </div>
               </div>
@@ -505,7 +459,7 @@ const Overview = () => {
                 </div>
                 <button 
                   className="btn btn--primary date-filters__apply-btn"
-                  onClick={fetchStats}
+                  onClick={debouncedFetchStats}
                   disabled={loading}
                 >
                   {loading ? 'Loading...' : 'Apply Filters'}
@@ -622,86 +576,28 @@ const Overview = () => {
             </div>
           </div>
 
-          {/* Draggable and Resizable Dashboard Widgets */}
-          <div className="dashboard-interaction-hint">
-            <p className="interaction-hint-text">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: '0.5rem', verticalAlign: 'text-bottom'}}>
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="8" x2="12" y2="12"></line>
-                <line x1="12" y1="16" x2="12.01" y2="16"></line>
-              </svg>
-              Drag the header to move • Resize using the handle in the bottom-right corner
-            </p>
-          </div>
-          <ResponsiveGridLayout
-            className="layout"
-            layouts={{lg: initialLayout()}}
-            onLayoutChange={onLayoutChange}
-            onDragStart={() => document.body.classList.add('react-grid-dragging')}
-            onDragStop={() => document.body.classList.remove('react-grid-dragging')}
-            onResizeStart={() => document.body.classList.add('react-grid-resizing')}
-            onResizeStop={() => document.body.classList.remove('react-grid-resizing')}
-            breakpoints={{lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0}}
-            cols={{lg: 12, md: 10, sm: 6, xs: 4, xxs: 2}}
-            rowHeight={70}
-            isDraggable={true}
-            isResizable={true}
-            isBounded={false}
-            useCSSTransforms={true}
-            compactType="vertical"
-            preventCollision={false}
-            margin={[10, 10]}
-            containerPadding={[0, 0]}
-            resizeHandles={['se']}
-            draggableHandle=".drag-handle"
-          >
-            <div key="charts" data-grid={{x: 0, y: 0, w: 12, h: 6, minW: 4, minH: 4}}>
-              <div className="dashboard-widget">
-                <div className="dashboard-widget__header">
-                  <div className="drag-handle" style={{display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'move', flex: 1}}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="drag-handle-icon">
-                      <circle cx="12" cy="9" r="1"></circle>
-                      <circle cx="19" cy="9" r="1"></circle>
-                      <circle cx="5" cy="9" r="1"></circle>
-                      <circle cx="12" cy="15" r="1"></circle>
-                      <circle cx="19" cy="15" r="1"></circle>
-                      <circle cx="5" cy="15" r="1"></circle>
-                    </svg>
-                    <h3 className="dashboard-widget__title">Data Visualization</h3>
-                  </div>
-                </div>
-                <div className="dashboard-widget__body">
-                  <Charts startDate={startDate} endDate={endDate} />
-                </div>
+          {/* Static Dashboard Widgets (Non-Resizable) */}
+          <div className="dashboard-widgets-grid">
+            <div className="dashboard-widget dashboard-widget--full-width">
+              <div className="dashboard-widget__header">
+                <h3 className="dashboard-widget__title">Data Visualization</h3>
+              </div>
+              <div className="dashboard-widget__body">
+                <Charts startDate={startDate} endDate={endDate} />
               </div>
             </div>
             
-            {dashboardSettings.showRecentActivity && (
-              <div key="recentActivity" data-grid={{x: 0, y: 6, w: 6, h: 4, minW: 2, minH: 3}}>
-                {renderWidget('recentActivity', 'Recent Activity', <RecentActivity startDate={startDate} endDate={endDate} />, dashboardSettings.showRecentActivity)}
+            <div className="dashboard-widgets-row">
+              <div className="dashboard-widget dashboard-widget--half-width">
+                <div className="dashboard-widget__header">
+                  <h3 className="dashboard-widget__title">Company Ticket Overview</h3>
+                </div>
+                <div className="dashboard-widget__body">
+                  <CompanyTickets startDate={startDate} endDate={endDate} />
+                </div>
               </div>
-            )}
-            
-            {dashboardSettings.showTicketCategories && (
-              <div key="ticketCategories" data-grid={{x: 6, y: 6, w: 6, h: 4, minW: 2, minH: 3}}>
-                {renderWidget('ticketCategories', 'Ticket Categories', <TicketCategories startDate={startDate} endDate={endDate} />, dashboardSettings.showTicketCategories)}
-              </div>
-            )}
-            
-            {dashboardSettings.showAgentPerformance && (
-              <div key="agentPerformance" data-grid={{x: 0, y: 10, w: 6, h: 4, minW: 3, minH: 3}}>
-                {renderWidget('agentPerformance', 'Agent Performance', <AgentPerformance startDate={startDate} endDate={endDate} />, dashboardSettings.showAgentPerformance)}
-              </div>
-            )}
-            
-            {dashboardSettings.showCustomerSatisfaction && (
-              <div key="customerSatisfaction" data-grid={{x: 6, y: 10, w: 6, h: 4, minW: 3, minH: 3}}>
-                {renderWidget('customerSatisfaction', 'Customer Satisfaction', <CustomerSatisfaction startDate={startDate} endDate={endDate} />, dashboardSettings.showCustomerSatisfaction)}
-              </div>
-            )}
-            
-            {/* Removed less essential components for cleaner UI */}
-          </ResponsiveGridLayout>
+            </div>
+          </div>
 
         </div>
       </div>

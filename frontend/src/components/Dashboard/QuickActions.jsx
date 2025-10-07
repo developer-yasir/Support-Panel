@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 
-const QuickActions = ({ startDate, endDate }) => {
+const QuickActions = () => {
   const navigate = useNavigate();
 
   const actions = [

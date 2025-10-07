@@ -7,16 +7,30 @@ class WebSocketService {
     this.reconnectAttempts = 0;
     this.listeners = {};
     this.url = null; // Store the URL for reconnection
+    this.isConnecting = false; // Prevent multiple connection attempts
   }
 
   connect(url) {
+    // Prevent multiple connection attempts
+    if (this.isConnecting || (this.ws && this.ws.readyState === WebSocket.CONNECTING)) {
+      console.log('WebSocket connection already in progress or already connected');
+      return;
+    }
+    
+    // Close existing connection if it exists
+    if (this.ws) {
+      this.ws.close();
+    }
+    
     try {
+      this.isConnecting = true;
       this.url = url; // Store the URL for reconnection
       this.ws = new WebSocket(url);
       
       this.ws.onopen = () => {
         console.log('WebSocket connected');
         this.reconnectAttempts = 0;
+        this.isConnecting = false;
         this.notifyListeners('open');
       };
       
@@ -31,16 +45,22 @@ class WebSocketService {
       
       this.ws.onclose = (event) => {
         console.log('WebSocket disconnected', event);
+        this.isConnecting = false;
         this.notifyListeners('close');
-        this.attemptReconnect();
+        // Only attempt to reconnect if it wasn't a clean close (code 1005) or normal close (code 1000)
+        if (event.code !== 1000 && event.code !== 1005) {
+          this.attemptReconnect();
+        }
       };
       
       this.ws.onerror = (error) => {
         console.error('WebSocket error:', error);
+        this.isConnecting = false;
         this.notifyListeners('error', error);
       };
     } catch (error) {
       console.error('Failed to create WebSocket connection:', error);
+      this.isConnecting = false;
     }
   }
   
@@ -57,6 +77,7 @@ class WebSocketService {
       }, this.reconnectInterval);
     } else {
       console.error('Max reconnection attempts reached');
+      this.reconnectAttempts = 0; // Reset for future attempts
     }
   }
   

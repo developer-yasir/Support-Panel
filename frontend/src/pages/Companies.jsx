@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
@@ -11,7 +10,6 @@ const Companies = () => {
   const [filters, setFilters] = useState({
     search: ''
   });
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchCompanies = async () => {
@@ -20,6 +18,7 @@ const Companies = () => {
         const response = await api.get('/companies');
         setCompanies(response.data);
       } catch (err) {
+        console.error('Failed to fetch companies:', err);
         setError('Failed to fetch companies');
       } finally {
         setLoading(false);
@@ -85,16 +84,16 @@ const Companies = () => {
                   <svg xmlns="http://www.w3.org/2000/svg" className="icon dashboard-header__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="28" height="28">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
-                  Organizations
+                  Companies
                 </h1>
-                <p className="dashboard-header__subtitle">Manage your customer organizations</p>
+                <p className="dashboard-header__subtitle">Manage your customer companies</p>
               </div>
               <div className="dashboard-header__actions">
                 <button className="btn btn--primary">
                   <svg xmlns="http://www.w3.org/2000/svg" className="icon dashboard-header__btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
-                  Add Organization
+                  Add Company
                 </button>
               </div>
             </div>
@@ -113,7 +112,7 @@ const Companies = () => {
                     value={filters.search}
                     onChange={handleFilterChange}
                     className="form-control"
-                    placeholder="Search organizations by name or domain..."
+                    placeholder="Search companies by name or domain..."
                   />
                 </div>
               </form>
@@ -136,7 +135,7 @@ const Companies = () => {
             {loading ? (
               <div className="tickets-table__loading">
                 <div className="spinner spinner--primary"></div>
-                <p>Loading organizations...</p>
+                <p>Loading companies...</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -149,9 +148,9 @@ const Companies = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                           </svg>
                         </div>
-                        <h3 className="empty-state__title">No organizations found</h3>
+                        <h3 className="empty-state__title">No companies found</h3>
                         <p className="empty-state__description">
-                          {filters.search ? 'Try adjusting your search' : 'No organizations available yet'}
+                          {filters.search ? 'Try adjusting your search' : 'No companies available yet'}
                         </p>
                         {filters.search ? (
                           <button className="btn btn--primary" onClick={() => setFilters({search: ''})}>
@@ -159,7 +158,7 @@ const Companies = () => {
                           </button>
                         ) : (
                           <button className="btn btn--primary">
-                            Add Organization
+                            Add Company
                           </button>
                         )}
                       </div>

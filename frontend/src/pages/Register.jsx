@@ -1,7 +1,31 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { api } from '../services/api';
+
+// Auto password generator function
+const generatePassword = () => {
+  const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+  const numbers = '0123456789';
+  const symbols = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+  
+  const allChars = uppercase + lowercase + numbers + symbols;
+  let password = '';
+  
+  // Ensure at least one character from each category
+  password += uppercase[Math.floor(Math.random() * uppercase.length)];
+  password += lowercase[Math.floor(Math.random() * lowercase.length)];
+  password += numbers[Math.floor(Math.random() * numbers.length)];
+  password += symbols[Math.floor(Math.random() * symbols.length)];
+  
+  // Fill the rest with random characters from all categories
+  for (let i = 4; i < 12; i++) {
+    password += allChars[Math.floor(Math.random() * allChars.length)];
+  }
+  
+  // Shuffle the password to randomize the order
+  return password.split('').sort(() => Math.random() - 0.5).join('');
+};
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -30,17 +54,20 @@ const Register = () => {
     setError('');
 
     try {
-      const response = await api.post('/auth/register', { name, email, password, role });
+      const response = await register(name, email, password, role);
       
-      if (response.data.userId) {
+      if (response.success) {
         // Registration successful, redirect to email verification
         setRegistrationSuccess(true);
         // Redirect to email verification page with email as parameter
         setTimeout(() => {
           navigate(`/verify-email?email=${encodeURIComponent(email)}`);
         }, 2000);
+      } else {
+        setError(response.message || 'Registration failed');
       }
     } catch (err) {
+      console.error('Registration error:', err);
       setError(err.response?.data?.message || 'Registration failed');
     } finally {
       setLoading(false);
@@ -232,13 +259,25 @@ const Register = () => {
               <div className="form-group">
                 <div className="password-header">
                   <label htmlFor="password" className="form-label">Password</label>
-                  <button 
-                    type="button" 
-                    className="password-toggle"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? 'Hide' : 'Show'}
-                  </button>
+                  <div className="password-controls">
+                    <button 
+                      type="button" 
+                      className="password-toggle"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? 'Hide' : 'Show'}
+                    </button>
+                    <button 
+                      type="button" 
+                      className="password-generator-btn"
+                      onClick={() => {
+                        const newPassword = generatePassword();
+                        setFormData({...formData, password: newPassword});
+                      }}
+                    >
+                      Generate
+                    </button>
+                  </div>
                 </div>
                 <div className="password-input-wrapper">
                   <input

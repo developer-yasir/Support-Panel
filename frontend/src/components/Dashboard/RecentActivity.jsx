@@ -16,7 +16,9 @@ const RecentActivity = ({ startDate, endDate }) => {
         
         const url = `/tickets/activity${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
         const response = await api.get(url);
-        setActivities(response.data);
+        // Ensure response.data is an array
+        const data = Array.isArray(response.data) ? response.data : [];
+        setActivities(data);
       } catch (error) {
         console.error('Error fetching recent activities:', error);
         // Fallback to mock data

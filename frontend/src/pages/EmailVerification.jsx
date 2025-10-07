@@ -60,6 +60,7 @@ const EmailVerification = () => {
       setResent(true);
       setTimeout(() => setResent(false), 5000);
     } catch (err) {
+      console.error('Failed to resend verification code:', err);
       setError('Failed to resend verification code');
     } finally {
       setResending(false);

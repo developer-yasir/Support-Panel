@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useDashboardSettings } from '../contexts/DashboardSettingsContext';
+import { useTheme } from '../contexts/ThemeContext';
 import Navbar from '../components/Navbar';
 
 const Settings = () => {
   const { dashboardSettings, updateSetting } = useDashboardSettings();
+  const { theme, toggleTheme, setThemeMode } = useTheme();
   const [appSettings, setAppSettings] = useState({
     notifications: true,
     emailAlerts: true,
-    darkMode: false,
     language: 'en'
   });
 
@@ -17,6 +18,15 @@ const Settings = () => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+  };
+
+  const handleThemeChange = (e) => {
+    const { checked } = e.target;
+    if (checked) {
+      setThemeMode('dark');
+    } else {
+      setThemeMode('light');
+    }
   };
 
   const handleDashboardSettingChange = (e) => {
@@ -112,8 +122,8 @@ const Settings = () => {
                         type="checkbox"
                         id="darkMode"
                         name="darkMode"
-                        checked={appSettings.darkMode}
-                        onChange={handleAppSettingChange}
+                        checked={theme === 'dark'}
+                        onChange={handleThemeChange}
                         className="settings__toggle-input"
                       />
                       <label htmlFor="darkMode" className="settings__toggle-label">
@@ -140,9 +150,6 @@ const Settings = () => {
                     className="form-control form-control--select"
                   >
                     <option value="en">English</option>
-                    <option value="es">Spanish</option>
-                    <option value="fr">French</option>
-                    <option value="de">German</option>
                   </select>
                   <p className="settings__help-text">Select your preferred language for the application</p>
                 </div>
@@ -165,200 +172,24 @@ const Settings = () => {
                 
                 <div className="form-group">
                   <div className="settings__toggle-group">
-                    <label htmlFor="showRecentActivity" className="form-label settings__label">
-                      Recent Activity
+                    <label htmlFor="showCompanyTickets" className="form-label settings__label">
+                      Company Tickets
                     </label>
                     <div className="settings__toggle">
                       <input
                         type="checkbox"
-                        id="showRecentActivity"
-                        name="showRecentActivity"
-                        checked={dashboardSettings.showRecentActivity}
+                        id="showCompanyTickets"
+                        name="showCompanyTickets"
+                        checked={dashboardSettings.showCompanyTickets}
                         onChange={handleDashboardSettingChange}
                         className="settings__toggle-input"
                       />
-                      <label htmlFor="showRecentActivity" className="settings__toggle-label">
+                      <label htmlFor="showCompanyTickets" className="settings__toggle-label">
                         <span className="settings__toggle-slider"></span>
                       </label>
                     </div>
                   </div>
-                  <p className="settings__help-text">Show the recent activity feed on the overview page</p>
-                </div>
-                
-                <div className="form-group">
-                  <div className="settings__toggle-group">
-                    <label htmlFor="showTicketCategories" className="form-label settings__label">
-                      Ticket Categories
-                    </label>
-                    <div className="settings__toggle">
-                      <input
-                        type="checkbox"
-                        id="showTicketCategories"
-                        name="showTicketCategories"
-                        checked={dashboardSettings.showTicketCategories}
-                        onChange={handleDashboardSettingChange}
-                        className="settings__toggle-input"
-                      />
-                      <label htmlFor="showTicketCategories" className="settings__toggle-label">
-                        <span className="settings__toggle-slider"></span>
-                      </label>
-                    </div>
-                  </div>
-                  <p className="settings__help-text">Show the ticket categories breakdown</p>
-                </div>
-                
-                <div className="form-group">
-                  <div className="settings__toggle-group">
-                    <label htmlFor="showAgentPerformance" className="form-label settings__label">
-                      Agent Performance
-                    </label>
-                    <div className="settings__toggle">
-                      <input
-                        type="checkbox"
-                        id="showAgentPerformance"
-                        name="showAgentPerformance"
-                        checked={dashboardSettings.showAgentPerformance}
-                        onChange={handleDashboardSettingChange}
-                        className="settings__toggle-input"
-                      />
-                      <label htmlFor="showAgentPerformance" className="settings__toggle-label">
-                        <span className="settings__toggle-slider"></span>
-                      </label>
-                    </div>
-                  </div>
-                  <p className="settings__help-text">Show agent performance metrics</p>
-                </div>
-                
-                <div className="form-group">
-                  <div className="settings__toggle-group">
-                    <label htmlFor="showCustomerSatisfaction" className="form-label settings__label">
-                      Customer Satisfaction
-                    </label>
-                    <div className="settings__toggle">
-                      <input
-                        type="checkbox"
-                        id="showCustomerSatisfaction"
-                        name="showCustomerSatisfaction"
-                        checked={dashboardSettings.showCustomerSatisfaction}
-                        onChange={handleDashboardSettingChange}
-                        className="settings__toggle-input"
-                      />
-                      <label htmlFor="showCustomerSatisfaction" className="settings__toggle-label">
-                        <span className="settings__toggle-slider"></span>
-                      </label>
-                    </div>
-                  </div>
-                  <p className="settings__help-text">Show customer satisfaction ratings</p>
-                </div>
-                
-                <div className="form-group">
-                  <div className="settings__toggle-group">
-                    <label htmlFor="showTicketAgeAnalysis" className="form-label settings__label">
-                      Ticket Age Analysis
-                    </label>
-                    <div className="settings__toggle">
-                      <input
-                        type="checkbox"
-                        id="showTicketAgeAnalysis"
-                        name="showTicketAgeAnalysis"
-                        checked={dashboardSettings.showTicketAgeAnalysis}
-                        onChange={handleDashboardSettingChange}
-                        className="settings__toggle-input"
-                      />
-                      <label htmlFor="showTicketAgeAnalysis" className="settings__toggle-label">
-                        <span className="settings__toggle-slider"></span>
-                      </label>
-                    </div>
-                  </div>
-                  <p className="settings__help-text">Show analysis of ticket age and resolution time</p>
-                </div>
-                
-                <div className="form-group">
-                  <div className="settings__toggle-group">
-                    <label htmlFor="showResponseTimeMetrics" className="form-label settings__label">
-                      Response Time Metrics
-                    </label>
-                    <div className="settings__toggle">
-                      <input
-                        type="checkbox"
-                        id="showResponseTimeMetrics"
-                        name="showResponseTimeMetrics"
-                        checked={dashboardSettings.showResponseTimeMetrics}
-                        onChange={handleDashboardSettingChange}
-                        className="settings__toggle-input"
-                      />
-                      <label htmlFor="showResponseTimeMetrics" className="settings__toggle-label">
-                        <span className="settings__toggle-slider"></span>
-                      </label>
-                    </div>
-                  </div>
-                  <p className="settings__help-text">Show response time metrics compared to targets</p>
-                </div>
-                
-                <div className="form-group">
-                  <div className="settings__toggle-group">
-                    <label htmlFor="showQuickActions" className="form-label settings__label">
-                      Quick Actions Panel
-                    </label>
-                    <div className="settings__toggle">
-                      <input
-                        type="checkbox"
-                        id="showQuickActions"
-                        name="showQuickActions"
-                        checked={dashboardSettings.showQuickActions}
-                        onChange={handleDashboardSettingChange}
-                        className="settings__toggle-input"
-                      />
-                      <label htmlFor="showQuickActions" className="settings__toggle-label">
-                        <span className="settings__toggle-slider"></span>
-                      </label>
-                    </div>
-                  </div>
-                  <p className="settings__help-text">Show quick action buttons for common operations</p>
-                </div>
-                
-                <div className="form-group">
-                  <div className="settings__toggle-group">
-                    <label htmlFor="showUpcomingBreaches" className="form-label settings__label">
-                      Upcoming SLA Breaches
-                    </label>
-                    <div className="settings__toggle">
-                      <input
-                        type="checkbox"
-                        id="showUpcomingBreaches"
-                        name="showUpcomingBreaches"
-                        checked={dashboardSettings.showUpcomingBreaches}
-                        onChange={handleDashboardSettingChange}
-                        className="settings__toggle-input"
-                      />
-                      <label htmlFor="showUpcomingBreaches" className="settings__toggle-label">
-                        <span className="settings__toggle-slider"></span>
-                      </label>
-                    </div>
-                  </div>
-                  <p className="settings__help-text">Show tickets approaching SLA deadline</p>
-                </div>
-                
-                <div className="form-group">
-                  <div className="settings__toggle-group">
-                    <label htmlFor="showDepartmentView" className="form-label settings__label">
-                      Department View
-                    </label>
-                    <div className="settings__toggle">
-                      <input
-                        type="checkbox"
-                        id="showDepartmentView"
-                        name="showDepartmentView"
-                        checked={dashboardSettings.showDepartmentView}
-                        onChange={handleDashboardSettingChange}
-                        className="settings__toggle-input"
-                      />
-                      <label htmlFor="showDepartmentView" className="settings__toggle-label">
-                        <span className="settings__toggle-slider"></span>
-                      </label>
-                    </div>
-                  </div>
-                  <p className="settings__help-text">Show department-specific ticket breakdown</p>
+                  <p className="settings__help-text">Show company-specific ticket breakdown</p>
                 </div>
               </div>
               

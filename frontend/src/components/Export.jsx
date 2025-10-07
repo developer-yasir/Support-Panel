@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import { saveAs } from 'file-saver';
 import './Export.css';
 
 const Export = ({ stats, startDate, endDate }) => {

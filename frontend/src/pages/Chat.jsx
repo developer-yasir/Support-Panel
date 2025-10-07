@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
+import WebSocketService from '../services/websocket';
+import StartNewChat from '../components/StartNewChat';
+import './Chat.css';
 
 const Chat = () => {
   const [conversations, setConversations] = useState([]);
@@ -11,52 +13,93 @@ const Chat = () => {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [userStatus, setUserStatus] = useState('online');
+  const [showStartNewChat, setShowStartNewChat] = useState(false);
   const messagesEndRef = useRef(null);
 
-  // Mock data for conversations
+  // Initialize WebSocket connection
   useEffect(() => {
-    const fetchConversations = async () => {
-      try {
-        setLoading(true);
-        // In a real app, this would come from an API
-        const mockConversations = [
-          { id: 1, customerName: 'John Doe', customerEmail: 'john.doe@example.com', lastMessage: 'Still having issues with the login', lastMessageTime: '2023-06-15T14:45:00Z', unread: 3, status: 'online', avatar: 'JD' },
-          { id: 2, customerName: 'Alice Johnson', customerEmail: 'alice.j@example.com', lastMessage: 'Thanks for your help!', lastMessageTime: '2023-06-15T13:20:00Z', unread: 0, status: 'online', avatar: 'AJ' },
-          { id: 3, customerName: 'Mike Brown', customerEmail: 'mike.b@example.com', lastMessage: 'Can you explain step 3 again?', lastMessageTime: '2023-06-15T12:15:00Z', unread: 1, status: 'away', avatar: 'MB' },
-          { id: 4, customerName: 'Sarah Davis', customerEmail: 'sarah.d@example.com', lastMessage: 'When will this be fixed?', lastMessageTime: '2023-06-15T11:30:00Z', unread: 0, status: 'offline', avatar: 'SD' },
-          { id: 5, customerName: 'Emma Wilson', customerEmail: 'emma.w@example.com', lastMessage: 'Works perfectly now, thank you!', lastMessageTime: '2023-06-15T10:45:00Z', unread: 0, status: 'online', avatar: 'EW' },
-        ];
-        setConversations(mockConversations);
-      } catch (err) {
-        setError('Failed to fetch conversations');
-      } finally {
-        setLoading(false);
+    // Get WebSocket URL from environment or construct it from backend URL
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+    const cleanBackendUrl = backendUrl.endsWith('/api') ? backendUrl.slice(0, -4) : backendUrl;
+    const wsProtocol = cleanBackendUrl.startsWith('https') ? 'wss' : 'ws';
+    
+    // Remove protocol from URL using string replacement instead of regex to avoid parsing issues
+    const cleanUrl = cleanBackendUrl.replace('https://', '').replace('http://', '');
+    const wsUrl = `${wsProtocol}://${cleanUrl}/ws`;
+
+    console.log('Connecting to WebSocket:', wsUrl); // Debug log
+    
+    // Connect to WebSocket
+    WebSocketService.connect(wsUrl);
+
+    // Add message listener
+    const handleMessage = (data) => {
+      // Handle incoming chat messages
+      if (data.type === 'chat_message') {
+        // Only add the message if it's for the current conversation
+        if (data.message.conversationId === activeConversation?.id) {
+          setMessages(prev => {
+            // Check if message already exists to prevent duplicates
+            const messageExists = prev.some(msg => msg.id === data.message.id);
+            if (!messageExists) {
+              // Ensure message has correct structure and that text is a string
+              const processedMessage = {
+                ...data.message,
+                text: typeof data.message.text === 'object' && data.message.text !== null ? 
+                      (data.message.text.text || JSON.stringify(data.message.text)) : 
+                      (data.message.text || '')
+              };
+              return [...prev, processedMessage];
+            }
+            return prev;
+          });
+        }
       }
     };
 
+    WebSocketService.addListener('message', handleMessage);
+
+    // Clean up on unmount
+    return () => {
+      WebSocketService.removeListener('message', handleMessage);
+      WebSocketService.disconnect();
+    };
+  }, [activeConversation?.id]);
+
+  // Fetch conversations from API
+  const fetchConversations = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/chat/conversations');
+      setConversations(response.data);
+    } catch (err) {
+      console.error('Failed to fetch conversations:', err);
+      setError('Failed to load conversations. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchConversations();
   }, []);
 
-  // Simulate loading messages for a conversation
+  // Load messages for a conversation
   useEffect(() => {
     if (activeConversation) {
       const fetchMessages = async () => {
-        setLoading(true);
-        // In a real app, this would come from an API
-        const mockMessages = [
-          { id: 1, sender: 'customer', text: 'Hi, I\'m having trouble with the login process.', timestamp: '2023-06-15T10:30:00Z', avatar: 'JD' },
-          { id: 2, sender: 'agent', text: 'Hello, I can help you with that. Can you please provide your email address?', timestamp: '2023-06-15T10:32:00Z', avatar: 'AJ' },
-          { id: 3, sender: 'customer', text: 'Sure, it\'s john.doe@example.com', timestamp: '2023-06-15T10:33:00Z', avatar: 'JD' },
-          { id: 4, sender: 'agent', text: 'Thank you. I see the issue. Your account is locked. I\'ll unlock it for you now.', timestamp: '2023-06-15T10:35:00Z', avatar: 'AJ' },
-          { id: 5, sender: 'customer', text: 'Great, thank you! I can log in now.', timestamp: '2023-06-15T10:37:00Z', avatar: 'JD' },
-          { id: 6, sender: 'agent', text: 'You\'re welcome. Is there anything else I can help you with today?', timestamp: '2023-06-15T10:38:00Z', avatar: 'AJ' },
-        ];
-        setMessages(mockMessages);
-        setLoading(false);
+        try {
+          const response = await api.get(`/chat/conversations/${activeConversation.id}/messages`);
+          setMessages(response.data);
+        } catch (err) {
+          console.error('Failed to fetch messages:', err);
+          setError('Failed to load messages. Please try again later.');
+        }
       };
 
       fetchMessages();
+    } else {
+      setMessages([]);
     }
   }, [activeConversation]);
 
@@ -74,23 +117,41 @@ const Chat = () => {
     if (!newMessage.trim() || !activeConversation) return;
 
     try {
-      // In a real app, this would make an API call
+      // Create a new message object
       const newMsg = {
-        id: messages.length + 1,
-        sender: 'agent',
+        conversationId: activeConversation.id,
         text: newMessage,
-        timestamp: new Date().toISOString(),
-        avatar: 'AJ' // Agent's avatar
+        senderType: 'agent', // Assuming this is an agent sending the message
       };
 
-      setMessages(prev => [...prev, newMsg]);
+      // Send the message via API
+      const response = await api.post('/chat/messages', newMsg);
+      
+      // Add the message to the local state
+      setMessages(prev => [...prev, response.data]);
       setNewMessage('');
+
+      // Broadcast the message via WebSocket to other users in the conversation
+      WebSocketService.sendMessage({
+        type: 'chat_message',
+        message: response.data
+      });
     } catch (err) {
-      setError('Failed to send message');
+      console.error('Failed to send message:', err);
+      setError('Failed to send message. Please try again later.');
     }
   };
 
   const selectConversation = (conversation) => {
+    setActiveConversation(conversation);
+  };
+
+  const handleNewConversation = (conversation) => {
+    // Close the start new chat modal
+    setShowStartNewChat(false);
+    // Fetch updated conversations list to include the new one
+    fetchConversations();
+    // Select the new conversation
     setActiveConversation(conversation);
   };
 
@@ -104,191 +165,220 @@ const Chat = () => {
   };
 
   return (
-    <div className="chat">
+    <div className="chat-page">
       <Navbar />
       <div className="dashboard__layout">
         <Sidebar />
-        <div className="container dashboard__container">
-          <div className="dashboard__header">
-            <div className="dashboard-header__content">
-              <div className="dashboard-header__title-wrapper">
-                <h1 className="dashboard-header__title">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="icon dashboard-header__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="28" height="28">
+        <div className="chat-container">
+          {/* Chat Header */}
+          <div className="chat-header">
+            <div className="chat-header-content">
+              <div className="chat-header-info">
+                <h1 className="chat-title">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="chat-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
                   Live Chat
                 </h1>
-                <p className="dashboard-header__subtitle">Manage customer conversations in real-time</p>
+                <p className="chat-subtitle">Real-time customer support</p>
               </div>
-              <div className="dashboard-header__actions">
-                <div className="chat-status">
-                  <div className="status-indicator">
-                    <div className={`status-indicator__dot ${getStatusColor(userStatus)}`}></div>
-                    <span className="status-indicator__text">
-                      {userStatus.charAt(0).toUpperCase() + userStatus.slice(1)}
-                    </span>
-                  </div>
+              <div className="chat-header-actions">
+                <button 
+                  className="btn btn--primary chat-header-action-btn"
+                  onClick={() => setShowStartNewChat(true)}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  New Chat
+                </button>
+                <div className="agent-status">
+                  <div className="status-indicator bg-success"></div>
+                  <span className="status-text">Online</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="chat__container">
-            {/* Conversations List */}
-            <div className="chat__sidebar">
-              <div className="chat__search">
-                <div className="form-group">
+          <div className="chat-content">
+            {/* Sidebar - Conversation List */}
+            <div className="chat-sidebar">
+              <div className="chat-search">
+                <div className="search-wrapper">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
                   <input
                     type="text"
-                    className="form-control"
+                    className="search-input"
                     placeholder="Search conversations..."
                   />
                 </div>
               </div>
               
-              <div className="chat__conversations-list">
+              <div className="conversations-list">
                 {error && (
-                  <div className="alert alert--danger">
-                    <div className="alert__icon">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
+                  <div className="error-message">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="error-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                     {error}
                   </div>
                 )}
                 
-                {loading ? (
-                  <div className="chat__loading">
-                    <div className="spinner spinner--primary"></div>
+                {loading && (
+                  <div className="loading-spinner">
+                    <div className="spinner"></div>
                     <p>Loading conversations...</p>
                   </div>
-                ) : (
-                  conversations.map(conversation => (
-                    <div 
-                      key={conversation.id}
-                      className={`chat__conversation ${activeConversation?.id === conversation.id ? 'chat__conversation--active' : ''}`}
-                      onClick={() => selectConversation(conversation)}
-                    >
-                      <div className="conversation__avatar">
-                        <div className="avatar">{conversation.avatar}</div>
-                        <div className={`status-indicator status-indicator--small ${getStatusColor(conversation.status)}`}></div>
+                )}
+                
+                {!loading && conversations.map(conversation => (
+                  <div 
+                    key={conversation.id}
+                    className={`conversation-item ${activeConversation?.id === conversation.id ? 'active' : ''}`}
+                    onClick={() => selectConversation(conversation)}
+                  >
+                    <div className="conversation-avatar">
+                      <div className="avatar-initial">{conversation.avatar || conversation.customerName?.charAt(0)?.toUpperCase() || 'U'}</div>
+                      <div className={`status-badge ${getStatusColor(conversation.status)}`}></div>
+                    </div>
+                    <div className="conversation-info">
+                      <div className="conversation-header">
+                        <h4 className="conversation-name">{conversation.customerName}</h4>
+                        <span className="conversation-time">
+                          {new Date(conversation.lastMessageTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
                       </div>
-                      <div className="conversation__info">
-                        <div className="conversation__header">
-                          <h4 className="conversation__name">{conversation.customerName}</h4>
-                          <span className="conversation__time">
-                            {new Date(conversation.lastMessageTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
-                        <div className="conversation__preview">
-                          <p className="conversation__last-message">{conversation.lastMessage}</p>
-                          {conversation.unread > 0 && (
-                            <span className="badge badge--danger conversation__unread">{conversation.unread}</span>
-                          )}
-                        </div>
+                      <div className="conversation-preview">
+                        <p className="conversation-message">{conversation.lastMessage}</p>
+                        {conversation.unread > 0 && (
+                          <span className="unread-count">{conversation.unread}</span>
+                        )}
                       </div>
                     </div>
-                  ))
-                )}
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* Chat Area */}
-            {activeConversation ? (
-              <div className="chat__main">
-                <div className="chat__header">
-                  <div className="chat__contact">
-                    <div className="contact__avatar">
-                      <div className="avatar">{activeConversation.avatar}</div>
-                      <div className={`status-indicator status-indicator--small ${getStatusColor(activeConversation.status)}`}></div>
-                    </div>
-                    <div className="contact__info">
-                      <h3 className="contact__name">{activeConversation.customerName}</h3>
-                      <p className="contact__email">{activeConversation.customerEmail}</p>
-                    </div>
-                  </div>
-                  <div className="chat__actions">
-                    <button className="btn btn--outline btn--small">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                      </svg>
-                    </button>
-                    <button className="btn btn--outline btn--small">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                      </svg>
-                    </button>
-                    <button className="btn btn--outline btn--small">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="chat__messages">
-                  {messages.map(message => (
-                    <div 
-                      key={message.id} 
-                      className={`message ${message.sender === 'agent' ? 'message--sent' : 'message--received'}`}
-                    >
-                      <div className="message__avatar">
-                        <div className="avatar">{message.avatar}</div>
+            {/* Main Chat Area */}
+            <div className="chat-main">
+              {activeConversation ? (
+                <>
+                  <div className="chat-room-header">
+                    <div className="chat-contact">
+                      <div className="contact-avatar">
+                        <div className="avatar-initial">{activeConversation.avatar || activeConversation.customerName?.charAt(0)?.toUpperCase() || 'U'}</div>
+                        <div className={`status-badge ${getStatusColor(activeConversation.status)}`}></div>
                       </div>
-                      <div className="message__content">
-                        <div className="message__text">
-                          {message.text}
-                        </div>
-                        <div className="message__time">
-                          {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </div>
+                      <div className="contact-info">
+                        <h3 className="contact-name">{activeConversation.customerName}</h3>
+                        <p className="contact-status">{activeConversation.customerEmail}</p>
                       </div>
                     </div>
-                  ))}
-                  <div ref={messagesEndRef} />
-                </div>
-
-                <form className="chat__input-form" onSubmit={handleSendMessage}>
-                  <div className="chat__input-wrapper">
-                    <input
-                      type="text"
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      className="form-control chat__input"
-                      placeholder="Type your message..."
-                      disabled={loading}
-                    />
-                    <button 
-                      type="submit" 
-                      className="btn btn--primary chat__send-btn"
-                      disabled={!newMessage.trim() || loading}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                      </svg>
-                    </button>
+                    <div className="chat-actions">
+                      <button className="action-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="action-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                        </svg>
+                      </button>
+                      <button className="action-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="action-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
-                </form>
-              </div>
-            ) : (
-              <div className="chat__empty-state">
-                <div className="empty-state">
-                  <div className="empty-state__icon-wrapper">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="empty-state__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="48" height="48">
+
+                  <div className="messages-container">
+                    {messages.map(message => (
+                      <div 
+                        key={message.id} 
+                        className={`message-bubble ${message.sender?.type === 'agent' ? 'sent' : 'received'}`}
+                      >
+                        {message.sender?.type !== 'agent' && (
+                          <div className="message-avatar">
+                            <div className="avatar-initial">{message.avatar || message.senderName?.charAt(0)?.toUpperCase() || 'U'}</div>
+                          </div>
+                        )}
+                        <div className="message-content">
+                          <div className="message-text">{typeof message.text === 'object' && message.text !== null ? (message.text?.text || JSON.stringify(message.text)) : (message.text || '')}</div>
+                          <div className="message-time">
+                            {message.timestamp ? new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                          </div>
+                        </div>
+                        {message.sender?.type === 'agent' && (
+                          <div className="message-avatar">
+                            <div className="avatar-initial">{message.avatar || message.senderName?.charAt(0)?.toUpperCase() || 'A'}</div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    <div ref={messagesEndRef} />
+                  </div>
+
+                  <form className="message-input-form" onSubmit={handleSendMessage}>
+                    <div className="input-wrapper">
+                      <input
+                        type="text"
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        className="message-input"
+                        placeholder="Type your message..."
+                        disabled={loading}
+                      />
+                      <button 
+                        type="submit" 
+                        className="send-button"
+                        disabled={!newMessage.trim() || loading}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="send-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </div>
+                  </form>
+                </>
+              ) : (
+                <div className="empty-chat-state">
+                  <div className="empty-chat-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                     </svg>
                   </div>
-                  <h3 className="empty-state__title">No conversation selected</h3>
-                  <p className="empty-state__description">
-                    Select a conversation from the list to start chatting with a customer
+                  <h3 className="empty-chat-title">Select a conversation</h3>
+                  <p className="empty-chat-description">
+                    Choose a conversation from the list to start chatting with a customer
                   </p>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>
+      {/* Modal for starting a new chat */}
+      {showStartNewChat && (
+        <div className="modal">
+          <div className="modal__overlay" onClick={() => setShowStartNewChat(false)}></div>
+          <div className="modal__content start-chat-modal">
+            <div className="modal__header">
+              <h3 className="modal__title">Start New Chat</h3>
+              <button 
+                className="modal__close"
+                onClick={() => setShowStartNewChat(false)}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="icon modal__close-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="modal__body">
+              <StartNewChat onNewConversation={handleNewConversation} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
