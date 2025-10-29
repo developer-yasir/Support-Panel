@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
-import FilterSidebar from '../components/FilterSidebar';
-import '../styles/freshdesk-styles.css';
+import FilterSidebar from "../components/FilterSidebar";
+import '../pages/FreshdeskStyles.css';
 
 const Tickets = () => {
   const [tickets, setTickets] = useState([]);
@@ -172,7 +172,6 @@ const Tickets = () => {
   }, [tickets, searchTerm, statusFilter, priorityFilter, sortOption, currentView, filters]);
 
   const handleTicketClick = useCallback((ticket) => {
-    // Navigate to the ticket detail page instead of opening a drawer
     navigate(`/ticket/${ticket.ticketId || ticket._id || ticket.id}`);
   }, [navigate]);
 
@@ -247,63 +246,50 @@ const Tickets = () => {
   return (
     <div className="freshdesk-dashboard">
       <Navbar />
+      {/* Header Bar */}
+      <div className="freshdesk-header">
+        <div className="freshdesk-header-content">
+          <div className="freshdesk-search-container">
+            <input
+              type="text"
+              placeholder="Search tickets, subjects, requesters..."
+              className="freshdesk-search-input"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <svg className="freshdesk-search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          
+          <div className="freshdesk-header-actions">
+            <select 
+              className="freshdesk-filter-select tickets-page-priority-select-filter"
+              value={sortOption}
+              onChange={(e) => setSortOption(e.target.value)}
+            >
+              <option value="latest">Latest</option>
+              <option value="oldest">Oldest</option>
+              <option value="priority">Priority</option>
+              <option value="due_date">Due Date</option>
+            </select>
+            
+            <button 
+              className="freshdesk-new-ticket-btn"
+              onClick={() => navigate('/ticket/new')}
+            >
+              <svg className="freshdesk-btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              New Ticket
+            </button>
+          </div>
+        </div>
+      </div>
       <div className="freshdesk-layout">
         <Sidebar />
         
-        {/* Header Bar */}
-        <div className="freshdesk-header">
-          <div className="freshdesk-header-content">
-            <div className="freshdesk-search-container">
-              <input
-                type="text"
-                placeholder="Search tickets, subjects, requesters..."
-                className="freshdesk-search-input"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              <svg className="freshdesk-search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
-            
-            <div className="freshdesk-header-actions">
-              <select 
-                className="freshdesk-filter-select"
-                value={sortOption}
-                onChange={(e) => setSortOption(e.target.value)}
-              >
-                <option value="latest">Latest</option>
-                <option value="oldest">Oldest</option>
-                <option value="priority">Priority</option>
-                <option value="due_date">Due Date</option>
-              </select>
-              
-              <button 
-                className="freshdesk-new-ticket-btn"
-                onClick={() => navigate('/ticket/new')}
-              >
-                <svg className="freshdesk-btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                New Ticket
-              </button>
-            </div>
-          </div>
-        </div>
-        
         <div className="freshdesk-content">
-          {/* Filter Sidebar */}
-          <FilterSidebar 
-            onFilterChange={useCallback((filters) => {
-              // Update the filtering logic based on the new filters
-              setFilters(filters);
-            }, [setFilters])}
-            onClearFilters={useCallback(() => {
-              // Reset the filters state
-              setFilters({});
-            }, [setFilters])}
-          />
-          
           {/* Center Ticket List */}
           <div className="freshdesk-main-content">
             <div className="freshdesk-ticket-list-header">
@@ -431,6 +417,17 @@ const Tickets = () => {
               )}
             </div>
           </div>
+          {/* Filter Sidebar - on the right */}
+          <FilterSidebar 
+            onFilterChange={useCallback((filters) => {
+              // Update the filtering logic based on the new filters
+              setFilters(filters);
+            }, [setFilters])}
+            onClearFilters={useCallback(() => {
+              // Reset the filters state
+              setFilters({});
+            }, [setFilters])}
+          />
         </div>
         
 

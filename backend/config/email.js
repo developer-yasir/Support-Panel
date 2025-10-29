@@ -4,17 +4,20 @@ const createTransporter = () => {
   console.log('Creating transporter with config:', {
     host: process.env.EMAIL_HOST || 'smtp.gmail.com',
     port: process.env.EMAIL_PORT || 587,
-    secure: process.env.EMAIL_SECURE === 'true' || false,
+    secure: process.env.EMAIL_SECURE === 'true', // true for 465, false for other ports
     user: process.env.EMAIL_USER ? '[REDACTED]' : 'NOT SET'
   });
   
+  // Determine if using secure connection
+  const isSecure = parseInt(process.env.EMAIL_PORT) === 465;
+  
   return nodemailer.createTransport({
     host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-    port: process.env.EMAIL_PORT || 587,
-    secure: process.env.EMAIL_SECURE === 'true' || false,
+    port: parseInt(process.env.EMAIL_PORT) || 587,
+    secure: isSecure, // true for 465, false for other ports
     auth: {
-      user: process.env.EMAIL_USER || 'yasirraeesit@gmail.com',
-      pass: process.env.EMAIL_PASS || 'luqp cvlv vfun ovfq'
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
     }
   });
 };
@@ -61,6 +64,128 @@ const sendVerificationEmail = async (email, name, verificationCode) => {
   }
 };
 
+// Additional email functions for support panel
+
+const sendTicketNotification = async (userEmail, userName, ticket) => {
+  const transporter = createTransporter();
+  
+  const mailOptions = {
+    from: process.env.EMAIL_FROM || '"Support Panel" <no-reply@supportpanel.com>',
+    to: userEmail,
+    subject: `New Support Ticket Created - ${ticket.ticketId}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #3b82f6;">New Support Ticket Created</h2>
+        <p>Hello ${userName},</p>
+        <p>A new support ticket has been created with the following details:</p>
+        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+          <tr style="background-color: #f9fafb;">
+            <td style="padding: 12px; border: 1px solid #e5e7eb; font-weight: bold;">Ticket ID</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb;">${ticket.ticketId || 'N/A'}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; font-weight: bold;">Title</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb;">${ticket.title || 'N/A'}</td>
+          </tr>
+          <tr style="background-color: #f9fafb;">
+            <td style="padding: 12px; border: 1px solid #e5e7eb; font-weight: bold;">Priority</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; color: ${getPriorityColor(ticket.priority || 'medium')}">${(ticket.priority || 'medium').toUpperCase()}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; font-weight: bold;">Status</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb;">${(ticket.status || 'open').toUpperCase()}</td>
+          </tr>
+          <tr style="background-color: #f9fafb;">
+            <td style="padding: 12px; border: 1px solid #e5e7eb; font-weight: bold;">Created Date</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb;">${new Date(ticket.createdAt || Date.now()).toLocaleString()}</td>
+          </tr>
+        </table>
+        <p><a href="${process.env.FRONTEND_URL}/ticket/${ticket._id}" style="background-color: #3b82f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Ticket</a></p>
+        <p>If you didn't create this ticket, please contact our support team.</p>
+        <hr style="margin: 30px 0;">
+        <p style="font-size: 12px; color: #6b7280;">
+          This email was sent by Support Panel. If you have any questions, please contact our support team.
+        </p>
+      </div>
+    `
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Ticket notification email sent: %s', info.messageId);
+    return info;
+  } catch (error) {
+    console.error('Error sending ticket notification email:', error);
+    throw error;
+  }
+};
+
+const sendTicketUpdateNotification = async (userEmail, userName, ticket) => {
+  const transporter = createTransporter();
+  
+  const mailOptions = {
+    from: process.env.EMAIL_FROM || '"Support Panel" <no-reply@supportpanel.com>',
+    to: userEmail,
+    subject: `Ticket Update - ${ticket.ticketId}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #3b82f6;">Ticket Update</h2>
+        <p>Hello ${userName},</p>
+        <p>The following ticket has been updated:</p>
+        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+          <tr style="background-color: #f9fafb;">
+            <td style="padding: 12px; border: 1px solid #e5e7eb; font-weight: bold;">Ticket ID</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb;">${ticket.ticketId}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; font-weight: bold;">Title</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb;">${ticket.title}</td>
+          </tr>
+          <tr style="background-color: #f9fafb;">
+            <td style="padding: 12px; border: 1px solid #e5e7eb; font-weight: bold;">Status</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb;">${(ticket.status || 'open').toUpperCase()}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; font-weight: bold;">Priority</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; color: ${getPriorityColor(ticket.priority || 'medium')}">${(ticket.priority || 'medium').toUpperCase()}</td>
+          </tr>
+          <tr style="background-color: #f9fafb;">
+            <td style="padding: 12px; border: 1px solid #e5e7eb; font-weight: bold;">Last Updated</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb;">${new Date(ticket.updatedAt || Date.now()).toLocaleString()}</td>
+          </tr>
+        </table>
+        <p><a href="${process.env.FRONTEND_URL}/ticket/${ticket._id}" style="background-color: #3b82f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Updated Ticket</a></p>
+        <p>If you have any questions about this update, please contact our support team.</p>
+        <hr style="margin: 30px 0;">
+        <p style="font-size: 12px; color: #6b7280;">
+          This email was sent by Support Panel. If you have any questions, please contact our support team.
+        </p>
+      </div>
+    `
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Ticket update notification email sent: %s', info.messageId);
+    return info;
+  } catch (error) {
+    console.error('Error sending ticket update notification email:', error);
+    throw error;
+  }
+};
+
+const getPriorityColor = (priority) => {
+  switch (priority.toLowerCase()) {
+    case 'low': return '#10b981'; // green
+    case 'medium': return '#f59e0b'; // amber
+    case 'high': return '#f97316'; // orange
+    case 'urgent': return '#ef4444'; // red
+    default: return '#6b7280'; // gray
+  }
+};
+
 module.exports = {
-  sendVerificationEmail
+  sendVerificationEmail,
+  sendTicketNotification,
+  sendTicketUpdateNotification
 };

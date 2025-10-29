@@ -5,8 +5,8 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Redirect to the overview page which serves as our main dashboard
-    navigate('/overview');
+    // Redirect to the tickets page which serves as our main dashboard
+    navigate('/tickets');
   }, [navigate]);
 
   return (

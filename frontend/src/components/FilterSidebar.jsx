@@ -228,7 +228,7 @@ const FilterSidebar = ({
         <label className="freshdesk-filter-label">Search fields</label>
         <input
           type="text"
-          className="freshdesk-filter-input"
+          className="freshdesk-filter-input sp-filter-search-fields"
           value={searchFields}
           onChange={(e) => setSearchFields(e.target.value)}
           placeholder="Search tickets..."
@@ -240,7 +240,7 @@ const FilterSidebar = ({
         <label className="freshdesk-filter-label">Created</label>
         <input
           type="date"
-          className="freshdesk-filter-input"
+          className="freshdesk-filter-input sp-filter-created-date"
           value={createdDate}
           onChange={(e) => setCreatedDate(e.target.value)}
         />
@@ -250,7 +250,7 @@ const FilterSidebar = ({
         <label className="freshdesk-filter-label">Closed at</label>
         <input
           type="date"
-          className="freshdesk-filter-input"
+          className="freshdesk-filter-input sp-filter-closed-date"
           value={closedDate}
           onChange={(e) => setClosedDate(e.target.value)}
         />
@@ -260,7 +260,7 @@ const FilterSidebar = ({
         <label className="freshdesk-filter-label">Resolved at</label>
         <input
           type="date"
-          className="freshdesk-filter-input"
+          className="freshdesk-filter-input sp-filter-resolved-date"
           value={resolvedDate}
           onChange={(e) => setResolvedDate(e.target.value)}
         />
@@ -270,7 +270,7 @@ const FilterSidebar = ({
         <label className="freshdesk-filter-label">Resolution due by</label>
         <input
           type="date"
-          className="freshdesk-filter-input"
+          className="freshdesk-filter-input sp-filter-resolution-due-date"
           value={resolutionDueDate}
           onChange={(e) => setResolutionDueDate(e.target.value)}
         />
@@ -280,7 +280,7 @@ const FilterSidebar = ({
         <label className="freshdesk-filter-label">First response due by</label>
         <input
           type="date"
-          className="freshdesk-filter-input"
+          className="freshdesk-filter-input sp-filter-first-response-due-date"
           value={firstResponseDueDate}
           onChange={(e) => setFirstResponseDueDate(e.target.value)}
         />
@@ -290,7 +290,7 @@ const FilterSidebar = ({
       <div className="freshdesk-filter-group">
         <label className="freshdesk-filter-label">Status</label>
         <select
-          className="freshdesk-filter-select"
+          className="freshdesk-filter-select sp-filter-status-select"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
         >
@@ -306,7 +306,7 @@ const FilterSidebar = ({
       <div className="freshdesk-filter-group">
         <label className="freshdesk-filter-label">Priority</label>
         <select
-          className="freshdesk-filter-select"
+          className="freshdesk-filter-select sp-filter-priority-select"
           value={priorityFilter}
           onChange={(e) => setPriorityFilter(e.target.value)}
         >
@@ -322,7 +322,7 @@ const FilterSidebar = ({
       <div className="freshdesk-filter-group">
         <label className="freshdesk-filter-label">Type</label>
         <select
-          className="freshdesk-filter-select"
+          className="freshdesk-filter-select sp-filter-type-select"
           value={typesFilter}
           onChange={(e) => setTypesFilter(e.target.value)}
         >
@@ -338,7 +338,7 @@ const FilterSidebar = ({
       <div className="freshdesk-filter-group">
         <label className="freshdesk-filter-label">Source</label>
         <select
-          className="freshdesk-filter-select"
+          className="freshdesk-filter-select sp-filter-source-select"
           value={sourcesFilter}
           onChange={(e) => setSourcesFilter(e.target.value)}
         >
@@ -355,7 +355,7 @@ const FilterSidebar = ({
         <label className="freshdesk-filter-label">Tags</label>
         <input
           type="text"
-          className="freshdesk-filter-input"
+          className="freshdesk-filter-input sp-filter-tags-input"
           value={tagsFilter}
           onChange={(e) => setTagsFilter(e.target.value)}
           placeholder="Enter tags..."
@@ -367,7 +367,7 @@ const FilterSidebar = ({
         <label className="freshdesk-filter-label">Company</label>
         <input
           type="text"
-          className="freshdesk-filter-input"
+          className="freshdesk-filter-input sp-filter-company-input"
           value={companiesFilter}
           onChange={(e) => setCompaniesFilter(e.target.value)}
           placeholder="Enter company..."
@@ -379,7 +379,7 @@ const FilterSidebar = ({
         <label className="freshdesk-filter-label">Contact</label>
         <input
           type="text"
-          className="freshdesk-filter-input"
+          className="freshdesk-filter-input sp-filter-contact-input"
           value={contactsFilter}
           onChange={(e) => setContactsFilter(e.target.value)}
           placeholder="Enter contact..."
@@ -391,7 +391,7 @@ const FilterSidebar = ({
         <label className="freshdesk-filter-label">Country</label>
         <input
           type="text"
-          className="freshdesk-filter-input"
+          className="freshdesk-filter-input sp-filter-country-input"
           value={countryFilter}
           onChange={(e) => setCountryFilter(e.target.value)}
           placeholder="Enter country..."
@@ -403,7 +403,7 @@ const FilterSidebar = ({
         <label className="freshdesk-filter-label">Category</label>
         <input
           type="text"
-          className="freshdesk-filter-input"
+          className="freshdesk-filter-input sp-filter-category-input"
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
           placeholder="Enter category..."

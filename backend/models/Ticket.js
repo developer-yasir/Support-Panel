@@ -47,8 +47,8 @@ const ticketSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Pre-save middleware to generate sequential ticket ID
-ticketSchema.pre('save', async function(next) {
+// Pre-validate middleware to generate sequential ticket ID
+ticketSchema.pre('validate', async function(next) {
   if (this.isNew && !this.ticketId) {
     try {
       // Try to increment the counter
@@ -78,6 +78,13 @@ ticketSchema.pre('save', async function(next) {
     }
   }
   next();
+});
+
+// Add a post-save validation to ensure ticketId exists
+ticketSchema.post('save', function(doc) {
+  if (!doc.ticketId) {
+    console.error('ERROR: Ticket saved without ticketId. This should not happen!');
+  }
 });
 
 module.exports = mongoose.model('Ticket', ticketSchema);

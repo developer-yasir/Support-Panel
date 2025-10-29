@@ -6,7 +6,8 @@ const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAuth();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
+  const [openSubmenu, setOpenSubmenu] = useState(null);
 
   useEffect(() => {
     // Add/remove collapsed class to body for layout adjustments
@@ -23,11 +24,11 @@ const Sidebar = () => {
 
   const menuItems = [
     {
-      id: 'dashboard',
-      title: 'Dashboard',
+      id: 'overview',
+      title: 'Overview',
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" className="icon sidebar__menu-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
         </svg>
       ),
       path: '/overview'
@@ -42,6 +43,7 @@ const Sidebar = () => {
       ),
       path: '/tickets'
     },
+
     {
       id: 'agents',
       title: 'Agents',
@@ -96,8 +98,19 @@ const Sidebar = () => {
   ];
 
   const isActive = (path) => {
-    // Simple path comparison - since dashboard now points to /overview, just check for exact match
+    // Check for exact match, handle special case for root path which should highlight tickets
+    if (path === '/tickets' && (location.pathname === '/' || location.pathname === '/tickets' || location.pathname === '/dashboard')) {
+      return true;
+    }
     return location.pathname === path;
+  };
+
+  const isSubmenuActive = (submenu) => {
+    return submenu.some(item => location.pathname === item.path);
+  };
+
+  const toggleSubmenu = (id) => {
+    setOpenSubmenu(openSubmenu === id ? null : id);
   };
 
   return (
@@ -122,15 +135,57 @@ const Sidebar = () => {
       
       <div className="sidebar__menu">
         {menuItems.map((item) => (
-          <button
-            key={item.id}
-            className={`sidebar__menu-item ${isActive(item.path) ? 'sidebar__menu-item--active' : ''}`}
-            onClick={() => navigate(item.path)}
-            title={isCollapsed ? item.title : ''}
-          >
-            {item.icon}
-            {!isCollapsed && <span className="sidebar__menu-text">{item.title}</span>}
-          </button>
+          <div key={item.id}>
+            {item.submenu ? (
+              <div>
+                <button
+                  className={`sidebar__menu-item ${isSubmenuActive(item.submenu) ? 'sidebar__menu-item--active' : ''}`}
+                  onClick={() => !isCollapsed && toggleSubmenu(item.id)}
+                  title={isCollapsed ? item.title : ''}
+                >
+                  {item.icon}
+                  {!isCollapsed && <span className="sidebar__menu-text">{item.title}</span>}
+                  {!isCollapsed && (
+                    <svg 
+                      className={`ml-auto transition-transform ${openSubmenu === item.id ? 'rotate-180' : ''}`}
+                      xmlns="http://www.w3.org/2000/svg" 
+                      width="16" 
+                      height="16" 
+                      fill="none" 
+                      viewBox="0 0 24 24" 
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  )}
+                </button>
+                {!isCollapsed && openSubmenu === item.id && (
+                  <div className="sidebar__submenu">
+                    {item.submenu.map((subItem) => (
+                      <button
+                        key={subItem.id}
+                        className={`sidebar__menu-item sidebar__submenu-item ${isActive(subItem.path) ? 'sidebar__menu-item--active' : ''}`}
+                        onClick={() => navigate(subItem.path)}
+                        title={subItem.title}
+                      >
+                        <span className="sidebar__menu-text">{subItem.title}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <button
+                key={item.id}
+                className={`sidebar__menu-item ${isActive(item.path) ? 'sidebar__menu-item--active' : ''}`}
+                onClick={() => navigate(item.path)}
+                title={isCollapsed ? item.title : ''}
+              >
+                {item.icon}
+                {!isCollapsed && <span className="sidebar__menu-text">{item.title}</span>}
+              </button>
+            )}
+          </div>
         ))}
         <div style={{ marginTop: 'auto' }}>
           <button

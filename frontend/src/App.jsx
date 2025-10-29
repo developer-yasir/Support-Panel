@@ -3,7 +3,6 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
-import TicketDetail from './pages/TicketDetail';
 import CreateTicket from './pages/CreateTicket';
 import EmailVerification from './pages/EmailVerification';
 import Settings from './pages/Settings';
@@ -16,6 +15,7 @@ import Chat from './pages/Chat';
 import Tickets from './pages/Tickets';
 import Agents from './pages/Agents';
 import ProtectedRoute from './components/ProtectedRoute';
+import Design1 from './pages/ticketDetailDesigns/Design1';
 
 // Removed KnowledgeBase and Community imports
 
@@ -30,7 +30,7 @@ function App() {
             <Route path="/verify-email" element={<EmailVerification />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>
-                <Overview />
+                <Tickets />
               </ProtectedRoute>
             } />
             <Route path="/overview" element={
@@ -84,9 +84,9 @@ function App() {
                 <CreateTicket />
               </ProtectedRoute>
             } />
-            <Route path="/ticket/:id" element={
+            <Route path="/ticket/:ticketId" element={
               <ProtectedRoute>
-                <TicketDetail />
+                <Design1 />
               </ProtectedRoute>
             } />
             <Route path="/testing-new-tickets" element={
@@ -94,9 +94,10 @@ function App() {
                 <Tickets />
               </ProtectedRoute>
             } />
+
             <Route path="/" element={
               <ProtectedRoute>
-                <Overview />
+                <Tickets />
               </ProtectedRoute>
             } />
           </Routes>

@@ -33,9 +33,9 @@ export const AuthProvider = ({ children }) => {
     initializeAuth();
   }, []);
 
-  const login = async (email, password) => {
+  const login = async (email, password, rememberMe = false) => {
     try {
-      const response = await api.post('/auth/login', { email, password });
+      const response = await api.post('/auth/login', { email, password, rememberMe });
       const { token, ...userData } = response.data;
       
       localStorage.setItem('token', token);
@@ -49,31 +49,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const guestLogin = async () => {
-    try {
-      // Generate a random username for guest users
-      const randomAdjective = ['Cool', 'Swift', 'Bright', 'Quick', 'Clever', 'Smart', 'Wise', 'Bold', 'Keen', 'Sharp', 'Noble', 'Calm', 'Brave', 'Sly', 'Witty', 'Savvy', 'Sage', 'Lively', 'Cheerful', 'Gentle'];
-      const randomNoun = ['Tiger', 'Eagle', 'Falcon', 'Panther', 'Wolf', 'Lion', 'Hawk', 'Bear', 'Fox', 'Deer', 'Owl', 'Horse', 'Shark', 'Dolphin', 'Eagle', 'Raven', 'Sparrow', 'Lynx', 'Cougar', 'Heron'];
-      
-      const randomAdjectiveChoice = randomAdjective[Math.floor(Math.random() * randomAdjective.length)];
-      const randomNounChoice = randomNoun[Math.floor(Math.random() * randomNoun.length)];
-      const randomNumber = Math.floor(1000 + Math.random() * 9000); // 4-digit number
-      
-      const randomUsername = `${randomAdjectiveChoice}${randomNounChoice}${randomNumber}`;
-      
-      const response = await api.post('/auth/guest-login', { name: randomUsername });
-      const { token, ...userData } = response.data;
-      
-      localStorage.setItem('token', token);
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      setUser(userData);
-      
-      return { success: true };
-    } catch (error) {
-      console.error('Guest login error:', error);
-      return { success: false, message: 'Guest login failed' };
-    }
-  };
+
 
   const register = async (name, email, password, role) => {
     try {
@@ -109,7 +85,6 @@ export const AuthProvider = ({ children }) => {
   const value = {
     user,
     login,
-    guestLogin,
     register,
     logout,
     updateProfile,

@@ -37,7 +37,7 @@ const Navbar = () => {
     <nav className="navbar">
       <div className="navbar__container">
         <div className="navbar__left">
-          <div className="navbar__brand" onClick={() => navigate('/overview')} style={{display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer'}}>
+          <div className="navbar__brand" onClick={() => navigate('/tickets')} style={{display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer'}}>
             <div className="logo-container" style={{width: '40px', height: '40px'}}>
               <div className="rotating-border" style={{width: '44px', height: '44px', borderRadius: '12px'}}></div>
               <div className="logo-aura" style={{width: '50px', height: '50px'}}></div>

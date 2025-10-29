@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDashboardSettings } from '../contexts/DashboardSettingsContext';
 import Navbar from '../components/Navbar';
@@ -6,11 +6,18 @@ import Sidebar from '../components/Sidebar';
 import Export from '../components/Export';
 import Charts from '../components/Charts';
 import RecentActivity from '../components/Dashboard/RecentActivity';
-import AgentPerformance from '../components/Dashboard/AgentPerformance';
+
 import CompanyTickets from '../components/Dashboard/CompanyTickets';
 
 import { api } from '../services/api';
 import WebSocketService from '../services/websocket';
+
+// Memoize child components to prevent unnecessary re-renders
+const MemoizedCharts = memo(Charts);
+const MemoizedRecentActivity = memo(RecentActivity);
+
+const MemoizedCompanyTickets = memo(CompanyTickets);
+const MemoizedExport = memo(Export);
 
 const Overview = () => {
   const { dashboardSettings, updateSetting } = useDashboardSettings();
@@ -18,7 +25,9 @@ const Overview = () => {
     totalTickets: 0,
     openTickets: 0,
     inProgressTickets: 0,
-    highPriorityTickets: 0
+    highPriorityTickets: 0,
+    resolvedTickets: 0,
+    avgResolutionTime: 0
   });
   const [loading, setStatsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -37,8 +46,8 @@ const Overview = () => {
   const statsTimeoutRef = useRef(null);
   const navigate = useNavigate();
 
-  // Function to calculate date ranges
-  const getDateRange = (range) => {
+  // Memoize functions to prevent recreation on every render
+  const getDateRange = useCallback((range) => {
     const today = new Date();
     let start = new Date();
     
@@ -67,23 +76,23 @@ const Overview = () => {
       startDate: start.toISOString().split('T')[0],
       endDate: today.toISOString().split('T')[0]
     };
-  };
+  }, []);
 
-  // Function to apply date range filter
-  const applyDateRange = (range) => {
+  // Memoize function to apply date range
+  const applyDateRange = useCallback((range) => {
     const { startDate, endDate } = getDateRange(range);
     setStartDate(startDate);
     setEndDate(endDate);
-  };
+  }, [getDateRange]);
 
-  // Function to clear date filters
-  const clearFilters = () => {
+  // Memoize function to clear filters
+  const clearFilters = useCallback(() => {
     setStartDate('');
     setEndDate('');
-  };
+  }, []);
 
-  // Function to fetch stats with date filters
-  const fetchStats = async () => {
+  // Memoize the stats fetching function
+  const fetchStats = useCallback(async () => {
     try {
       setStatsLoading(true);
       const queryParams = new URLSearchParams();
@@ -96,12 +105,13 @@ const Overview = () => {
       
       const newStats = response.data;
       
-      // Compare new stats with current stats to determine if update is needed
+      // Use ref values for comparison to avoid dependency on stats state
+      const currentStats = previousStats.current;
       const shouldUpdate = 
-        stats.totalTickets !== newStats.totalTickets ||
-        stats.openTickets !== newStats.openTickets ||
-        stats.inProgressTickets !== newStats.inProgressTickets ||
-        stats.highPriorityTickets !== newStats.highPriorityTickets;
+        currentStats.totalTickets !== newStats.totalTickets ||
+        currentStats.openTickets !== newStats.openTickets ||
+        currentStats.inProgressTickets !== newStats.inProgressTickets ||
+        currentStats.highPriorityTickets !== newStats.highPriorityTickets;
       
       if (shouldUpdate) {
         // Check for new tickets
@@ -124,7 +134,7 @@ const Overview = () => {
     } finally {
       setStatsLoading(false);
     }
-  };
+  }, [startDate, endDate]);
 
   const debouncedFetchStats = useCallback(() => {
     // Clear any existing timeout to debounce the request
@@ -136,7 +146,7 @@ const Overview = () => {
     statsTimeoutRef.current = setTimeout(() => {
       fetchStats();
     }, 1000);
-  }, [fetchStats, startDate, endDate]);
+  }, [fetchStats]);
 
   // Set page title
   useEffect(() => {
@@ -197,31 +207,7 @@ const Overview = () => {
       WebSocketService.removeListener('close', handleWebSocketClose);
       WebSocketService.disconnect();
     };
-  }, [startDate, endDate, debouncedFetchStats]);
-
-  // Set up WebSocket connection separately to avoid reconnection on filter changes
-  useEffect(() => {
-    // Set up WebSocket connection
-    // Make sure to connect to the correct WebSocket endpoint (strip /api if present)
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
-    const cleanBackendUrl = backendUrl.endsWith('/api') ? backendUrl.slice(0, -4) : backendUrl;
-    const wsProtocol = cleanBackendUrl.startsWith('https') ? 'wss' : 'ws';
-    const wsUrl = `${wsProtocol}://${cleanBackendUrl.replace(/^https?:\/\/|^http?:\/\//, '')}/ws`;
-    
-    console.log('Connecting to WebSocket (separate effect):', wsUrl); // Debug log
-    WebSocketService.connect(wsUrl);
-    WebSocketService.addListener('message', handleWebSocketMessage);
-    WebSocketService.addListener('error', handleWebSocketError);
-    WebSocketService.addListener('close', handleWebSocketClose);
-    
-    // Clean up WebSocket on component unmount
-    return () => {
-      WebSocketService.removeListener('message', handleWebSocketMessage);
-      WebSocketService.removeListener('error', handleWebSocketError);
-      WebSocketService.removeListener('close', handleWebSocketClose);
-      WebSocketService.disconnect();
-    };
-  }, [handleWebSocketMessage, handleWebSocketError, handleWebSocketClose]); // Only re-run if callbacks change
+  }, [startDate, endDate, debouncedFetchStats, handleWebSocketMessage, handleWebSocketError, handleWebSocketClose]);
 
   // Reset new tickets count when filters change
   useEffect(() => {
@@ -229,11 +215,89 @@ const Overview = () => {
     lastTotalTickets.current = 0;
   }, [startDate, endDate]);
 
+  // Memoize toggle function
+  const handleSettingToggle = useCallback((settingName) => {
+    updateSetting(settingName, !dashboardSettings[settingName]);
+  }, [dashboardSettings, updateSetting]);
 
+  // Memoize the settings panel
+  const settingsPanel = useMemo(() => (
+    showSettingsPanel && (
+      <div className="dashboard__settings-panel card">
+        <div className="card__body">
+          <div className="dashboard-settings__header">
+            <h3 className="card__title">Dashboard Settings</h3>
+            <button 
+              className="btn btn--secondary btn--small"
+              onClick={() => setShowSettingsPanel(false)}
+            >
+              Close
+            </button>
+          </div>
+          
+          <div className="dashboard-settings__grid">
+            <div className="dashboard-setting-item">
+              <div className="settings__toggle-group">
+                <label htmlFor="showRecentActivity" className="form-label settings__label">
+                  Recent Activity
+                </label>
+                <div className="settings__toggle">
+                  <input
+                    type="checkbox"
+                    id="showRecentActivity"
+                    name="showRecentActivity"
+                    checked={dashboardSettings.showRecentActivity}
+                    onChange={() => handleSettingToggle('showRecentActivity')}
+                    className="settings__toggle-input"
+                  />
+                  <label htmlFor="showRecentActivity" className="settings__toggle-label">
+                    <span className="settings__toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+            
 
+            
+            <div className="dashboard-setting-item">
+              <div className="settings__toggle-group">
+                <label htmlFor="showTicketAgeAnalysis" className="form-label settings__label">
+                  Ticket Age Analysis
+                </label>
+                <div className="settings__toggle">
+                  <input
+                    type="checkbox"
+                    id="showTicketAgeAnalysis"
+                    name="showTicketAgeAnalysis"
+                    checked={dashboardSettings.showTicketAgeAnalysis}
+                    onChange={() => handleSettingToggle('showTicketAgeAnalysis')}
+                    className="settings__toggle-input"
+                  />
+                  <label htmlFor="showTicketAgeAnalysis" className="settings__toggle-label">
+                    <span className="settings__toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+            
+            {/* Removed less essential components for cleaner UI */}
+          </div>
+        </div>
+      </div>
+    )
+  ), [showSettingsPanel, dashboardSettings, handleSettingToggle]);
 
-
-
+  // Memoize the notification badge
+  const notificationBadge = useMemo(() => (
+    newTicketsCount > 0 && (
+      <div className="notification-badge notification-badge--pulse">
+        <svg xmlns="http://www.w3.org/2000/svg" className="icon notification-badge__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+        </svg>
+        <span className="notification-badge__count">{newTicketsCount} new</span>
+      </div>
+    )
+  ), [newTicketsCount]);
 
   return (
     <div className="dashboard">
@@ -251,27 +315,24 @@ const Overview = () => {
               {error}
             </div>
           )}
+          
+          {/* Modern Dashboard Header with better layout */}
           <div className="dashboard__header">
             <div className="dashboard-header__content">
-              <div className="dashboard-header__title-wrapper">
-                <h1 className="dashboard-header__title">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="icon dashboard-header__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="28" height="28">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                  </svg>
-                  Dashboard
-                </h1>
-                <p className="dashboard-header__subtitle">Welcome to your support panel</p>
+              <div className="dashboard-header__info">
+                <div className="dashboard-header__title-wrapper">
+                  <h1 className="dashboard-header__title">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="icon dashboard-header__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="28" height="28">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                    Dashboard Overview
+                  </h1>
+                  <p className="dashboard-header__subtitle">Welcome back! Here's what's happening today</p>
+                </div>
               </div>
               <div className="dashboard-header__actions">
                 {/* Notification badge for new tickets */}
-                {newTicketsCount > 0 && (
-                  <div className="notification-badge">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="icon notification-badge__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                    </svg>
-                    <span className="notification-badge__count">{newTicketsCount} new</span>
-                  </div>
-                )}
+                {notificationBadge}
                 <button
                   className="btn btn--outline btn--small"
                   onClick={() => setShowSettingsPanel(!showSettingsPanel)}
@@ -282,7 +343,7 @@ const Overview = () => {
                   </svg>
                   Settings
                 </button>
-                <Export stats={stats} startDate={startDate} endDate={endDate} />
+                <MemoizedExport stats={stats} startDate={startDate} endDate={endDate} />
                 <button
                   onClick={() => navigate('/ticket/new')}
                   className="btn btn--primary dashboard-header__create-btn"
@@ -297,112 +358,17 @@ const Overview = () => {
           </div>
 
           {/* Dashboard Settings Panel */}
-          {showSettingsPanel && (
-            <div className="dashboard__settings-panel card">
-              <div className="card__body">
-                <div className="dashboard-settings__header">
-                  <h3 className="card__title">Dashboard Settings</h3>
-                  <button 
-                    className="btn btn--secondary btn--small"
-                    onClick={() => setShowSettingsPanel(false)}
-                  >
-                    Close
-                  </button>
-                </div>
-                
-                <div className="dashboard-settings__grid">
-                  <div className="dashboard-setting-item">
-                    <div className="settings__toggle-group">
-                      <label htmlFor="showRecentActivity" className="form-label settings__label">
-                        Recent Activity
-                      </label>
-                      <div className="settings__toggle">
-                        <input
-                          type="checkbox"
-                          id="showRecentActivity"
-                          name="showRecentActivity"
-                          checked={dashboardSettings.showRecentActivity}
-                          onChange={() => handleSettingToggle('showRecentActivity')}
-                          className="settings__toggle-input"
-                        />
-                        <label htmlFor="showRecentActivity" className="settings__toggle-label">
-                          <span className="settings__toggle-slider"></span>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                  
+          {settingsPanel}
 
-                  
-                  <div className="dashboard-setting-item">
-                    <div className="settings__toggle-group">
-                      <label htmlFor="showAgentPerformance" className="form-label settings__label">
-                        Agent Performance
-                      </label>
-                      <div className="settings__toggle">
-                        <input
-                          type="checkbox"
-                          id="showAgentPerformance"
-                          name="showAgentPerformance"
-                          checked={dashboardSettings.showAgentPerformance}
-                          onChange={() => handleSettingToggle('showAgentPerformance')}
-                          className="settings__toggle-input"
-                        />
-                        <label htmlFor="showAgentPerformance" className="settings__toggle-label">
-                          <span className="settings__toggle-slider"></span>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                  
-
-                  
-                  <div className="dashboard-setting-item">
-                    <div className="settings__toggle-group">
-                      <label htmlFor="showTicketAgeAnalysis" className="form-label settings__label">
-                        Ticket Age Analysis
-                      </label>
-                      <div className="settings__toggle">
-                        <input
-                          type="checkbox"
-                          id="showTicketAgeAnalysis"
-                          name="showTicketAgeAnalysis"
-                          checked={dashboardSettings.showTicketAgeAnalysis}
-                          onChange={() => handleSettingToggle('showTicketAgeAnalysis')}
-                          className="settings__toggle-input"
-                        />
-                        <label htmlFor="showTicketAgeAnalysis" className="settings__toggle-label">
-                          <span className="settings__toggle-slider"></span>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Removed less essential components for cleaner UI */}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Date Range Filters */}
+          {/* Modern Date Range Filters */}
           <div className="card date-filters-card">
             <div className="card__body">
               <div className="date-filters__header">
-                <h3 className="date-filters__title">Date Range Filters</h3>
+                <h3 className="date-filters__title">Filter by Date</h3>
                 <div className="date-filters__actions">
                   <button 
-                    className="btn btn--secondary btn--small date-filters__clear-btn"
+                    className="btn btn--outline btn--small date-filters__clear-btn"
                     onClick={clearFilters}
-                  >
-                    Clear Filters
-                  </button>
-                  <button
-                    className="btn btn--outline btn--small"
-                    onClick={() => {
-                      // Clear date filters
-                      setStartDate('');
-                      setEndDate('');
-                    }}
                   >
                     Clear Filters
                   </button>
@@ -411,25 +377,25 @@ const Overview = () => {
               
               <div className="date-filters__quick-filters">
                 <button 
-                  className="btn btn--outline btn--small date-filters__quick-btn"
+                  className="btn btn--outline date-filters__quick-btn"
                   onClick={() => applyDateRange('today')}
                 >
                   Today
                 </button>
                 <button 
-                  className="btn btn--outline btn--small date-filters__quick-btn"
+                  className="btn btn--outline date-filters__quick-btn"
                   onClick={() => applyDateRange('week')}
                 >
                   This Week
                 </button>
                 <button 
-                  className="btn btn--outline btn--small date-filters__quick-btn"
+                  className="btn btn--outline date-filters__quick-btn"
                   onClick={() => applyDateRange('month')}
                 >
                   This Month
                 </button>
                 <button 
-                  className="btn btn--outline btn--small date-filters__quick-btn"
+                  className="btn btn--outline date-filters__quick-btn"
                   onClick={() => applyDateRange('quarter')}
                 >
                   Last Quarter
@@ -468,10 +434,10 @@ const Overview = () => {
             </div>
           </div>
 
-          {/* Stats */}
+          {/* Modern Stats Grid */}
           <div className="dashboard__stats-grid">
             <div className="dashboard__stats-col">
-              <div className="stats-card stats-card--total">
+              <div className="stats-card stats-card--total stats-card--elevated">
                 <div className="stats-card__content">
                   <div className="stats-card__header">
                     <div className="stats-card__info">
@@ -496,8 +462,9 @@ const Overview = () => {
                 </div>
               </div>
             </div>
+            
             <div className="dashboard__stats-col">
-              <div className="stats-card stats-card--open">
+              <div className="stats-card stats-card--open stats-card--elevated">
                 <div className="stats-card__content">
                   <div className="stats-card__header">
                     <div className="stats-card__info">
@@ -522,8 +489,9 @@ const Overview = () => {
                 </div>
               </div>
             </div>
+            
             <div className="dashboard__stats-col">
-              <div className="stats-card stats-card--progress">
+              <div className="stats-card stats-card--progress stats-card--elevated">
                 <div className="stats-card__content">
                   <div className="stats-card__header">
                     <div className="stats-card__info">
@@ -548,8 +516,9 @@ const Overview = () => {
                 </div>
               </div>
             </div>
+            
             <div className="dashboard__stats-col">
-              <div className="stats-card stats-card--priority">
+              <div className="stats-card stats-card--priority stats-card--elevated">
                 <div className="stats-card__content">
                   <div className="stats-card__header">
                     <div className="stats-card__info">
@@ -576,26 +545,84 @@ const Overview = () => {
             </div>
           </div>
 
-          {/* Static Dashboard Widgets (Non-Resizable) */}
+          {/* New section for additional metrics */}
+          <div className="dashboard__secondary-stats-grid">
+            <div className="stats-card stats-card--elevated stats-card--sm">
+              <div className="stats-card__content">
+                <div className="stats-card__header">
+                  <div className="stats-card__info">
+                    <p className="stats-card__label">Resolved Today</p>
+                    <h4 className="stats-card__value">{loading ? 'Loading...' : stats.resolvedTickets || 0}</h4>
+                  </div>
+                  <div className="stats-card__icon-wrapper stats-card__icon-wrapper--success">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="icon stats-card__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="stats-card__footer">
+                  <div className="stats-card__trend">↑ 12% from last week</div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="stats-card stats-card--elevated stats-card--sm">
+              <div className="stats-card__content">
+                <div className="stats-card__header">
+                  <div className="stats-card__info">
+                    <p className="stats-card__label">Avg. Resolution Time</p>
+                    <h4 className="stats-card__value">{loading ? 'Loading...' : `${stats.avgResolutionTime || 0}h`}</h4>
+                  </div>
+                  <div className="stats-card__icon-wrapper stats-card__icon-wrapper--info">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="icon stats-card__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="stats-card__footer">
+                  <div className="stats-card__trend">↓ 8% from last month</div>
+                </div>
+              </div>
+            </div>
+            
+
+            
+
+          </div>
+
+          {/* Dashboard Widgets Grid */}
           <div className="dashboard-widgets-grid">
             <div className="dashboard-widget dashboard-widget--full-width">
               <div className="dashboard-widget__header">
                 <h3 className="dashboard-widget__title">Data Visualization</h3>
               </div>
               <div className="dashboard-widget__body">
-                <Charts startDate={startDate} endDate={endDate} />
+                <MemoizedCharts startDate={startDate} endDate={endDate} />
               </div>
             </div>
             
             <div className="dashboard-widgets-row">
               <div className="dashboard-widget dashboard-widget--half-width">
                 <div className="dashboard-widget__header">
+                  <h3 className="dashboard-widget__title">Recent Activity</h3>
+                </div>
+                <div className="dashboard-widget__body">
+                  <MemoizedRecentActivity startDate={startDate} endDate={endDate} />
+                </div>
+              </div>
+              
+              <div className="dashboard-widget dashboard-widget--half-width">
+                <div className="dashboard-widget__header">
                   <h3 className="dashboard-widget__title">Company Ticket Overview</h3>
                 </div>
                 <div className="dashboard-widget__body">
-                  <CompanyTickets startDate={startDate} endDate={endDate} />
+                  <MemoizedCompanyTickets startDate={startDate} endDate={endDate} />
                 </div>
               </div>
+            </div>
+            
+            <div className="dashboard-widgets-row">
+
             </div>
           </div>
 

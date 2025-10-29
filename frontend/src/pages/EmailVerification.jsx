@@ -188,7 +188,7 @@ const EmailVerification = () => {
               <button
                 onClick={handleResendCode}
                 disabled={resending}
-                className="btn btn--outline btn--block guest-login-btn"
+                className="btn btn--outline btn--block resend-btn"
               >
                 {resending ? (
                   'Resending...'

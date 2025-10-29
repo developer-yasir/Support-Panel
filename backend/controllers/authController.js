@@ -4,9 +4,10 @@ const config = require('../config/config');
 const { sendVerificationEmail } = require('../config/email');
 
 // Generate JWT token
-const generateToken = (userId) => {
+const generateToken = (userId, rememberMe = false) => {
+  const expiresIn = rememberMe ? config.jwtRememberMeExpiration : config.jwtExpiration;
   return jwt.sign({ id: userId }, config.jwtSecret, {
-    expiresIn: config.jwtExpiration
+    expiresIn: expiresIn
   });
 };
 
@@ -92,8 +93,8 @@ exports.verifyEmail = async (req, res) => {
     user.emailVerificationExpires = undefined;
     await user.save();
 
-    // Generate token
-    const token = generateToken(user._id);
+    // Generate token (default to no remember me for registration)
+    const token = generateToken(user._id, false);
 
     res.json({
       _id: user._id,
@@ -111,7 +112,7 @@ exports.verifyEmail = async (req, res) => {
 // Login user
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, rememberMe = false } = req.body;
 
     // Find user by email
     const user = await User.findOne({ email });
@@ -134,8 +135,8 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Generate token
-    const token = generateToken(user._id);
+    // Generate token with remember me option
+    const token = generateToken(user._id, rememberMe);
 
     res.json({
       _id: user._id,
@@ -150,46 +151,7 @@ exports.login = async (req, res) => {
   }
 };
 
-// Guest login
-exports.guestLogin = async (req, res) => {
-  try {
-    // Check if guest user exists, if not create one
-    let user = await User.findOne({ email: 'guest@example.com' });
-    
-    if (!user) {
-      // Create guest user
-      user = new User({
-        name: 'Guest User',
-        email: 'guest@example.com',
-        password: 'guest123',
-        role: 'support_agent',
-        isEmailVerified: true // Guest users don't need email verification
-      });
-      
-      await user.save();
-    } else {
-      // Ensure existing guest user has email verified
-      if (!user.isEmailVerified) {
-        user.isEmailVerified = true;
-        await user.save();
-      }
-    }
-    
-    // Generate token
-    const token = generateToken(user._id);
 
-    res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      isEmailVerified: user.isEmailVerified,
-      token
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
 
 // Logout user
 exports.logout = (req, res) => {

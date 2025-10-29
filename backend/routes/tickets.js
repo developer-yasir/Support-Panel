@@ -14,7 +14,6 @@ const {
   getAgentPerformance,
   getRecentActivity,
   getCompanyTicketStats,
-  getCustomerSatisfaction,
   getDepartmentStats,
   getResponseTimeMetrics,
   getTicketAgeAnalysis,
@@ -51,8 +50,7 @@ router.route('/activity')
 router.route('/company-stats')
   .get(getCompanyTicketStats);
 
-router.route('/satisfaction')
-  .get(getCustomerSatisfaction);
+
 
 router.route('/departments')
   .get(getDepartmentStats);

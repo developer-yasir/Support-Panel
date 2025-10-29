@@ -1,5 +1,6 @@
 const Ticket = require('../models/Ticket');
 const User = require('../models/User');
+const { sendTicketNotification } = require('../config/email');
 
 // Create a new ticket
 exports.createTicket = async (req, res) => {
@@ -20,6 +21,29 @@ exports.createTicket = async (req, res) => {
     // Populate references
     await ticket.populate('createdBy', 'name email');
     await ticket.populate('assignedTo', 'name email');
+    
+    // Send email notification for new ticket
+    try {
+      if (ticket.createdBy.email) {
+        await sendTicketNotification(
+          ticket.createdBy.email,
+          ticket.createdBy.name,
+          ticket
+        );
+      }
+      
+      // Also notify the assigned user if different from creator
+      if (ticket.assignedTo && ticket.assignedTo.email && ticket.assignedTo._id.toString() !== ticket.createdBy._id.toString()) {
+        await sendTicketNotification(
+          ticket.assignedTo.email,
+          ticket.assignedTo.name,
+          ticket
+        );
+      }
+    } catch (emailError) {
+      // If email fails, log the error but still return success
+      console.error('Error sending ticket notification email:', emailError);
+    }
     
     // Broadcast new ticket to WebSocket clients
     if (global.broadcastNewTicket) {
@@ -58,15 +82,19 @@ exports.getTickets = async (req, res) => {
 // Get ticket by ID
 exports.getTicketById = async (req, res) => {
   try {
-    // First try to find by the custom ticketId, then by MongoDB _id for backward compatibility
-    const ticket = await Ticket.findOne({
-      $or: [
-        { ticketId: req.params.id },
-        { _id: req.params.id }
-      ]
-    })
+    let ticket;
+    
+    // First try to find by custom ticketId
+    ticket = await Ticket.findOne({ ticketId: req.params.id })
       .populate('createdBy', 'name email')
       .populate('assignedTo', 'name email');
+    
+    // If not found by ticketId and the param looks like an ObjectId, try to find by _id
+    if (!ticket && /^[0-9a-fA-F]{24}$/.test(req.params.id)) {
+      ticket = await Ticket.findById(req.params.id)
+        .populate('createdBy', 'name email')
+        .populate('assignedTo', 'name email');
+    }
     
     if (!ticket) {
       return res.status(404).json({ message: 'Ticket not found' });
@@ -84,13 +112,15 @@ exports.updateTicket = async (req, res) => {
     console.log('Update ticket request:', req.params.id, req.body);
     const { title, description, priority, status, assignedTo, dueDate, escalationLevel } = req.body;
     
-    // Find ticket by custom ticketId or MongoDB _id
-    const ticket = await Ticket.findOne({
-      $or: [
-        { ticketId: req.params.id },
-        { _id: req.params.id }
-      ]
-    });
+    let ticket;
+    
+    // Find ticket by custom ticketId
+    ticket = await Ticket.findOne({ ticketId: req.params.id });
+    
+    // If not found by ticketId and the param looks like an ObjectId, try to find by _id
+    if (!ticket && /^[0-9a-fA-F]{24}$/.test(req.params.id)) {
+      ticket = await Ticket.findById(req.params.id);
+    }
     
     if (!ticket) {
       console.log('Ticket not found:', req.params.id);
@@ -130,6 +160,29 @@ exports.updateTicket = async (req, res) => {
     
     console.log('Ticket updated successfully:', ticket._id);
     
+    // Send email notification for ticket update
+    try {
+      if (ticket.createdBy.email) {
+        await sendTicketUpdateNotification(
+          ticket.createdBy.email,
+          ticket.createdBy.name,
+          ticket
+        );
+      }
+      
+      // Also notify the assigned user if different from creator
+      if (ticket.assignedTo && ticket.assignedTo.email && ticket.assignedTo._id.toString() !== ticket.createdBy._id.toString()) {
+        await sendTicketUpdateNotification(
+          ticket.assignedTo.email,
+          ticket.assignedTo.name,
+          ticket
+        );
+      }
+    } catch (emailError) {
+      // If email fails, log the error but still return success
+      console.error('Error sending ticket update notification email:', emailError);
+    }
+    
     // Broadcast ticket update to WebSocket clients
     if (global.broadcastTicketUpdate) {
       global.broadcastTicketUpdate(ticket);
@@ -145,13 +198,15 @@ exports.updateTicket = async (req, res) => {
 // Delete ticket
 exports.deleteTicket = async (req, res) => {
   try {
-    // Find ticket by custom ticketId or MongoDB _id
-    const ticket = await Ticket.findOne({
-      $or: [
-        { ticketId: req.params.id },
-        { _id: req.params.id }
-      ]
-    });
+    let ticket;
+    
+    // Find ticket by custom ticketId
+    ticket = await Ticket.findOne({ ticketId: req.params.id });
+    
+    // If not found by ticketId and the param looks like an ObjectId, try to find by _id
+    if (!ticket && /^[0-9a-fA-F]{24}$/.test(req.params.id)) {
+      ticket = await Ticket.findById(req.params.id);
+    }
     
     if (!ticket) {
       return res.status(404).json({ message: 'Ticket not found' });
@@ -178,13 +233,15 @@ exports.deleteTicket = async (req, res) => {
 // Escalate ticket
 exports.escalateTicket = async (req, res) => {
   try {
-    // Find ticket by custom ticketId or MongoDB _id
-    const ticket = await Ticket.findOne({
-      $or: [
-        { ticketId: req.params.id },
-        { _id: req.params.id }
-      ]
-    });
+    let ticket;
+    
+    // Find ticket by custom ticketId
+    ticket = await Ticket.findOne({ ticketId: req.params.id });
+    
+    // If not found by ticketId and the param looks like an ObjectId, try to find by _id
+    if (!ticket && /^[0-9a-fA-F]{24}$/.test(req.params.id)) {
+      ticket = await Ticket.findById(req.params.id);
+    }
     
     if (!ticket) {
       return res.status(404).json({ message: 'Ticket not found' });
@@ -483,12 +540,9 @@ exports.getAgentPerformance = async (req, res) => {
       }
     ]);
 
-    // Calculate satisfaction for each agent (if feedback data exists)
-    // For now, we'll add mock satisfaction data as it requires additional feedback collection
     const result = agentPerformance.map(agent => ({
       ...agent,
       avgResolutionTime: agent.avgResolutionTime ? agent.avgResolutionTime.toFixed(1) + 'h' : 'N/A',
-      satisfaction: Math.min(5, Math.max(3, Math.round(4 + Math.random() * 0.5) * 10) / 10) // Random value between 3-5 for demo
     }));
 
     res.json(result);
@@ -578,29 +632,6 @@ exports.getCompanyTicketStats = async (req, res) => {
   }
 };
 
-// Get customer satisfaction metrics
-exports.getCustomerSatisfaction = async (req, res) => {
-  try {
-    // In a real application, this would pull from actual customer feedback/satisfaction surveys
-    // For now, we'll return mock data
-    const satisfactionData = {
-      overallSatisfaction: Math.round(4 + Math.random() * 0.5 * 10) / 10, // Random value between 4.0-4.5
-      satisfactionTrends: [
-        { date: '2023-01-01', rating: 4.1 },
-        { date: '2023-02-01', rating: 4.3 },
-        { date: '2023-03-01', rating: 4.2 },
-        { date: '2023-04-01', rating: 4.4 },
-        { date: '2023-05-01', rating: 4.5 },
-      ],
-      ticketResolutionSatisfaction: Math.round(4 + Math.random() * 0.5 * 10) / 10, // Random value
-      supportInteractionSatisfaction: Math.round(4 + Math.random() * 0.5 * 10) / 10, // Random value
-    };
-
-    res.json(satisfactionData);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
 
 // Get department statistics
 exports.getDepartmentStats = async (req, res) => {

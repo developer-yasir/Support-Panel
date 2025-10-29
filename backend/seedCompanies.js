@@ -21,7 +21,7 @@ const seedCompanies = async () => {
     console.log('Connected to MongoDB');
 
     // Clear existing users (optional - remove this if you want to keep existing data)
-    // await User.deleteMany({});
+    await User.deleteMany({});
 
     // Create sample users for each company
     for (const company of companies) {

@@ -8,12 +8,12 @@ const Login = () => {
     password: ''
   });
   const [loading, setLoading] = useState(false);
-  const [guestLoading, setGuestLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [emailToVerify, setEmailToVerify] = useState('');
 
-  const { login, guestLogin } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const { email, password } = formData;
@@ -28,10 +28,10 @@ const Login = () => {
     setError('');
 
     try {
-      const response = await login(email, password);
+      const response = await login(email, password, rememberMe);
       
       if (response.success) {
-        navigate('/overview');
+        navigate('/tickets');
       } else {
         // Check if the error is related to email verification
         if (response.message.includes('verify your email')) {
@@ -52,20 +52,7 @@ const Login = () => {
     }
   };
 
-  const onGuestLogin = async () => {
-    setGuestLoading(true);
-    setError('');
 
-    const response = await guestLogin();
-    
-    if (response.success) {
-      navigate('/overview');
-    } else {
-      setError(response.message);
-    }
-    
-    setGuestLoading(false);
-  };
 
   // If we need to redirect to email verification
   if (emailToVerify) {
@@ -267,6 +254,19 @@ const Login = () => {
                 <a href="#" className="forgot-password">Forgot password?</a>
               </div>
               
+              <div className="form-group form-group--checkbox">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="checkbox-input"
+                  />
+                  <span className="checkbox-custom"></span>
+                  Remember me
+                </label>
+              </div>
+              
               <div className="form-group">
                 <button
                   type="submit"
@@ -282,28 +282,7 @@ const Login = () => {
               </div>
             </form>
             
-            <div className="divider">
-              <span className="divider-text">or continue with</span>
-            </div>
-            
-            <div className="form-group">
-              <button
-                onClick={onGuestLogin}
-                disabled={guestLoading}
-                className="btn btn--outline btn--block guest-login-btn"
-              >
-                {guestLoading ? (
-                  'Logging in as Guest...'
-                ) : (
-                  <>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="guest-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                    Continue as Guest
-                  </>
-                )}
-              </button>
-            </div>
+
             
             <div className="login-footer">
               <p>Don't have an account? <Link to="/register" className="register-link">Register</Link></p>
