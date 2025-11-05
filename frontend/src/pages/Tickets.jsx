@@ -18,6 +18,7 @@ const Tickets = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [currentView, setCurrentView] = useState('all');
   const [filters, setFilters] = useState({});
+  const [agents, setAgents] = useState([]);
   const navigate = useNavigate();
 
 
@@ -40,6 +41,22 @@ const Tickets = () => {
     };
 
     fetchTickets();
+  }, []);
+
+  useEffect(() => {
+    const fetchAgents = async () => {
+      try {
+        // Fetch agents from the backend API
+        const response = await api.get('/users?role=support_agent');
+        setAgents(response.data);
+      } catch (error) {
+        console.error('Error fetching agents:', error);
+        // Fallback to an empty array if API fails
+        setAgents([]);
+      }
+    };
+
+    fetchAgents();
   }, []);
 
   useEffect(() => {
@@ -241,6 +258,93 @@ const Tickets = () => {
     return `${Math.floor(diffInSeconds / 86400)} days ago`;
   };
 
+  const handleAssignChange = async (ticket, newAssigneeId) => {
+    try {
+      // Prepare the update payload
+      const updateData = {
+        assignedTo: newAssigneeId !== 'unassigned' ? newAssigneeId : null
+      };
+
+      // Make API call to update the ticket
+      const response = await api.put(`/tickets/${ticket._id}`, updateData);
+
+      // Update the local state with the new ticket data
+      setTickets(prevTickets => 
+        prevTickets.map(t => 
+          t._id === ticket._id ? response.data : t
+        )
+      );
+      
+      // Also update filtered tickets
+      setFilteredTickets(prevFiltered => 
+        prevFiltered.map(t => 
+          t._id === ticket._id ? response.data : t
+        )
+      );
+      
+      console.log(`Ticket ${ticket.ticketId} assigned to ${newAssigneeId}`);
+    } catch (error) {
+      console.error('Error assigning ticket:', error);
+      // Optionally show an error message to the user
+    }
+  };
+
+  const handleStatusChange = async (ticket, newStatus) => {
+    try {
+      // Make API call to update the ticket
+      const response = await api.put(`/tickets/${ticket._id}`, {
+        status: newStatus
+      });
+
+      // Update the local state with the new ticket data
+      setTickets(prevTickets => 
+        prevTickets.map(t => 
+          t._id === ticket._id ? response.data : t
+        )
+      );
+      
+      // Also update filtered tickets
+      setFilteredTickets(prevFiltered => 
+        prevFiltered.map(t => 
+          t._id === ticket._id ? response.data : t
+        )
+      );
+      
+      console.log(`Ticket ${ticket.ticketId} status updated to ${newStatus}`);
+    } catch (error) {
+      console.error('Error updating ticket status:', error);
+      // Optionally show an error message to the user
+    }
+  };
+
+  const handlePriorityChange = async (ticket, newPriority) => {
+    try {
+      // Make API call to update the ticket
+      const response = await api.put(`/tickets/${ticket._id}`, {
+        priority: newPriority
+      });
+
+      // Update the local state with the new ticket data
+      setTickets(prevTickets => 
+        prevTickets.map(t => 
+          t._id === ticket._id ? response.data : t
+        )
+      );
+      
+      // Also update filtered tickets
+      setFilteredTickets(prevFiltered => 
+        prevFiltered.map(t => 
+          t._id === ticket._id ? response.data : t
+        )
+      );
+      
+      console.log(`Ticket ${ticket.ticketId} priority updated to ${newPriority}`);
+    } catch (error) {
+      console.error('Error updating ticket priority:', error);
+      // Optionally show an error message to the user
+    }
+  };
+
 
 
   return (
@@ -348,10 +452,8 @@ const Tickets = () => {
                       <th width="100">Ticket ID</th>
                       <th>Subject</th>
                       <th>Requester</th>
-                      <th>Assigned To</th>
-                      <th>Status</th>
-                      <th>Priority</th>
                       <th>Last Updated</th>
+                      <th>Details</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -388,27 +490,55 @@ const Tickets = () => {
                           </div>
                         </td>
                         <td>
-                          {ticket.assignedTo ? (
-                            <div className="freshdesk-agent-badge">
-                              <span className="freshdesk-agent-avatar">{ticket.assignedTo.name?.charAt(0) || 'A'}</span>
-                              <span className="freshdesk-agent-name">{ticket.assignedTo.name}</span>
-                            </div>
-                          ) : (
-                            <span className="freshdesk-unassigned">Unassigned</span>
-                          )}
-                        </td>
-                        <td>
-                          <span className={`freshdesk-status-badge ${getStatusColor(ticket.status)}`}>
-                            {ticket.status.replace('_', ' ').toUpperCase()}
-                          </span>
-                        </td>
-                        <td>
-                          <span className={`freshdesk-priority-badge ${getPriorityColor(ticket.priority)}`}>
-                            {ticket.priority.toUpperCase()}
-                          </span>
-                        </td>
-                        <td>
                           <div className="freshdesk-time-ago">{getTimeAgo(ticket.lastUpdated)}</div>
+                        </td>
+                        <td>
+                          <div className="freshdesk-ticket-details-block">
+                            <div className="freshdesk-ticket-assigned">
+                              <span className="freshdesk-ticket-detail-label">Assigned To:</span>
+                              <select
+                                className="freshdesk-quick-action-select"
+                                value={ticket.assignedTo?._id || ''}
+                                onChange={(e) => handleAssignChange(ticket, e.target.value)}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <option value="">Unassigned</option>
+                                {agents.map(agent => (
+                                  <option key={agent._id} value={agent._id}>
+                                    {agent.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="freshdesk-ticket-status">
+                              <span className="freshdesk-ticket-detail-label">Status:</span>
+                              <select
+                                className="freshdesk-quick-action-select"
+                                value={ticket.status}
+                                onChange={(e) => handleStatusChange(ticket, e.target.value)}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <option value="open">Open</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="resolved">Resolved</option>
+                                <option value="closed">Closed</option>
+                              </select>
+                            </div>
+                            <div className="freshdesk-ticket-priority">
+                              <span className="freshdesk-ticket-detail-label">Priority:</span>
+                              <select
+                                className="freshdesk-quick-action-select"
+                                value={ticket.priority}
+                                onChange={(e) => handlePriorityChange(ticket, e.target.value)}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                                <option value="urgent">Urgent</option>
+                              </select>
+                            </div>
+                          </div>
                         </td>
                       </tr>
                     ))}
