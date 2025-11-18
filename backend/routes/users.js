@@ -7,6 +7,7 @@ const {
   updateUserStatus,
   deleteUser
 } = require('../controllers/userController');
+const User = require('../models/User'); // Moved import to top
 const { protect, adminOnly } = require('../middlewares/authMiddleware');
 
 // All routes are protected
@@ -31,11 +32,10 @@ router.route('/agents')
     try {
       // Allow authenticated users to get a list of agents
       // This endpoint will return only active agents
-      const User = require('../models/User');
       const agents = await User.find({ 
         role: 'support_agent',
         isActive: true 
-      }, 'name email _id');
+      }).select('name email _id');
       res.json(agents);
     } catch (err) {
       console.error('Error fetching agents:', err);

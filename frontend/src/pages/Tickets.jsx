@@ -49,7 +49,7 @@ const Tickets = () => {
     const fetchAgents = async () => {
       try {
         // Fetch agents from the backend API
-        const response = await api.get('/users?role=support_agent');
+        const response = await api.get('/users/agents');
         setAgents(response.data);
       } catch (error) {
         console.error('Error fetching agents:', error);

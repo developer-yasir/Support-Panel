@@ -41,7 +41,7 @@ const CreateTicket = () => {
         const companiesResponse = await api.get('/companies');
         setCompanies(companiesResponse.data);
 
-        const agentsResponse = await api.get('/users?role=support_agent');
+        const agentsResponse = await api.get('/users/agents');
         setAgents(agentsResponse.data);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -297,7 +297,7 @@ const CreateTicket = () => {
                     <div className="freshdesk-tag-input">
                       <div className="freshdesk-tags-container">
                         {formData.cc && formData.cc.split(',').filter(tag => tag.trim()).map((tag, index) => (
-                          <span key={index} className="freshdesk-tag">
+                          <span key={`${tag.trim()}-${index}`} className="freshdesk-tag">
                             {tag.trim()}
                           </span>
                         ))}
@@ -533,7 +533,7 @@ const CreateTicket = () => {
                   <div className="freshdesk-tag-input">
                     <div className="freshdesk-tags-container">
                       {formData.tags && formData.tags.split(',').filter(tag => tag.trim()).map((tag, index) => (
-                        <span key={index} className="freshdesk-tag">
+                        <span key={`${tag.trim()}-${index}`} className="freshdesk-tag">
                           {tag.trim()}
                         </span>
                       ))}
