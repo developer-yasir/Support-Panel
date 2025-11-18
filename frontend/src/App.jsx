@@ -22,6 +22,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
 import Design1 from './pages/ticketDetailDesigns/Design1';
+import TicketDetails from './pages/TicketDetails';
 import ErrorBoundary from './components/ErrorBoundary';
 
 // Removed KnowledgeBase and Community imports
@@ -101,7 +102,7 @@ function App() {
             } />
             <Route path="/ticket/:ticketId" element={
               <ProtectedRoute>
-                <Design1 />
+                <TicketDetails />
               </ProtectedRoute>
             } />
             <Route path="/testing-new-tickets" element={

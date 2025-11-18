@@ -1,180 +1,222 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
-import './FreshdeskStyles.css';
-
-// Inline SVG Icons
-const ClockIcon = ({ size = 16 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', verticalAlign: 'middle' }}>
-    <circle cx="12" cy="12" r="10" />
-    <polyline points="12 6 12 12 16 14" />
-  </svg>
-);
-
-const EditIcon = ({ size = 16 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', verticalAlign: 'middle' }}>
-    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-  </svg>
-);
-
-const UserIcon = ({ size = 16 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', verticalAlign: 'middle' }}>
-    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-    <circle cx="12" cy="7" r="4" />
-  </svg>
-);
-
-const TagIcon = ({ size = 16 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', verticalAlign: 'middle' }}>
-    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-    <circle cx="12" cy="7" r="4" />
-  </svg>
-);
-
-const FlagIcon = ({ size = 16 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', verticalAlign: 'middle' }}>
-    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
-    <line x1="4" y1="22" x2="4" y2="15" />
-  </svg>
-);
-
-const BuildingIcon = ({ size = 16 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', verticalAlign: 'middle' }}>
-    <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z" />
-    <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2" />
-    <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2" />
-    <path d="M10 6h4" />
-    <path d="M10 10h4" />
-    <path d="M10 14h4" />
-    <path d="M10 18h4" />
-  </svg>
-);
-
-const MapPinIcon = ({ size = 16 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', verticalAlign: 'middle' }}>
-    <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
-    <circle cx="12" cy="10" r="3" />
-  </svg>
-);
-
-const GlobeIcon = ({ size = 16 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', verticalAlign: 'middle' }}>
-    <circle cx="12" cy="12" r="10" />
-    <path d="M2 12h20" />
-    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-  </svg>
-);
-
-const HashIcon = ({ size = 16 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', verticalAlign: 'middle' }}>
-    <line x1="4" y1="9" x2="20" y2="9" />
-    <line x1="4" y1="15" x2="20" y2="15" />
-    <line x1="10" y1="3" x2="8" y2="21" />
-    <line x1="16" y1="3" x2="14" y2="21" />
-  </svg>
-);
-
-const BriefcaseIcon = ({ size = 16 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', verticalAlign: 'middle' }}>
-    <path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-    <rect width="20" height="14" x="2" y="6" rx="2" />
-  </svg>
-);
 
 const TicketDetails = () => {
   const { ticketId } = useParams();
   const navigate = useNavigate();
   const [ticket, setTicket] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [reply, setReply] = useState('');
-  const [comments, setComments] = useState([]);
+  const [error, setError] = useState(null);
+  const [replyText, setReplyText] = useState('');
+  const [replyLoading, setReplyLoading] = useState(false);
+  const [ticketProperties, setTicketProperties] = useState({});
+  const [agents, setAgents] = useState([]);
 
+  // Initialize with sample ticket data for now
   useEffect(() => {
-    const fetchTicketAndComments = async () => {
+    const fetchTicketDetails = async () => {
       try {
-        // Fetch ticket details
-        const ticketResponse = await api.get(`/tickets/${ticketId}`);
-        setTicket(ticketResponse.data);
-
-        // Fetch related comments
-        // In a real app, you might fetch comments from a separate endpoint
-        setComments([
-          {
-            id: 1,
-            author: ticketResponse.data.createdBy?.name || 'Requester',
-            authorEmail: ticketResponse.data.createdBy?.email || 'requester@example.com',
-            content: ticketResponse.data.description || 'No description provided.',
-            timestamp: ticketResponse.data.createdAt || new Date().toISOString(),
-            isRequester: true
-          },
-          {
-            id: 2,
-            author: 'Support Agent',
-            authorEmail: 'agent@example.com',
-            content: 'Thank you for reporting this issue. We are currently investigating.',
-            timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
-            isRequester: false
-          }
-        ]);
-      } catch (error) {
-        console.error('Error fetching ticket:', error);
-        // Handle error appropriately
+        setLoading(true);
+        
+        // First, try to fetch from the backend API
+        try {
+          const ticketResponse = await api.get(`/tickets/${ticketId}`);
+          const ticketData = ticketResponse.data;
+          
+          // Now fetch comments for this ticket
+          const commentsResponse = await api.get(`/comments/ticket/${ticketData._id}`);
+          
+          // Combine ticket data with comments
+          setTicket({
+            ...ticketData,
+            comments: commentsResponse.data
+          });
+          setTicketProperties(ticketData);
+        } catch (apiError) {
+          console.error('API fetch failed, using sample data:', apiError);
+          
+          // Fallback to sample data
+          const sampleTicket = {
+            _id: ticketId,
+            ticketId: ticketId.startsWith('TK-') ? ticketId : `TK-${ticketId}`,
+            title: 'Email delivery issue with customer notifications',
+            description: `Customer is experiencing issues with email notifications not being delivered properly.\n\nSteps to reproduce:\n1. Customer submits a support request\n2. System sends notification email\n3. Customer doesn't receive the email\n\nAdditional notes: This appears to be happening only for customers using Gmail.`,
+            status: 'open',
+            priority: 'high',
+            createdAt: new Date().toISOString(),
+            lastActivity: new Date().toISOString(),
+            requester: {
+              name: 'Sarah Johnson',
+              email: 'sarah.j@example.com',
+              company: 'Tech Innovations Inc.',
+              phone: '+1 (555) 123-4567'
+            },
+            assignee: {
+              name: 'Michael Chen',
+              email: 'michael.chen@support.com'
+            },
+            requesterId: 'user1',
+            assigneeId: 'agent1',
+            comments: [
+              {
+                _id: 'comment1',
+                author: {
+                  name: 'Michael Chen',
+                  avatar: 'MC'
+                },
+                content: 'Hi Sarah, I\'m looking into this issue. Can you confirm if you\'re seeing any bounce-back messages in your email logs?',
+                createdAt: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
+                isInternal: false
+              },
+              {
+                _id: 'comment2',
+                author: {
+                  name: 'Sarah Johnson',
+                  avatar: 'SJ'
+                },
+                content: 'Yes, I can see some bounce-back messages. They seem to indicate a spam filter issue.',
+                createdAt: new Date(Date.now() - 1800000).toISOString(), // 30 minutes ago
+                isInternal: false
+              },
+              {
+                _id: 'comment3',
+                author: {
+                  name: 'David Wilson',
+                  avatar: 'DW'
+                },
+                content: 'Internal note: Checking the mail server configuration for possible issues.',
+                createdAt: new Date(Date.now() - 600000).toISOString(), // 10 minutes ago
+                isInternal: true
+              }
+            ]
+          };
+          setTicket(sampleTicket);
+          setTicketProperties(sampleTicket);
+        }
+      } catch (err) {
+        setError(err.message);
+        console.error('Error fetching ticket:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    if (ticketId) {
-      fetchTicketAndComments();
-    }
+    const fetchAgents = async () => {
+      try {
+        const response = await api.get('/users?role=support_agent');
+        setAgents(response.data);
+      } catch (error) {
+        console.error('Error fetching agents:', error);
+        // Fallback to sample agents
+        setAgents([
+          { _id: 'agent1', name: 'Michael Chen', email: 'michael.chen@support.com' },
+          { _id: 'agent2', name: 'David Wilson', email: 'david.w@support.com' },
+          { _id: 'agent3', name: 'Emily Rodriguez', email: 'emily.r@support.com' }
+        ]);
+      }
+    };
+
+    fetchTicketDetails();
+    fetchAgents();
   }, [ticketId]);
 
   const handleReplySubmit = async (e) => {
     e.preventDefault();
-    if (!reply.trim()) return;
+    if (!replyText.trim()) return;
 
+    setReplyLoading(true);
     try {
-      // In a real app, this would send the reply to the backend
-      const newComment = {
-        id: comments.length + 1,
-        author: 'Support Agent', // Assuming current user is agent
-        authorEmail: 'agent@example.com',
-        content: reply,
-        timestamp: new Date().toISOString(),
-        isRequester: false
-      };
+      // Make API call to add comment
+      const response = await api.post(`/comments`, {
+        ticketId: ticket._id,
+        content: replyText,
+        isInternal: false
+      });
 
-      setComments([...comments, newComment]);
-      setReply('');
-    } catch (error) {
-      console.error('Error submitting reply:', error);
+      // Add the new comment to the ticket's comments in state
+      setTicket(prev => ({
+        ...prev,
+        comments: [...(prev.comments || []), response.data]
+      }));
+
+      // Clear the reply text
+      setReplyText('');
+    } catch (err) {
+      console.error('Error adding reply:', err);
+      // Show error to user
+      alert('Failed to add reply: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setReplyLoading(false);
     }
   };
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  const handlePropertyChange = async (field, value) => {
+    try {
+      // In a real implementation, update the backend
+      const response = await api.put(`/tickets/${ticket._id}`, {
+        [field]: value
+      });
+      
+      setTicketProperties(prev => ({
+        ...prev,
+        [field]: value
+      }));
+      
+      // Update the main ticket object too
+      setTicket(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    } catch (err) {
+      console.error(`Error updating ${field}:`, err);
+    }
+  };
+
+  const handleStatusChange = (newStatus) => {
+    handlePropertyChange('status', newStatus);
+  };
+
+  const handlePriorityChange = (newPriority) => {
+    handlePropertyChange('priority', newPriority);
+  };
+
+  const handleAssigneeChange = (agentId) => {
+    handlePropertyChange('assigneeId', agentId);
   };
 
   if (loading) {
     return (
-      <div className="freshdesk-dashboard">
+      <div className="freshdesk-ticket-detail-page">
         <Navbar />
         <div className="freshdesk-layout">
           <Sidebar />
-          <div className="freshdesk-content flex items-center justify-center min-h-screen">
-            <div className="text-center">
-              <div className="freshdesk-spinner w-10 h-10 border-4 border-brand-primary border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-              <p className="text-gray-600">Loading ticket details...</p>
+          <div className="freshdesk-ticket-detail-content">
+            <div className="freshdesk-ticket-detail-loading">
+              <div className="freshdesk-spinner"></div>
+              <p>Loading ticket details...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="freshdesk-ticket-detail-page">
+        <Navbar />
+        <div className="freshdesk-layout">
+          <Sidebar />
+          <div className="freshdesk-ticket-detail-content">
+            <div className="freshdesk-ticket-detail-error">
+              <h3>Error Loading Ticket</h3>
+              <p>{error}</p>
+              <button onClick={() => navigate('/tickets')} className="freshdesk-btn freshdesk-btn--primary">
+                Back to Tickets
+              </button>
             </div>
           </div>
         </div>
@@ -184,17 +226,15 @@ const TicketDetails = () => {
 
   if (!ticket) {
     return (
-      <div className="freshdesk-dashboard">
+      <div className="freshdesk-ticket-detail-page">
         <Navbar />
         <div className="freshdesk-layout">
           <Sidebar />
-          <div className="freshdesk-content flex items-center justify-center min-h-screen">
-            <div className="text-center">
-              <h2 className="text-xl font-semibold text-gray-800 mb-2">Ticket Not Found</h2>
-              <button 
-                onClick={() => navigate('/tickets')}
-                className="freshdesk-new-ticket-btn"
-              >
+          <div className="freshdesk-ticket-detail-content">
+            <div className="freshdesk-ticket-detail-error">
+              <h3>Ticket Not Found</h3>
+              <p>The ticket you're looking for doesn't exist.</p>
+              <button onClick={() => navigate('/tickets')} className="freshdesk-btn freshdesk-btn--primary">
                 Back to Tickets
               </button>
             </div>
@@ -205,157 +245,232 @@ const TicketDetails = () => {
   }
 
   return (
-    <div className="freshdesk-dashboard">
+    <div className="freshdesk-ticket-detail-page">
       <Navbar />
       <div className="freshdesk-layout">
         <Sidebar />
-        <div className="flex-1 flex flex-col min-h-screen freshdesk-main-content">
-          {/* Header */}
-          <div className="freshdesk-ticket-details-header">
-            <div>
-              <h1 className="freshdesk-ticket-details-title">
-                #{ticket.ticketId || ticket._id || 'N/A'} — {ticket.title || ticket.subject || 'No Title'}
+        <div className="freshdesk-ticket-detail-content">
+          {/* Ticket Header */}
+          <div className="freshdesk-ticket-detail-header">
+            <div className="freshdesk-ticket-detail-header-left">
+              <h1 className="freshdesk-ticket-detail-title">
+                {ticket.title}
               </h1>
-              <p className="freshdesk-ticket-details-subtitle">Reported by {ticket.createdBy?.name || 'Unknown'}</p>
+              <div className="freshdesk-ticket-detail-id">
+                {ticket.ticketId.replace(/^TK-/, '')}
+              </div>
             </div>
-            <span className={`freshdesk-ticket-details-status ${
-              ticket.status === 'open' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
-              ticket.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' :
-              ticket.status === 'pending' ? 'bg-orange-100 text-orange-800 border border-orange-200' :
-              ticket.status === 'resolved' ? 'bg-green-100 text-green-800 border border-green-200' :
-              ticket.status === 'closed' ? 'bg-gray-100 text-gray-800 border border-gray-200' :
-              'bg-gray-100 text-gray-800 border border-gray-200'
-            }`}>
-              {ticket.status ? ticket.status.replace('_', ' ').toUpperCase() : 'N/A'}
-            </span>
+            <div className="freshdesk-ticket-detail-header-right">
+              <div className={`freshdesk-ticket-status-badge freshdesk-ticket-status-${ticketProperties.status || ticket.status}`}>
+                {ticketProperties.status || ticket.status}
+              </div>
+              <button 
+                onClick={() => navigate('/tickets')}
+                className="freshdesk-btn freshdesk-btn--outline"
+              >
+                ← Back to Tickets
+              </button>
+            </div>
           </div>
 
           {/* Main Content */}
-          <div className="freshdesk-ticket-details-content">
+          <div className="freshdesk-ticket-detail-main">
             {/* Conversation */}
             <div className="freshdesk-ticket-conversation">
-              {comments.map((comment) => (
+              {/* Original Ticket */}
+              <div className="freshdesk-conversation-message freshdesk-conversation-message--original">
+                <div className="freshdesk-message-header">
+                  <div className="freshdesk-message-author">
+                    <div className="freshdesk-message-author-avatar" style={{background: 'linear-gradient(135deg, #4f46e5, #7c3aed)'}}>
+                      {ticket.requester?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'R'}
+                    </div>
+                    <div className="freshdesk-message-author-info">
+                      <span className="freshdesk-message-author-name">{ticket.requester?.name || 'Requester'}</span>
+                      <span className="freshdesk-message-author-role">Requester</span>
+                    </div>
+                  </div>
+                  <div className="freshdesk-message-timestamp">
+                    {new Date(ticket.createdAt).toLocaleString()}
+                  </div>
+                </div>
+                <div className="freshdesk-message-content">
+                  <h3>{ticket.title}</h3>
+                  <div className="freshdesk-message-description">
+                    {ticket.description?.split('\n').map((line, i) => (
+                      <p key={i}>{line}</p>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Comments/Replies */}
+              {ticket.comments?.map((comment) => (
                 <div 
-                  key={comment.id} 
-                  className={`freshdesk-conversation-message ${comment.isRequester ? 'requester' : ''}`}
+                  key={comment._id} 
+                  className={`freshdesk-conversation-message ${comment.isInternal ? 'freshdesk-conversation-message--internal' : ''}`}
                 >
                   <div className="freshdesk-message-header">
                     <div className="freshdesk-message-author">
-                      <div className="freshdesk-message-author-avatar">
-                        {comment.author.charAt(0)}
+                      <div className="freshdesk-message-author-avatar" style={{background: comment.isInternal ? 'linear-gradient(135deg, #0ea5e9, #0284c7)' : 'linear-gradient(135deg, #4f46e5, #7c3aed)'}}>
+                        {(comment.createdBy?.name || comment.author?.name)?.split(' ').map(n => n[0]).join('').toUpperCase() || 'A'}
                       </div>
-                      <span>{comment.author}</span>
+                      <div className="freshdesk-message-author-info">
+                        <span className="freshdesk-message-author-name">{comment.createdBy?.name || comment.author?.name}</span>
+                        {comment.isInternal && (
+                          <span className="freshdesk-message-author-role freshdesk-message-author-role--internal">Internal Note</span>
+                        )}
+                      </div>
                     </div>
-                    <span className="freshdesk-message-timestamp">
-                      {formatDate(comment.timestamp)}
-                    </span>
+                    <div className="freshdesk-message-timestamp">
+                      {new Date(comment.createdAt).toLocaleString()}
+                    </div>
                   </div>
-                  <p className="freshdesk-message-content">
+                  <div className="freshdesk-message-content">
                     {comment.content}
-                  </p>
+                  </div>
                 </div>
               ))}
 
-              {comments.length === 0 && (
-                <div className="text-center py-10 text-gray-500">
-                  <p>No conversation yet. Be the first to reply!</p>
+              {/* Reply Form */}
+              <form onSubmit={handleReplySubmit} className="freshdesk-reply-form">
+                <textarea
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  placeholder="Type your reply here..."
+                  className="freshdesk-reply-textarea"
+                  rows="4"
+                />
+                <div className="freshdesk-reply-actions">
+                  <div className="freshdesk-reply-options">
+                    <label className="freshdesk-checkbox-label">
+                      <input type="checkbox" />
+                      <span className="freshdesk-checkbox-custom"></span>
+                      Make public reply
+                    </label>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={replyLoading || !replyText.trim()}
+                    className="freshdesk-btn freshdesk-btn--primary freshdesk-reply-submit"
+                  >
+                    {replyLoading ? 'Sending...' : 'Post Reply'}
+                  </button>
                 </div>
-              )}
+              </form>
             </div>
 
-            {/* Right Sidebar */}
+            {/* Sidebar */}
             <div className="freshdesk-ticket-sidebar">
-              {/* Status */}
+              {/* Ticket Properties */}
               <div className="freshdesk-sidebar-section">
-                <h2 className="freshdesk-sidebar-title">Ticket Details</h2>
-                <div className="flex items-center justify-between text-sm text-gray-700 mb-2">
-                  <div className="flex items-center gap-2">
-                    <span>First Response Due</span>
-                  </div>
-                  <EditIcon size={14} className="freshdesk-edit-icon" />
-                </div>
-                <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
-                  <ClockIcon size={14} className="freshdesk-clock-icon" /> {formatDate(ticket.createdAt || new Date())}
+                <h3 className="freshdesk-sidebar-title">Properties</h3>
+                
+                <div className="freshdesk-property-item">
+                  <label className="freshdesk-property-label">Status</label>
+                  <select
+                    value={ticketProperties.status || ticket.status}
+                    onChange={(e) => handleStatusChange(e.target.value)}
+                    className="freshdesk-property-select"
+                  >
+                    <option value="open">Open</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="pending">Pending</option>
+                    <option value="resolved">Resolved</option>
+                    <option value="closed">Closed</option>
+                  </select>
                 </div>
 
-                <div className="flex items-center justify-between text-sm text-gray-700 mb-2">
-                  <div className="flex items-center gap-2">
-                    <span>Resolution Due</span>
-                  </div>
-                  <EditIcon size={14} className="freshdesk-edit-icon" />
+                <div className="freshdesk-property-item">
+                  <label className="freshdesk-property-label">Priority</label>
+                  <select
+                    value={ticketProperties.priority || ticket.priority}
+                    onChange={(e) => handlePriorityChange(e.target.value)}
+                    className="freshdesk-property-select"
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
+                  </select>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-gray-500">
-                  <ClockIcon size={14} className="freshdesk-clock-icon" /> {formatDate(ticket.updatedAt || new Date())}
+
+                <div className="freshdesk-property-item">
+                  <label className="freshdesk-property-label">Assigned To</label>
+                  <select
+                    value={ticketProperties.assigneeId || ticket.assigneeId || ''}
+                    onChange={(e) => handleAssigneeChange(e.target.value)}
+                    className="freshdesk-property-select"
+                  >
+                    <option value="">Unassigned</option>
+                    {agents.map(agent => (
+                      <option key={agent._id} value={agent._id}>
+                        {agent.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="freshdesk-property-item">
+                  <label className="freshdesk-property-label">Requester</label>
+                  <div className="freshdesk-property-value">
+                    {ticket.requester?.name || 'Unknown'}<br />
+                    <small>{ticket.requester?.email || 'No email provided'}</small>
+                  </div>
+                </div>
+
+                <div className="freshdesk-property-item">
+                  <label className="freshdesk-property-label">Created</label>
+                  <div className="freshdesk-property-value">
+                    {new Date(ticket.createdAt).toLocaleString()}
+                  </div>
+                </div>
+
+                <div className="freshdesk-property-item">
+                  <label className="freshdesk-property-label">Last Updated</label>
+                  <div className="freshdesk-property-value">
+                    {new Date(ticket.lastActivity || ticket.createdAt).toLocaleString()}
+                  </div>
                 </div>
               </div>
 
-              {/* Properties */}
-              <div className="freshdesk-sidebar-subsection">
-                <h3 className="freshdesk-sidebar-subtitle">Properties</h3>
-                <div className="freshdesk-property-grid">
-                  <p className="freshdesk-property-label"><Tag size={14} /> Tags</p>
-                  <p className="freshdesk-property-value">{ticket.tags?.join(', ') || 'None'}</p>
+              {/* Action Buttons */}
+              <div className="freshdesk-sidebar-section">
+                <h3 className="freshdesk-sidebar-title">Actions</h3>
+                <div className="freshdesk-action-buttons">
+                  <button className="freshdesk-btn freshdesk-btn--secondary freshdesk-btn--block">
+                    Add Time Entry
+                  </button>
+                  <button className="freshdesk-btn freshdesk-btn--secondary freshdesk-btn--block">
+                    Merge Ticket
+                  </button>
+                  <button className="freshdesk-btn freshdesk-btn--secondary freshdesk-btn--block">
+                    Transfer Ticket
+                  </button>
+                  <button className="freshdesk-btn freshdesk-btn--danger freshdesk-btn--block">
+                    Delete Ticket
+                  </button>
+                </div>
+              </div>
 
-                  <p className="freshdesk-property-label"><Hash size={14} /> Type</p>
-                  <p className="freshdesk-property-value">{ticket.type || 'Issue'}</p>
-
-                  <p className="freshdesk-property-label"><User size={14} /> Status</p>
-                  <p className="freshdesk-property-value">{ticket.status?.replace('_', ' ') || 'N/A'}</p>
-
-                  <p className="freshdesk-property-label"><Flag size={14} /> Priority</p>
-                  <span className={`inline-block px-2 py-1 rounded-full text-xs ${
-                    ticket.priority === 'low' ? 'bg-green-100 text-green-800 border border-green-200' :
-                    ticket.priority === 'medium' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
-                    ticket.priority === 'high' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' :
-                    ticket.priority === 'urgent' ? 'bg-red-100 text-red-800 border border-red-200' :
-                    'bg-gray-100 text-gray-800 border border-gray-200'
-                  }`}>
-                    {ticket.priority?.toUpperCase() || 'N/A'}
-                  </span>
-
-                  <p className="freshdesk-property-label"><Briefcase size={14} /> Group</p>
-                  <p className="freshdesk-property-value">{ticket.group || 'General Support'}</p>
-
-                  <p className="freshdesk-property-label"><User size={14} /> Agent</p>
-                  <p className="freshdesk-property-value">{ticket.assignedTo?.name || 'Unassigned'}</p>
-
-                  <p className="freshdesk-property-label"><Building size={14} /> Company</p>
-                  <p className="freshdesk-property-value">{ticket.company || 'N/A'}</p>
-
-                  <p className="freshdesk-property-label"><Hash size={14} /> Category</p>
-                  <p className="freshdesk-property-value">{ticket.category || 'General'}</p>
-
-                  <p className="freshdesk-property-label"><Hash size={14} /> Store/Site Code</p>
-                  <p className="freshdesk-property-value">{ticket.storeCode || 'N/A'}</p>
-
-                  <p className="freshdesk-property-label"><MapPin size={14} /> City</p>
-                  <p className="freshdesk-property-value">{ticket.city || 'N/A'}</p>
-
-                  <p className="freshdesk-property-label"><Globe size={14} /> Country</p>
-                  <p className="freshdesk-property-value">{ticket.country || 'N/A'}</p>
+              {/* Reporter Details */}
+              <div className="freshdesk-sidebar-section">
+                <h3 className="freshdesk-sidebar-title">Reporter Details</h3>
+                <div className="freshdesk-contact-info">
+                  <div className="freshdesk-contact-item">
+                    <strong>Name:</strong> {ticket.requester?.name || 'Unknown'}
+                  </div>
+                  <div className="freshdesk-contact-item">
+                    <strong>Email:</strong> {ticket.requester?.email || 'No email'}
+                  </div>
+                  <div className="freshdesk-contact-item">
+                    <strong>Phone:</strong> {ticket.requester?.phone || 'No phone'}
+                  </div>
+                  <div className="freshdesk-contact-item">
+                    <strong>Company:</strong> {ticket.requester?.company || 'No company'}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-
-          {/* Reply Box */}
-          <div className="freshdesk-reply-box">
-            <form onSubmit={handleReplySubmit} className="freshdesk-reply-form">
-              <textarea
-                className="freshdesk-reply-input"
-                rows="3"
-                placeholder="Type your reply..."
-                value={reply}
-                onChange={(e) => setReply(e.target.value)}
-              />
-              <button 
-                type="submit"
-                className="freshdesk-reply-button"
-                disabled={!reply.trim()}
-              >
-                Send
-              </button>
-            </form>
           </div>
         </div>
       </div>

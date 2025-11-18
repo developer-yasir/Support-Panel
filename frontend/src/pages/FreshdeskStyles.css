@@ -1214,80 +1214,301 @@
   letter-spacing: 0.5px;
 }
 
-.freshdesk-ticket-details-content {
+/* Ticket Detail Page Styles */
+.freshdesk-ticket-detail-page {
+  min-height: 100vh;
+  background-color: var(--gray-100);
+}
+
+.freshdesk-ticket-detail-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0 var(--spacing-xl) var(--spacing-xl);
+}
+
+.freshdesk-ticket-detail-header {
+  background: white;
+  border-bottom: 1px solid var(--gray-200);
+  padding: var(--spacing-xl) var(--spacing-xl);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 72px; /* Adjust for navbar */
+  z-index: 98;
+}
+
+.freshdesk-ticket-detail-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.freshdesk-ticket-detail-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin: 0;
+}
+
+.freshdesk-ticket-detail-id {
+  font-size: 0.875rem;
+  color: var(--gray-600);
+  margin: 0;
+  background: var(--gray-100);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--border-radius-full);
+  display: inline-block;
+  align-self: flex-start;
+}
+
+.freshdesk-ticket-status-badge {
+  padding: 0.375rem 0.875rem;
+  border-radius: var(--border-radius-full);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: inline-block;
+  border: 1px solid;
+}
+
+.freshdesk-ticket-status-open {
+  background: var(--success-100);
+  color: var(--success-800);
+  border-color: var(--success-200);
+}
+
+.freshdesk-ticket-status-in_progress {
+  background: var(--warning-100);
+  color: var(--warning-800);
+  border-color: var(--warning-200);
+}
+
+.freshdesk-ticket-status-pending {
+  background: var(--warning-50);
+  color: var(--warning-700);
+  border-color: var(--warning-100);
+}
+
+.freshdesk-ticket-status-resolved {
+  background: var(--success-100);
+  color: var(--success-800);
+  border-color: var(--success-200);
+}
+
+.freshdesk-ticket-status-closed {
+  background: var(--gray-100);
+  color: var(--gray-700);
+  border-color: var(--gray-200);
+}
+
+.freshdesk-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 1.25rem;
+  border-radius: var(--border-radius-lg);
+  border: 1px solid transparent;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-decoration: none;
+  gap: var(--spacing-xs);
+}
+
+.freshdesk-btn--primary {
+  background: linear-gradient(135deg, var(--brand-primary-start) 0%, var(--brand-secondary) 100%);
+  color: white;
+  border: none;
+}
+
+.freshdesk-btn--primary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.freshdesk-btn--outline {
+  background: transparent;
+  color: var(--gray-700);
+  border: 1px solid var(--gray-300);
+}
+
+.freshdesk-btn--outline:hover {
+  background: var(--gray-100);
+  border-color: var(--gray-400);
+}
+
+.freshdesk-btn--secondary {
+  background: var(--gray-100);
+  color: var(--gray-700);
+  border: 1px solid var(--gray-300);
+}
+
+.freshdesk-btn--secondary:hover {
+  background: var(--gray-200);
+  border-color: var(--gray-400);
+}
+
+.freshdesk-btn--danger {
+  background: var(--danger-100);
+  color: var(--danger-700);
+  border: 1px solid var(--danger-200);
+}
+
+.freshdesk-btn--danger:hover {
+  background: var(--danger-200);
+  border-color: var(--danger-300);
+}
+
+.freshdesk-btn--block {
+  display: block;
+  width: 100%;
+  margin-bottom: var(--spacing-sm);
+}
+
+.freshdesk-ticket-detail-main {
   display: flex;
   flex: 1;
-  min-height: 0; /* Allow flex child to shrink */
+  gap: var(--spacing-xl);
+  min-height: 0;
+  margin-top: var(--spacing-xl);
 }
 
 .freshdesk-ticket-conversation {
   flex: 1;
-  padding: var(--spacing-xl);
-  overflow-y: auto;
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--border-radius-xl);
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-lg);
 }
 
 .freshdesk-conversation-message {
-  border: 1px solid var(--gray-200);
-  border-radius: var(--border-radius-xl);
-  padding: var(--spacing-lg);
+  border-bottom: 1px solid var(--gray-100);
+  padding: var(--spacing-xl);
   background: white;
-  box-shadow: var(--shadow-sm);
-  animation: fadeIn 0.2s ease-out;
+  position: relative;
 }
 
-.freshdesk-conversation-message.requester {
+.freshdesk-conversation-message:last-child {
+  border-bottom: none;
+}
+
+.freshdesk-conversation-message--original {
   background: var(--gray-50);
+  border-left: 4px solid var(--brand-primary);
+}
+
+.freshdesk-conversation-message--internal {
+  background: var(--warning-50);
+  border-left: 4px solid var(--warning-500);
+}
+
+.freshdesk-conversation-message--internal .freshdesk-message-author-role--internal {
+  background: var(--warning-100);
+  color: var(--warning-800);
 }
 
 .freshdesk-message-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--spacing-sm);
-}
-
-.freshdesk-message-author {
-  font-weight: 600;
-  color: var(--gray-900);
-  display: flex;
-  align-items: center;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-md);
+  flex-wrap: wrap;
   gap: var(--spacing-sm);
 }
 
+.freshdesk-message-author {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex: 1;
+  min-width: 200px;
+}
+
 .freshdesk-message-author-avatar {
-  width: 2rem;
-  height: 2rem;
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--brand-primary-start) 0%, var(--brand-secondary) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 600;
   flex-shrink: 0;
 }
 
-.freshdesk-message-timestamp {
-  font-size: 0.75rem;
-  color: var(--gray-500);
+.freshdesk-message-author-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
 }
 
-.freshdesk-message-content {
+.freshdesk-message-author-name {
+  font-weight: 600;
+  color: var(--gray-900);
+  font-size: 0.95rem;
+}
+
+.freshdesk-message-author-role {
+  font-size: 0.75rem;
+  color: var(--gray-600);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--border-radius-full);
+  background: var(--gray-100);
+}
+
+.freshdesk-message-author-role--internal {
+  background: var(--warning-100);
+  color: var(--warning-800);
+}
+
+.freshdesk-message-timestamp {
+  font-size: 0.8rem;
+  color: var(--gray-500);
+  white-space: nowrap;
+  align-self: center;
+}
+
+.freshdesk-message-content h3 {
+  margin: 0 0 var(--spacing-sm) 0;
+  font-size: 1.1rem;
+  color: var(--gray-900);
+  font-weight: 600;
+}
+
+.freshdesk-message-description {
   color: var(--gray-700);
   line-height: 1.6;
+}
+
+.freshdesk-message-description p {
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.freshdesk-message-description p:last-child {
+  margin-bottom: 0;
 }
 
 .freshdesk-ticket-sidebar {
   width: 320px;
   background: white;
-  border-left: 1px solid var(--gray-200);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--border-radius-xl);
   padding: var(--spacing-xl);
   overflow-y: auto;
   box-shadow: var(--shadow-sm);
+  align-self: flex-start;
+  max-height: calc(100vh - 200px);
 }
 
 .freshdesk-sidebar-section {
@@ -1303,106 +1524,299 @@
   border-bottom: 1px solid var(--gray-200);
 }
 
-.freshdesk-sidebar-subsection {
-  border-top: 1px solid var(--gray-200);
-  padding-top: var(--spacing-lg);
-  margin-top: var(--spacing-lg);
-}
-
-.freshdesk-sidebar-subtitle {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--gray-800);
+.freshdesk-property-item {
   margin-bottom: var(--spacing-lg);
 }
 
-.freshdesk-property-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap-y: var(--spacing-md);
-}
-
 .freshdesk-property-label {
-  color: var(--gray-500);
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  font-size: 0.85rem;
-}
-
-.freshdesk-property-value {
-  color: var(--gray-900);
+  display: block;
   font-weight: 500;
-  font-size: 0.85rem;
-}
-
-.freshdesk-edit-icon {
-  color: var(--brand-primary);
-  cursor: pointer;
-  transition: color var(--transition-fast);
-}
-
-.freshdesk-edit-icon:hover {
-  color: var(--brand-secondary);
-}
-
-.freshdesk-clock-icon {
-  width: 0.875rem;
-  height: 0.875rem;
-}
-
-.freshdesk-reply-box {
-  background: white;
-  border-top: 1px solid var(--gray-200);
-  padding: var(--spacing-xl);
-  display: flex;
-  gap: var(--spacing-lg);
-}
-
-.freshdesk-reply-form {
-  display: flex;
-  flex: 1;
-  gap: var(--spacing-lg);
-}
-
-.freshdesk-reply-input {
-  flex: 1;
-  border: 1px solid var(--gray-300);
-  border-radius: var(--border-radius-lg);
-  padding: var(--spacing-md);
+  color: var(--gray-700);
+  margin-bottom: var(--spacing-xs);
   font-size: 0.9rem;
-  resize: vertical;
-  min-height: 100px;
+}
+
+.freshdesk-property-select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--border-radius-md);
+  font-size: 0.9rem;
+  background-color: white;
+  cursor: pointer;
   transition: all var(--transition-fast);
 }
 
-.freshdesk-reply-input:focus {
+.freshdesk-property-select:focus {
   outline: none;
   border-color: var(--brand-primary);
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
 }
 
-.freshdesk-reply-button {
-  padding: 0.625rem 1.5rem;
+.freshdesk-property-value {
+  color: var(--gray-900);
+  line-height: 1.5;
+}
+
+.freshdesk-action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.freshdesk-contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.freshdesk-contact-item {
+  padding: var(--spacing-xs) 0;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.freshdesk-contact-item:last-child {
+  border-bottom: none;
+}
+
+.freshdesk-reply-form {
+  padding: var(--spacing-xl);
+  border-top: 1px solid var(--gray-200);
+  background: white;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.freshdesk-reply-textarea {
+  width: 100%;
+  padding: var(--spacing-md);
+  border: 1px solid var(--gray-300);
   border-radius: var(--border-radius-lg);
-  background: linear-gradient(135deg, var(--brand-primary-start) 0%, var(--brand-secondary) 100%);
-  color: white;
-  border: none;
   font-size: 0.9rem;
-  font-weight: 500;
+  resize: vertical;
+  min-height: 120px;
+  transition: all var(--transition-fast);
+  font-family: inherit;
+}
+
+.freshdesk-reply-textarea:focus {
+  outline: none;
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.freshdesk-reply-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+
+.freshdesk-reply-options {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.freshdesk-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
   cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--gray-700);
+}
+
+.freshdesk-checkbox-custom {
+  position: relative;
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  background-color: white;
+  border: 2px solid var(--gray-300);
+  border-radius: var(--border-radius-sm);
   transition: all var(--transition-fast);
 }
 
-.freshdesk-reply-button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+.freshdesk-checkbox-label input[type="checkbox"]:checked + .freshdesk-checkbox-custom {
+  background-color: var(--brand-primary);
+  border-color: var(--brand-primary);
 }
 
-.freshdesk-reply-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
+.freshdesk-checkbox-label input[type="checkbox"]:checked + .freshdesk-checkbox-custom::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 1px;
+  width: 6px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.freshdesk-reply-submit {
+  align-self: flex-end;
+}
+
+.freshdesk-ticket-detail-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem;
+  color: var(--gray-500);
+  text-align: center;
+}
+
+.freshdesk-ticket-detail-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem;
+  color: var(--gray-500);
+  text-align: center;
+}
+
+.freshdesk-ticket-detail-error h3 {
+  margin: 0 0 0.5rem 0;
+  color: var(--gray-900);
+  font-size: 1.25rem;
+}
+
+.freshdesk-ticket-detail-error p {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+}
+
+/* Loading spinner */
+.freshdesk-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--gray-200);
+  border-top: 3px solid var(--brand-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+/* Dark Mode Support for Ticket Detail Page */
+[data-theme="dark"] .freshdesk-ticket-detail-page,
+.dark-theme .freshdesk-ticket-detail-page {
+  background-color: var(--background-primary);
+}
+
+[data-theme="dark"] .freshdesk-ticket-detail-header,
+.dark-theme .freshdesk-ticket-detail-header {
+  background: var(--gray-100);
+  border-color: var(--gray-300);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .freshdesk-ticket-detail-title,
+.dark-theme .freshdesk-ticket-detail-title {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .freshdesk-ticket-detail-id,
+.dark-theme .freshdesk-ticket-detail-id {
+  color: var(--text-secondary);
+  background: var(--gray-200);
+}
+
+[data-theme="dark"] .freshdesk-ticket-conversation,
+.dark-theme .freshdesk-ticket-conversation {
+  background: var(--gray-100);
+  border-color: var(--gray-300);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .freshdesk-conversation-message,
+.dark-theme .freshdesk-conversation-message {
+  background: var(--gray-100);
+  border-color: var(--gray-300);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .freshdesk-conversation-message--original,
+.dark-theme .freshdesk-conversation-message--original {
+  background: var(--gray-200);
+}
+
+[data-theme="dark"] .freshdesk-conversation-message--internal,
+.dark-theme .freshdesk-conversation-message--internal {
+  background: var(--warning-900);
+}
+
+[data-theme="dark"] .freshdesk-message-author-name,
+.dark-theme .freshdesk-message-author-name {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .freshdesk-message-author-role,
+.dark-theme .freshdesk-message-author-role {
+  color: var(--text-secondary);
+  background: var(--gray-200);
+}
+
+[data-theme="dark"] .freshdesk-message-timestamp,
+.dark-theme .freshdesk-message-timestamp {
+  color: var(--text-tertiary);
+}
+
+[data-theme="dark"] .freshdesk-message-content,
+.dark-theme .freshdesk-message-content {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .freshdesk-ticket-sidebar,
+.dark-theme .freshdesk-ticket-sidebar {
+  background: var(--gray-100);
+  border-color: var(--gray-300);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .freshdesk-sidebar-title,
+.dark-theme .freshdesk-sidebar-title {
+  color: var(--text-primary);
+  border-color: var(--gray-300);
+}
+
+[data-theme="dark"] .freshdesk-property-label,
+.dark-theme .freshdesk-property-label {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .freshdesk-property-value,
+.dark-theme .freshdesk-property-value {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .freshdesk-contact-item,
+.dark-theme .freshdesk-contact-item {
+  border-color: var(--gray-300);
+}
+
+[data-theme="dark"] .freshdesk-reply-form,
+.dark-theme .freshdesk-reply-form {
+  background: var(--gray-100);
+  border-color: var(--gray-300);
+}
+
+[data-theme="dark"] .freshdesk-reply-textarea,
+.dark-theme .freshdesk-reply-textarea {
+  background: var(--gray-200);
+  border-color: var(--gray-400);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .freshdesk-checkbox-custom,
+.dark-theme .freshdesk-checkbox-custom {
+  background-color: var(--gray-200);
+  border-color: var(--gray-400);
 }
 
 /* Animations */
