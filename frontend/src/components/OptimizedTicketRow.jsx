@@ -51,7 +51,9 @@ const OptimizedTicketRow = ({
         />
       </td>
       <td>
-        <div className="freshdesk-ticket-id" onClick={handleClick}>{ticket.ticketId || ticket._id || ticket.id}</div>
+        <div className="freshdesk-ticket-id" onClick={handleClick}>
+          {(ticket.ticketId || ticket._id || ticket.id).replace(/^TK-/, '')}
+        </div>
       </td>
       <td>
         <div className="freshdesk-ticket-subject" onClick={handleClick}>{ticket.title || ticket.subject}</div>
