@@ -777,6 +777,25 @@ body {
   margin-bottom: var(--spacing-xl);
 }
 
+.form-group-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  justify-content: space-between;
+  margin-bottom: 0;
+}
+
+.form-group-row .form-group {
+  margin-bottom: 0;
+  flex: 1;
+  display: flex;
+  justify-content: end;
+}
+
+.form-group-row .form-group--checkbox {
+  flex: 0 0 auto;
+}
+
 .form-label {
   display: block;
   margin-bottom: var(--spacing-sm);
@@ -2327,16 +2346,7 @@ body {
   color: var(--gray-600);
 }
 
-.register-link {
-  color: var(--gray-700);
-  text-decoration: none;
-  font-weight: 600;
-}
 
-.register-link:hover {
-  color: var(--gray-900);
-  text-decoration: underline;
-}
 
 /* Responsive adjustments for login page */
 @media (max-width: 992px) {
@@ -3565,6 +3575,36 @@ body {
   .password-generator-btn:hover {
     color: var(--brand-primary);
     opacity: 0.8;
+  }
+
+  /* Password input with generator button */
+  .password-input-wrapper {
+    position: relative;
+  }
+  
+  .password-generator-icon {
+    width: 18px;
+    height: 18px;
+    color: #6c757d;
+  }
+  
+  .password-generator-btn-inside {
+    position: absolute;
+    right: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  
+  .password-generator-btn-inside:hover {
+    background-color: #f0f0f0;
   }
 
 /* View Options Styles */

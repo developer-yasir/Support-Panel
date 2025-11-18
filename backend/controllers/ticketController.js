@@ -69,7 +69,7 @@ exports.getTickets = async (req, res) => {
     if (escalationLevel) filter.escalationLevel = escalationLevel;
     
     const tickets = await Ticket.find(filter)
-      .populate('createdBy', 'name email')
+      .populate('createdBy', 'name email company')
       .populate('assignedTo', 'name email')
       .sort({ createdAt: -1 });
     
@@ -128,8 +128,19 @@ exports.updateTicket = async (req, res) => {
     }
     
     // Check if user is authorized to update ticket
-    if (ticket.createdBy.toString() !== req.user.id && req.user.role !== 'admin') {
-      console.log('Unauthorized update attempt:', req.user.id, ticket.createdBy.toString());
+    // Admins can update any ticket
+    // Support agents can update any ticket if they're only changing assignment, status, or priority
+    // Ticket creator can update their own ticket
+    const fieldsBeingUpdated = Object.keys(req.body);
+    const assignmentFields = ['assignedTo', 'status', 'priority']; // Fields that support agents can update
+    const isOnlyAssignmentUpdate = fieldsBeingUpdated.every(field => assignmentFields.includes(field));
+    
+    const isTicketCreator = ticket.createdBy.toString() === req.user.id;
+    const isAdmin = req.user.role === 'admin';
+    const isSupportAgent = req.user.role === 'support_agent';
+    
+    if (!(isAdmin || (isSupportAgent && isOnlyAssignmentUpdate) || isTicketCreator)) {
+      console.log('Unauthorized update attempt:', req.user.id, ticket.createdBy.toString(), fieldsBeingUpdated);
       return res.status(403).json({ message: 'Not authorized to update this ticket' });
     }
     

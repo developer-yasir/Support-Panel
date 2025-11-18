@@ -16,6 +16,7 @@ const userRoutes = require('./routes/users');
 const contactsRoutes = require('./routes/contacts');
 const companiesRoutes = require('./routes/companies');
 const chatRoutes = require('./routes/chat');
+const twoFactorRoutes = require('./routes/twoFactor');
 
 // Initialize app
 const app = express();
@@ -36,6 +37,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/contacts', contactsRoutes);
 app.use('/api/companies', companiesRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/2fa', twoFactorRoutes);
 
 // Health check endpoint
 app.get('/', (req, res) => {

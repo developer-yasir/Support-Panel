@@ -2,6 +2,10 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import TwoFactorSetup from './pages/TwoFactorSetup';
+import TwoFactorVerification from './pages/TwoFactorVerification';
 import Dashboard from './pages/Dashboard';
 import CreateTicket from './pages/CreateTicket';
 import EmailVerification from './pages/EmailVerification';
@@ -14,8 +18,11 @@ import Reports from './pages/Reports';
 import Chat from './pages/Chat';
 import Tickets from './pages/Tickets';
 import Agents from './pages/Agents';
+import AdminDashboard from './pages/AdminDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
+import AdminProtectedRoute from './components/AdminProtectedRoute';
 import Design1 from './pages/ticketDetailDesigns/Design1';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Removed KnowledgeBase and Community imports
 
@@ -27,10 +34,16 @@ function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/2fa-setup" element={<TwoFactorSetup />} />
+            <Route path="/2fa-verification" element={<TwoFactorVerification />} />
             <Route path="/verify-email" element={<EmailVerification />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>
-                <Tickets />
+                <ErrorBoundary>
+                  <Tickets />
+                </ErrorBoundary>
               </ProtectedRoute>
             } />
             <Route path="/overview" element={
@@ -40,7 +53,9 @@ function App() {
             } />
             <Route path="/tickets" element={
               <ProtectedRoute>
-                <Tickets />
+                <ErrorBoundary>
+                  <Tickets />
+                </ErrorBoundary>
               </ProtectedRoute>
             } />
             <Route path="/contacts" element={
@@ -91,13 +106,25 @@ function App() {
             } />
             <Route path="/testing-new-tickets" element={
               <ProtectedRoute>
-                <Tickets />
+                <ErrorBoundary>
+                  <Tickets />
+                </ErrorBoundary>
               </ProtectedRoute>
+            } />
+            
+            <Route path="/admin" element={
+              <AdminProtectedRoute>
+                <ErrorBoundary>
+                  <AdminDashboard />
+                </ErrorBoundary>
+              </AdminProtectedRoute>
             } />
 
             <Route path="/" element={
               <ProtectedRoute>
-                <Tickets />
+                <ErrorBoundary>
+                  <Tickets />
+                </ErrorBoundary>
               </ProtectedRoute>
             } />
           </Routes>

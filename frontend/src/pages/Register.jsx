@@ -1,70 +1,79 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-
-// Auto password generator function
-const generatePassword = () => {
-  const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  const lowercase = 'abcdefghijklmnopqrstuvwxyz';
-  const numbers = '0123456789';
-  const symbols = '!@#$%^&*()_+-=[]{}|;:,.<>?';
-  
-  const allChars = uppercase + lowercase + numbers + symbols;
-  let password = '';
-  
-  // Ensure at least one character from each category
-  password += uppercase[Math.floor(Math.random() * uppercase.length)];
-  password += lowercase[Math.floor(Math.random() * lowercase.length)];
-  password += numbers[Math.floor(Math.random() * numbers.length)];
-  password += symbols[Math.floor(Math.random() * symbols.length)];
-  
-  // Fill the rest with random characters from all categories
-  for (let i = 4; i < 12; i++) {
-    password += allChars[Math.floor(Math.random() * allChars.length)];
-  }
-  
-  // Shuffle the password to randomize the order
-  return password.split('').sort(() => Math.random() - 0.5).join('');
-};
+import { api } from '../services/api';
 
 const Register = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
-    role: 'support_agent'
+    confirmPassword: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const { register } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
 
-  const { name, email, password, role } = formData;
+  const { name, email, password, confirmPassword } = formData;
 
   const onChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  // Password generation function
+  const generatePassword = () => {
+    const length = 12;
+    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?";
+    let generatedPassword = "";
+    for (let i = 0; i < length; i++) {
+      const randomIndex = Math.floor(Math.random() * charset.length);
+      generatedPassword += charset[randomIndex];
+    }
+    
+    setFormData(prev => ({
+      ...prev,
+      password: generatedPassword,
+      confirmPassword: generatedPassword
+    }));
   };
 
   const onSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    
+    // Basic validation
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      setLoading(false);
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      setLoading(false);
+      return;
+    }
 
     try {
-      const response = await register(name, email, password, role);
+      const response = await api.post('/auth/register', {
+        name,
+        email,
+        password
+      });
+
+      setSuccess(true);
       
-      if (response.success) {
-        // Registration successful, redirect to email verification
-        setRegistrationSuccess(true);
-        // Redirect to email verification page with email as parameter
+      // Check if registration was successful and redirect to verification
+      if (response.data.email) {
         setTimeout(() => {
-          navigate(`/verify-email?email=${encodeURIComponent(email)}`);
+          navigate(`/verify-email?email=${encodeURIComponent(response.data.email)}`);
         }, 2000);
-      } else {
-        setError(response.message || 'Registration failed');
       }
     } catch (err) {
       console.error('Registration error:', err);
@@ -74,7 +83,7 @@ const Register = () => {
     }
   };
 
-  if (registrationSuccess) {
+  if (success) {
     return (
       <div className="login-page">
         <div className="login-container">
@@ -131,15 +140,15 @@ const Register = () => {
           <div className="login-right">
             <div className="login-card">
               <div className="login-header">
-                <h2 className="login-title">Registration Successful!</h2>
-                <p className="login-subtitle">Please check your email for verification</p>
+                <h2 className="login-title">Registration Successful</h2>
+                <p className="login-subtitle">Please verify your email address</p>
               </div>
               
               <div className="alert alert--success login-alert">
                 <svg xmlns="http://www.w3.org/2000/svg" className="alert-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                We've sent a verification code to {email}. You'll be redirected shortly...
+                Thanks for registering! We've sent a verification email to {email}. Please check your inbox to verify your account.
               </div>
               
               <div className="form-group">
@@ -149,6 +158,10 @@ const Register = () => {
                 >
                   Continue to Verification
                 </button>
+              </div>
+              
+              <div className="login-footer">
+                <p>Already have an account? <Link to="/login" className="login-link">Sign in</Link></p>
               </div>
             </div>
           </div>
@@ -164,7 +177,7 @@ const Register = () => {
           <div className="login-brand">
             <div className="login-logo">
               <svg xmlns="http://www.w3.org/2000/svg" className="login-logo-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
             </div>
             <h1 className="login-brand-title">Support Panel</h1>
@@ -175,7 +188,7 @@ const Register = () => {
             <div className="login-feature">
               <div className="login-feature-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" className="feature-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
               </div>
               <div className="login-feature-content">
@@ -213,8 +226,8 @@ const Register = () => {
         <div className="login-right">
           <div className="login-card">
             <div className="login-header">
-              <h2 className="login-title">Create account</h2>
-              <p className="login-subtitle">Sign up to get started</p>
+              <h2 className="login-title">Create an account</h2>
+              <p className="login-subtitle">Get started with the support panel today</p>
             </div>
             
             {error && (
@@ -233,6 +246,7 @@ const Register = () => {
                   id="name"
                   name="name"
                   type="text"
+                  autoComplete="name"
                   required
                   value={name}
                   onChange={onChange}
@@ -242,9 +256,9 @@ const Register = () => {
               </div>
               
               <div className="form-group">
-                <label htmlFor="email-address" className="form-label">Email address</label>
+                <label htmlFor="email-register" className="form-label">Email address</label>
                 <input
-                  id="email-address"
+                  id="email-register"
                   name="email"
                   type="email"
                   autoComplete="email"
@@ -258,73 +272,101 @@ const Register = () => {
               
               <div className="form-group">
                 <div className="password-header">
-                  <label htmlFor="password" className="form-label">Password</label>
-                  <div className="password-controls">
-                    <button 
-                      type="button" 
-                      className="password-toggle"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? 'Hide' : 'Show'}
-                    </button>
-                    <button 
-                      type="button" 
-                      className="password-generator-btn"
-                      onClick={() => {
-                        const newPassword = generatePassword();
-                        setFormData({...formData, password: newPassword});
-                      }}
-                    >
-                      Generate
-                    </button>
-                  </div>
+                  <label htmlFor="password-register" className="form-label">Password</label>
+                  <button 
+                    type="button" 
+                    className="password-toggle"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? 'Hide' : 'Show'}
+                  </button>
                 </div>
                 <div className="password-input-wrapper">
                   <input
-                    id="password"
+                    id="password-register"
                     name="password"
                     type={showPassword ? "text" : "password"}
-                    autoComplete="new-password"
                     required
                     value={password}
                     onChange={onChange}
                     className="form-control"
                     placeholder="••••••••"
+                    minLength="6"
                   />
+                  <button
+                    type="button"
+                    className="password-generator-btn-inside"
+                    onClick={generatePassword}
+                    title="Generate password"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="password-generator-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="form-help-text">
+                  Password must be at least 6 characters
                 </div>
               </div>
               
               <div className="form-group">
-                <label htmlFor="role" className="form-label">Role</label>
-                <select
-                  id="role"
-                  name="role"
-                  value={role}
-                  onChange={onChange}
-                  className="form-control"
-                >
-                  <option value="support_agent">Support Agent</option>
-                  <option value="admin">Admin</option>
-                </select>
+                <div className="password-header">
+                  <label htmlFor="confirm-password" className="form-label">Confirm Password</label>
+                  <button 
+                    type="button" 
+                    className="password-toggle"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? 'Hide' : 'Show'}
+                  </button>
+                </div>
+                <div className="password-input-wrapper">
+                  <input
+                    id="confirm-password"
+                    name="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    required
+                    value={confirmPassword}
+                    onChange={onChange}
+                    className="form-control"
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    className="password-generator-btn-inside"
+                    onClick={() => {
+                      // Also generate for confirm password when generating for main password
+                      setFormData(prev => ({
+                        ...prev,
+                        confirmPassword: password
+                      }));
+                    }}
+                    title="Match password"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="password-generator-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  </button>
+                </div>
               </div>
               
               <div className="form-group">
                 <button
                   type="submit"
                   disabled={loading}
-                  className="btn btn--primary btn--block login-submit-btn"
+                  className="btn btn--primary login-submit-btn"
                 >
                   {loading ? (
                     'Creating account...'
                   ) : (
-                    'Create account'
+                    'Create Account'
                   )}
                 </button>
               </div>
             </form>
             
             <div className="login-footer">
-              <p>Already have an account? <Link to="/login" className="register-link">Sign in</Link></p>
+              <p>Already have an account? <Link to="/login" className="login-link">Sign in</Link></p>
             </div>
           </div>
         </div>

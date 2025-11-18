@@ -27,8 +27,6 @@
   box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   margin-bottom: var(--spacing-xl);
   border-radius: var(--border-radius-xl) var(--border-radius-xl) 0 0;
-  margin-left: var(--current-sidebar-width, 260px);
-  transition: margin-left var(--transition-normal);
 }
 
 .freshdesk-header-content {
@@ -130,30 +128,6 @@
   height: 18px;
 }
 
-.freshdesk-header-actions button.freshdesk-filter-toggle-btn {
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-    font-size: 17px !important;
-    padding: 7px !important;
-    border-radius: 5px !important;
-    background: white !important;
-    border: 1px solid var(--gray-300) !important;
-    color: var(--gray-700) !important;
-    cursor: pointer !important;
-    transition: all var(--transition-fast) !important;
-    box-shadow: var(--shadow-xs) !important;
-    margin-left: var(--spacing-md) !important;
-    gap: var(--spacing-xs) !important;
-}
-
-.freshdesk-header-actions button.freshdesk-filter-toggle-btn:hover {
-    background: var(--gray-50) !important;
-    border-color: var(--gray-400) !important;
-    transform: translateY(-2px) !important;
-    box-shadow: var(--shadow-md) !important;
-}
-
 .freshdesk-search-container {
   position: relative;
   flex: 1;
@@ -249,17 +223,13 @@
   min-height: 0; /* Allow flex child to shrink */
 }
 
-/* When filters are visible, main content should not take full width */
-.freshdesk-main-content {
-  flex: 1;
-  background: white;
-  border: 1px solid var(--gray-200);
-  border-radius: var(--border-radius-xl);
-  box-shadow: var(--shadow);
-  overflow: hidden;
+/* Main content area when filter is collapsed */
+.freshdesk-content.filters-collapsed {
   display: flex;
-  flex-direction: column;
-  order: 1; /* Place on the left */
+  flex: 1;
+  padding: 0 var(--spacing-xl) 0;
+  gap: var(--spacing-xl);
+  min-height: 0;
 }
 
 /* Filter toggle container when filters are collapsed */
@@ -302,7 +272,7 @@
 
 /* When filters are visible, main content and filter sidebar layout */
 .freshdesk-main-content {
-  flex: 1 1 0; /* grow, shrink, basis: 0 - allows it to expand to fill space */
+  flex: 1;
   background: white;
   border: 1px solid var(--gray-200);
   border-radius: var(--border-radius-xl);
@@ -311,11 +281,6 @@
   display: flex;
   flex-direction: column;
   order: 1; /* Place on the left */
-}
-
-/* Layout adjustment when filters are hidden */
-.freshdesk-content.filters-hidden {
-  gap: 0; /* Remove gap when filters are not present */
 }
 
 .freshdesk-filter-container {
@@ -552,12 +517,6 @@
 
 /* Requester info */
 .freshdesk-requester-info {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-}
-
-.freshdesk-company-info {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
@@ -982,10 +941,6 @@
     flex-direction: column;
     margin-left: 0 !important;
     margin-top: 72px;
-  }
-  
-  .freshdesk-header {
-    margin-left: 0 !important;
   }
   
   .freshdesk-content {

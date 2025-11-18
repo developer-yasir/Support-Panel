@@ -1,72 +1,36 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import { api } from '../services/api';
 
-const EmailVerification = () => {
-  const [verificationCode, setVerificationCode] = useState('');
+const ForgotPassword = () => {
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [email, setEmail] = useState('');
-  const [resending, setResending] = useState(false);
-  const [resent, setResent] = useState(false);
-  
-  const { login } = useAuth();
+  const [success, setSuccess] = useState(false);
+  const [message, setMessage] = useState('');
   const navigate = useNavigate();
 
-  // Get email from URL params or local storage
-  useState(() => {
-    const params = new URLSearchParams(window.location.search);
-    const emailParam = params.get('email');
-    if (emailParam) {
-      setEmail(emailParam);
-    }
-  }, []);
-
-  const handleVerify = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSuccess(false);
 
     try {
-      const response = await api.post('/auth/verify-email', {
-        email,
-        code: verificationCode
-      });
-      
-      if (response.data.token) {
-        // Store the token in localStorage and update auth context
-        localStorage.setItem('token', response.data.token);
-        api.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
-        
-        // Update user context
-        const { token, ...userData } = response.data;
-        // In a real application, you might want to update the user context here
-        // For now, we'll navigate directly to dashboard
-        navigate('/dashboard');
-      }
+      const response = await api.post('/auth/forgot-password', { email });
+      setMessage(response.data.message);
+      setSuccess(true);
+      setEmail('');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to verify email');
+      setError(err.response?.data?.message || 'Failed to send password reset email');
+      console.error('Forgot password error:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleResendCode = async () => {
-    setResending(true);
-    setError('');
-    
-    try {
-      // In a real app, you would have an endpoint to resend the code
-      // For now, we'll just show a message
-      setResent(true);
-      setTimeout(() => setResent(false), 5000);
-    } catch (err) {
-      console.error('Failed to resend verification code:', err);
-      setError('Failed to resend verification code');
-    } finally {
-      setResending(false);
-    }
+  const handleGoBack = () => {
+    navigate('/login');
   };
 
   return (
@@ -76,7 +40,7 @@ const EmailVerification = () => {
           <div className="login-brand">
             <div className="login-logo">
               <svg xmlns="http://www.w3.org/2000/svg" className="login-logo-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
             </div>
             <h1 className="login-brand-title">Support Panel</h1>
@@ -91,8 +55,8 @@ const EmailVerification = () => {
                 </svg>
               </div>
               <div className="login-feature-content">
-                <h3 className="login-feature-title">Email Verification</h3>
-                <p className="login-feature-description">We've sent a verification code to your email</p>
+                <h3 className="login-feature-title">Password Recovery</h3>
+                <p className="login-feature-description">Securely reset your account password</p>
               </div>
             </div>
             
@@ -125,8 +89,8 @@ const EmailVerification = () => {
         <div className="login-right">
           <div className="login-card">
             <div className="login-header">
-              <h2 className="login-title">Verify Your Email</h2>
-              <p className="login-subtitle">Enter the 6-digit code sent to {email}</p>
+              <h2 className="login-title">Forgot Password?</h2>
+              <p className="login-subtitle">Enter your email to reset your password</p>
             </div>
             
             {error && (
@@ -138,65 +102,52 @@ const EmailVerification = () => {
               </div>
             )}
             
-            {resent && (
+            {success ? (
               <div className="alert alert--success login-alert">
                 <svg xmlns="http://www.w3.org/2000/svg" className="alert-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                Verification code resent successfully!
+                {message}
               </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="login-form">
+                <div className="form-group">
+                  <label htmlFor="forgot-password-email" className="form-label">Email address</label>
+                  <input
+                    id="forgot-password-email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="form-control"
+                    placeholder="you@example.com"
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="btn btn--primary login-submit-btn"
+                  >
+                    {loading ? (
+                      'Sending Reset Link...'
+                    ) : (
+                      'Send Reset Link'
+                    )}
+                  </button>
+                </div>
+              </form>
             )}
             
-            <form onSubmit={handleVerify} className="login-form">
-              <div className="form-group">
-                <label htmlFor="verification-code" className="form-label">Verification Code</label>
-                <input
-                  id="verification-code"
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  maxLength="6"
-                  required
-                  value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
-                  className="form-control"
-                  placeholder="123456"
-                />
-                <div className="form-help-text">
-                  Enter the 6-digit code sent to your email
-                </div>
-              </div>
-              
-              <div className="form-group">
-                <button
-                  type="submit"
-                  disabled={loading || verificationCode.length !== 6}
-                  className="btn btn--primary btn--block login-submit-btn"
-                >
-                  {loading ? (
-                    'Verifying...'
-                  ) : (
-                    'Verify Email'
-                  )}
-                </button>
-              </div>
-            </form>
-            
-            <div className="divider">
-              <span className="divider-text">Didn't receive the code?</span>
-            </div>
-            
-            <div className="form-group">
-              <button
-                onClick={handleResendCode}
-                disabled={resending}
-                className="btn btn--outline btn--block resend-btn"
+            <div className="login-footer">
+              <button 
+                type="button" 
+                onClick={handleGoBack}
+                className="login-link"
               >
-                {resending ? (
-                  'Resending...'
-                ) : (
-                  'Resend Verification Code'
-                )}
+                ← Back to login
               </button>
             </div>
           </div>
@@ -206,4 +157,4 @@ const EmailVerification = () => {
   );
 };
 
-export default EmailVerification;
+export default ForgotPassword;

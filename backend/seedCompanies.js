@@ -22,6 +22,18 @@ const seedCompanies = async () => {
 
     // Clear existing users (optional - remove this if you want to keep existing data)
     await User.deleteMany({});
+    
+    // Create an initial admin user
+    const adminUser = new User({
+      name: 'Admin User',
+      email: 'admin@support.com',
+      password: 'admin123', // This will be hashed automatically
+      role: 'admin',
+      company: 'System Admin'
+    });
+    
+    await adminUser.save();
+    console.log(`Created admin user: ${adminUser.email}`);
 
     // Create sample users for each company
     for (const company of companies) {

@@ -42,6 +42,7 @@ const Overview = () => {
     inProgressTickets: 0,
     highPriorityTickets: 0
   });
+  const lastWebSocketRefresh = useRef(null);
   const refreshInterval = useRef(null);
   const statsTimeoutRef = useRef(null);
   const navigate = useNavigate();
@@ -156,8 +157,14 @@ const Overview = () => {
   // WebSocket message handler
   const handleWebSocketMessage = useCallback((data) => {
     // When we receive a ticket update message, refresh the stats
+    // Use a more conservative debounce to prevent too frequent updates
     if (data.type === 'ticket_update' || data.type === 'new_ticket') {
-      debouncedFetchStats();
+      // Only allow one refresh every 5 seconds from WebSocket events
+      const now = Date.now();
+      if (!lastWebSocketRefresh.current || now - lastWebSocketRefresh.current > 5000) {
+        lastWebSocketRefresh.current = now;
+        debouncedFetchStats();
+      }
     }
   }, [debouncedFetchStats]);
 

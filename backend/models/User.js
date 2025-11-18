@@ -45,6 +45,19 @@ const userSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
+  },
+  twoFactorEnabled: {
+    type: Boolean,
+    default: false
+  },
+  twoFactorSecret: {
+    type: String
+  },
+  passwordResetToken: {
+    type: String
+  },
+  passwordResetExpires: {
+    type: Date
   }
 }, {
   timestamps: true
@@ -68,6 +81,59 @@ userSchema.methods.createEmailVerificationToken = function() {
   this.emailVerificationToken = token;
   this.emailVerificationExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
   return token;
+};
+
+// Generate 2FA secret
+userSchema.methods.generateTwoFactorSecret = function() {
+  const speakeasy = require('speakeasy');
+  const secret = speakeasy.generateSecret({
+    name: `Support Panel (${this.email})`,
+    issuer: 'Support Panel'
+  });
+  this.twoFactorSecret = secret.base32;
+  return secret;
+};
+
+// Verify 2FA token
+userSchema.methods.verifyTwoFactorToken = function(token) {
+  if (!this.twoFactorSecret) {
+    return false;
+  }
+  
+  const speakeasy = require('speakeasy');
+  return speakeasy.totp.verify({
+    secret: this.twoFactorSecret,
+    encoding: 'base32',
+    token: token,
+    window: 2 // Allow up to 2 intervals before or after
+  });
+};
+
+// Get 2FA QR code URL
+userSchema.methods.getTwoFactorQrCodeUrl = function() {
+  if (!this.twoFactorSecret) {
+    return null;
+  }
+  
+  const speakeasy = require('speakeasy');
+  return speakeasy.otpauthURL({
+    secret: this.twoFactorSecret,
+    label: this.email,
+    issuer: 'Support Panel'
+  });
+};
+
+// Generate password reset token
+userSchema.methods.generatePasswordResetToken = function() {
+  // Generate a random token
+  const crypto = require('crypto');
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  
+  // Set the reset token and expiration (1 hour)
+  this.passwordResetToken = resetToken;
+  this.passwordResetExpires = Date.now() + 1 * 60 * 60 * 1000; // 1 hour
+  
+  return resetToken;
 };
 
 module.exports = mongoose.model('User', userSchema);

@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, user: currentUser } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [openSubmenu, setOpenSubmenu] = useState(null);
 
@@ -94,7 +94,17 @@ const Sidebar = () => {
         </svg>
       ),
       path: '/settings'
-    }
+    },
+    ...(currentUser?.role === 'admin' ? [{
+      id: 'admin',
+      title: 'Admin Dashboard',
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="icon sidebar__menu-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+        </svg>
+      ),
+      path: '/admin'
+    }] : [])
   ];
 
   const isActive = (path) => {

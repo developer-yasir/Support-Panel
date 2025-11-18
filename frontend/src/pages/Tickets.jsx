@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
 import FilterSidebar from "../components/FilterSidebar";
+import OptimizedTicketRow from '../components/OptimizedTicketRow';
 import '../pages/FreshdeskStyles.css';
 
 const Tickets = () => {
@@ -19,6 +20,7 @@ const Tickets = () => {
   const [currentView, setCurrentView] = useState('all');
   const [filters, setFilters] = useState({});
   const [agents, setAgents] = useState([]);
+  const [filtersCollapsed, setFiltersCollapsed] = useState(false);
   const navigate = useNavigate();
 
 
@@ -29,7 +31,7 @@ const Tickets = () => {
       try {
         setLoading(true);
         // Fetch tickets from the backend API
-        const response = await api.get('/tickets');
+        const response = await api.get('/tickets?populate=createdBy');
         setTickets(response.data);
       } catch (error) {
         console.error('Error fetching tickets:', error);
@@ -59,15 +61,15 @@ const Tickets = () => {
     fetchAgents();
   }, []);
 
-  useEffect(() => {
-    let filtered = tickets;
+  const filteredTicketsMemo = useMemo(() => {
+    let filtered = [...tickets]; // Create a copy to avoid mutating the original array
 
     // Apply search filter
     if (searchTerm) {
       filtered = filtered.filter(ticket =>
         (ticket.ticketId || ticket._id || ticket.id).toLowerCase().includes(searchTerm.toLowerCase()) ||
         (ticket.title || ticket.subject).toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ticket.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (ticket.description && ticket.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (ticket.createdBy?.name && ticket.createdBy.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (ticket.createdBy?.email && ticket.createdBy.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (ticket.assignedTo?.name && ticket.assignedTo.name.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -108,7 +110,7 @@ const Tickets = () => {
       filtered = filtered.filter(ticket =>
         (ticket.ticketId || ticket._id || ticket.id).toLowerCase().includes(searchFields.toLowerCase()) ||
         (ticket.title || ticket.subject).toLowerCase().includes(searchFields.toLowerCase()) ||
-        ticket.description.toLowerCase().includes(searchFields.toLowerCase()) ||
+        (ticket.description && ticket.description.toLowerCase().includes(searchFields.toLowerCase())) ||
         (ticket.createdBy?.name && ticket.createdBy.name.toLowerCase().includes(searchFields.toLowerCase())) ||
         (ticket.createdBy?.email && ticket.createdBy.email.toLowerCase().includes(searchFields.toLowerCase())) ||
         (ticket.assignedTo?.name && ticket.assignedTo.name.toLowerCase().includes(searchFields.toLowerCase()))
@@ -168,25 +170,30 @@ const Tickets = () => {
     }
 
     // Apply sorting
-    filtered = [...filtered].sort((a, b) => {
+    filtered.sort((a, b) => {
       switch (sortOption) {
         case 'latest':
-          return new Date(b.lastUpdated) - new Date(a.lastUpdated);
+          return new Date(b.lastUpdated || b.createdAt) - new Date(a.lastUpdated || a.createdAt);
         case 'oldest':
-          return new Date(a.lastUpdated) - new Date(b.lastUpdated);
+          return new Date(a.lastUpdated || a.createdAt) - new Date(b.lastUpdated || b.createdAt);
         case 'priority':
           const priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1 };
           return priorityOrder[b.priority] - priorityOrder[a.priority];
         case 'due_date':
           // Placeholder for due date sorting
-          return new Date(b.lastUpdated) - new Date(a.lastUpdated);
+          return new Date(b.lastUpdated || b.createdAt) - new Date(a.lastUpdated || a.createdAt);
         default:
           return 0;
       }
     });
 
-    setFilteredTickets(filtered);
+    return filtered;
   }, [tickets, searchTerm, statusFilter, priorityFilter, sortOption, currentView, filters]);
+
+  // Update state when filtered tickets change
+  useEffect(() => {
+    setFilteredTickets(filteredTicketsMemo);
+  }, [filteredTicketsMemo]);
 
   const handleTicketClick = useCallback((ticket) => {
     navigate(`/ticket/${ticket.ticketId || ticket._id || ticket.id}`);
@@ -282,10 +289,10 @@ const Tickets = () => {
         )
       );
       
-      console.log(`Ticket ${ticket.ticketId} assigned to ${newAssigneeId}`);
+      console.log(`Ticket ${ticket.ticketId} assigned successfully to ${newAssigneeId}`);
     } catch (error) {
       console.error('Error assigning ticket:', error);
-      // Optionally show an error message to the user
+      alert(`Failed to assign ticket: ${error.response?.data?.message || error.message || 'Unknown error'}`);
     }
   };
 
@@ -313,7 +320,7 @@ const Tickets = () => {
       console.log(`Ticket ${ticket.ticketId} status updated to ${newStatus}`);
     } catch (error) {
       console.error('Error updating ticket status:', error);
-      // Optionally show an error message to the user
+      alert(`Failed to update ticket status: ${error.response?.data?.message || error.message || 'Unknown error'}`);
     }
   };
 
@@ -341,9 +348,18 @@ const Tickets = () => {
       console.log(`Ticket ${ticket.ticketId} priority updated to ${newPriority}`);
     } catch (error) {
       console.error('Error updating ticket priority:', error);
-      // Optionally show an error message to the user
+      alert(`Failed to update ticket priority: ${error.response?.data?.message || error.message || 'Unknown error'}`);
     }
   };
+
+  // Define callback functions for FilterSidebar
+  const handleFilterChange = useCallback((filters) => {
+    setFilters(filters);
+  }, [setFilters]);
+
+  const handleClearFilters = useCallback(() => {
+    setFilters({});
+  }, [setFilters]);
 
 
 
@@ -356,7 +372,7 @@ const Tickets = () => {
           <div className="freshdesk-search-container">
             <input
               type="text"
-              placeholder="Search tickets, subjects, requesters..."
+              placeholder="Search tickets, subjects, companies..."
               className="freshdesk-search-input"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -387,13 +403,23 @@ const Tickets = () => {
               </svg>
               New Ticket
             </button>
+            
+            <button 
+              className="freshdesk-filter-toggle-btn"
+              onClick={() => setFiltersCollapsed(!filtersCollapsed)}
+            >
+              <svg className="freshdesk-btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+              Filters
+            </button>
           </div>
         </div>
       </div>
       <div className="freshdesk-layout">
         <Sidebar />
         
-        <div className="freshdesk-content">
+        <div className={`freshdesk-content ${filtersCollapsed ? 'filters-hidden' : ''}`}>
           {/* Center Ticket List */}
           <div className="freshdesk-main-content">
             <div className="freshdesk-ticket-list-header">
@@ -451,96 +477,25 @@ const Tickets = () => {
                       </th>
                       <th width="100">Ticket ID</th>
                       <th>Subject</th>
-                      <th>Requester</th>
+                      <th>Company</th>
                       <th>Last Updated</th>
                       <th>Details</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredTickets.map(ticket => (
-                      <tr 
-                        key={ticket.ticketId || ticket._id || ticket.id} 
-                        className={`freshdesk-ticket-row ticket-row ${selectedTickets.has(ticket.ticketId || ticket._id || ticket.id) ? 'selected' : ''}`}
-                        onClick={() => handleTicketClick(ticket)}
-                      >
-                        <td>
-                          <input
-                            type="checkbox"
-                            className="freshdesk-checkbox"
-                            checked={selectedTickets.has(ticket.ticketId || ticket._id || ticket.id)}
-                            onChange={(e) => {
-                              e.stopPropagation();
-                              handleSelectTicket(ticket.ticketId || ticket._id || ticket.id);
-                            }}
-                          />
-                        </td>
-                        <td>
-                          <div className="freshdesk-ticket-id">{ticket.ticketId || ticket._id || ticket.id}</div>
-                        </td>
-                        <td>
-                          <div className="freshdesk-ticket-subject">{ticket.title || ticket.subject}</div>
-                          <div className="freshdesk-ticket-description">
-                            {ticket.description.substring(0, 100)}...
-                          </div>
-                        </td>
-                        <td>
-                          <div className="freshdesk-requester-info">
-                            <div className="freshdesk-requester-name">{ticket.createdBy?.name || 'N/A'}</div>
-                            <div className="freshdesk-requester-email">{ticket.createdBy?.email || 'N/A'}</div>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="freshdesk-time-ago">{getTimeAgo(ticket.lastUpdated)}</div>
-                        </td>
-                        <td>
-                          <div className="freshdesk-ticket-details-block">
-                            <div className="freshdesk-ticket-assigned">
-                              <span className="freshdesk-ticket-detail-label">Assigned To:</span>
-                              <select
-                                className="freshdesk-quick-action-select"
-                                value={ticket.assignedTo?._id || ''}
-                                onChange={(e) => handleAssignChange(ticket, e.target.value)}
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <option value="">Unassigned</option>
-                                {agents.map(agent => (
-                                  <option key={agent._id} value={agent._id}>
-                                    {agent.name}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                            <div className="freshdesk-ticket-status">
-                              <span className="freshdesk-ticket-detail-label">Status:</span>
-                              <select
-                                className="freshdesk-quick-action-select"
-                                value={ticket.status}
-                                onChange={(e) => handleStatusChange(ticket, e.target.value)}
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <option value="open">Open</option>
-                                <option value="in_progress">In Progress</option>
-                                <option value="resolved">Resolved</option>
-                                <option value="closed">Closed</option>
-                              </select>
-                            </div>
-                            <div className="freshdesk-ticket-priority">
-                              <span className="freshdesk-ticket-detail-label">Priority:</span>
-                              <select
-                                className="freshdesk-quick-action-select"
-                                value={ticket.priority}
-                                onChange={(e) => handlePriorityChange(ticket, e.target.value)}
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <option value="low">Low</option>
-                                <option value="medium">Medium</option>
-                                <option value="high">High</option>
-                                <option value="urgent">Urgent</option>
-                              </select>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
+                      <OptimizedTicketRow
+                        key={ticket.ticketId || ticket._id || ticket.id}
+                        ticket={ticket}
+                        selectedTickets={selectedTickets}
+                        handleTicketClick={handleTicketClick}
+                        handleSelectTicket={handleSelectTicket}
+                        handleAssignChange={handleAssignChange}
+                        handleStatusChange={handleStatusChange}
+                        handlePriorityChange={handlePriorityChange}
+                        agents={agents}
+                        getTimeAgo={getTimeAgo}
+                      />
                     ))}
                   </tbody>
                 </table>
@@ -548,16 +503,17 @@ const Tickets = () => {
             </div>
           </div>
           {/* Filter Sidebar - on the right */}
-          <FilterSidebar 
-            onFilterChange={useCallback((filters) => {
-              // Update the filtering logic based on the new filters
-              setFilters(filters);
-            }, [setFilters])}
-            onClearFilters={useCallback(() => {
-              // Reset the filters state
-              setFilters({});
-            }, [setFilters])}
-          />
+          {!filtersCollapsed && (
+            <div className="freshdesk-filter-container">
+              <div className="freshdesk-filter-header">
+                <h3 className="freshdesk-filter-title">Filters</h3>
+              </div>
+              <FilterSidebar 
+                onFilterChange={handleFilterChange}
+                onClearFilters={handleClearFilters}
+              />
+            </div>
+          )}
         </div>
         
 

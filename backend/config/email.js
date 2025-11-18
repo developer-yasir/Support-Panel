@@ -184,8 +184,52 @@ const getPriorityColor = (priority) => {
   }
 };
 
+const sendPasswordResetEmail = async (email, name, resetToken) => {
+  const transporter = createTransporter();
+  
+  // Get the frontend URL from environment variable or default to localhost
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
+  
+  const mailOptions = {
+    from: process.env.EMAIL_FROM || '\"Support Panel\" <no-reply@supportpanel.com>',
+    to: email,
+    subject: 'Password Reset Request - Support Panel',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #3b82f6;">Password Reset Request</h2>
+        <p>Hello ${name},</p>
+        <p>You have requested to reset your password. Please click the button below to set a new password:</p>
+        <p style="text-align: center; margin: 30px 0;">
+          <a href="${resetUrl}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">Reset Your Password</a>
+        </p>
+        <p style="text-align: center; margin: 20px 0;">
+          Or copy and paste this link into your browser:<br>
+          <a href="${resetUrl}" style="color: #3b82f6; word-break: break-all;">${resetUrl}</a>
+        </p>
+        <p>This link will expire in 1 hour for security reasons.</p>
+        <p>If you didn't request a password reset, please ignore this email.</p>
+        <hr style="margin: 30px 0;">
+        <p style="font-size: 12px; color: #6b7280;">
+          This email was sent by Support Panel. If you have any questions, please contact our support team.
+        </p>
+      </div>
+    `
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Password reset email sent: %s', info.messageId);
+    return info;
+  } catch (error) {
+    console.error('Error sending password reset email:', error);
+    throw error;
+  }
+};
+
 module.exports = {
   sendVerificationEmail,
   sendTicketNotification,
-  sendTicketUpdateNotification
+  sendTicketUpdateNotification,
+  sendPasswordResetEmail
 };

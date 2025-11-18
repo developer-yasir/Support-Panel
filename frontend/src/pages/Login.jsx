@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { api } from '../services/api';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -28,6 +29,8 @@ const Login = () => {
     setError('');
 
     try {
+
+      
       const response = await login(email, password, rememberMe);
       
       if (response.success) {
@@ -40,6 +43,9 @@ const Login = () => {
           setTimeout(() => {
             navigate(`/verify-email?email=${encodeURIComponent(email)}`);
           }, 2000);
+        } else if (response.requires2FA) {
+          // Redirect to 2FA verification page
+          navigate(`/2fa-verification?email=${encodeURIComponent(email)}&rememberMe=${rememberMe}`);
         } else {
           setError(response.message);
         }
@@ -133,7 +139,7 @@ const Login = () => {
               </div>
               
               <div className="login-footer">
-                <p>Already verified? <Link to="/login" className="register-link" onClick={() => setEmailToVerify('')}>Try logging in again</Link></p>
+                <p>Already verified? <Link to="/login" className="login-link" onClick={() => setEmailToVerify('')}>Try logging in again</Link></p>
               </div>
             </div>
           </div>
@@ -251,41 +257,43 @@ const Login = () => {
                     placeholder="••••••••"
                   />
                 </div>
-                <a href="#" className="forgot-password">Forgot password?</a>
+                <a href="/forgot-password" className="forgot-password">Forgot password?</a>
               </div>
               
-              <div className="form-group form-group--checkbox">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="checkbox-input"
-                  />
-                  <span className="checkbox-custom"></span>
-                  Remember me
-                </label>
-              </div>
-              
-              <div className="form-group">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="btn btn--primary btn--block login-submit-btn"
-                >
-                  {loading ? (
-                    'Signing in...'
-                  ) : (
-                    'Sign in'
-                  )}
-                </button>
+              <div className="form-group-row">
+                <div className="form-group form-group--checkbox">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="checkbox-input"
+                    />
+                    <span className="checkbox-custom"></span>
+                    Remember me
+                  </label>
+                </div>
+                
+                <div className="form-group">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="btn btn--primary login-submit-btn"
+                  >
+                    {loading ? (
+                      'Signing in...'
+                    ) : (
+                      'Sign in'
+                    )}
+                  </button>
+                </div>
               </div>
             </form>
             
 
             
             <div className="login-footer">
-              <p>Don't have an account? <Link to="/register" className="register-link">Register</Link></p>
+              <p>Don't have an account? <Link to="/register" className="login-link">Sign up</Link></p>
             </div>
           </div>
         </div>

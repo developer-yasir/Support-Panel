@@ -33,9 +33,14 @@ export const AuthProvider = ({ children }) => {
     initializeAuth();
   }, []);
 
-  const login = async (email, password, rememberMe = false) => {
+  const login = async (email, password, rememberMe = false, twoFactorToken = null) => {
     try {
-      const response = await api.post('/auth/login', { email, password, rememberMe });
+      const loginData = { email, password, rememberMe };
+      if (twoFactorToken) {
+        loginData.twoFactorToken = twoFactorToken;
+      }
+      
+      const response = await api.post('/auth/login', loginData);
       const { token, ...userData } = response.data;
       
       localStorage.setItem('token', token);
@@ -51,20 +56,7 @@ export const AuthProvider = ({ children }) => {
 
 
 
-  const register = async (name, email, password, role) => {
-    try {
-      const response = await api.post('/auth/register', { name, email, password, role });
-      const { token, ...userData } = response.data;
-      
-      localStorage.setItem('token', token);
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      setUser(userData);
-      
-      return { success: true };
-    } catch (error) {
-      return { success: false, message: error.response?.data?.message || 'Registration failed' };
-    }
-  };
+
 
   const logout = () => {
     localStorage.removeItem('token');
@@ -84,8 +76,8 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     user,
+    currentUser: user,  // alias for consistency
     login,
-    register,
     logout,
     updateProfile,
     loading

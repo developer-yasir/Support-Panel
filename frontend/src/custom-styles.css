@@ -1108,6 +1108,76 @@
   height: 20px;
 }
 
+/* Filter Collapse Styles */
+.freshdesk-filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--gray-200);
+  background: white;
+  border-radius: var(--border-radius-xl) var(--border-radius-xl) 0 0;
+}
+
+.freshdesk-filter-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--gray-800);
+}
+
+.freshdesk-filter-collapse-btn {
+  background: none;
+  border: none;
+  color: var(--gray-600);
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: var(--border-radius-md);
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.freshdesk-filter-collapse-btn:hover {
+  background: var(--gray-100);
+  color: var(--gray-900);
+}
+
+.freshdesk-filter-collapse-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.filter-collapse-btn {
+  background: none;
+  border: none;
+  color: var(--gray-600);
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: var(--border-radius-md);
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.filter-collapse-btn:hover {
+  background: var(--gray-100);
+  color: var(--gray-900);
+}
+
+.filter-toggle-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.freshdesk-filter-toggle-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* Animations */
 @keyframes fadeIn {
   from {
