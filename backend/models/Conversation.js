@@ -27,9 +27,19 @@ const conversationSchema = new mongoose.Schema({
   lastMessage: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Message'
+  },
+  companyId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Company',
+    required: true
   }
 }, {
   timestamps: true // adds createdAt and updatedAt
 });
+
+// Add indexes for better performance
+conversationSchema.index({ companyId: 1 });
+conversationSchema.index({ status: 1, companyId: 1 });
+conversationSchema.index({ 'participants.userId': 1, companyId: 1 });
 
 module.exports = mongoose.model('Conversation', conversationSchema);

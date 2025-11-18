@@ -15,9 +15,19 @@ const commentSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
+  },
+  companyId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Company',
+    required: true
   }
 }, {
   timestamps: true
 });
+
+// Add indexes for better performance
+commentSchema.index({ companyId: 1 });
+commentSchema.index({ ticket: 1, companyId: 1 });
+commentSchema.index({ createdBy: 1, companyId: 1 });
 
 module.exports = mongoose.model('Comment', commentSchema);

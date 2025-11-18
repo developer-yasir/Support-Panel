@@ -41,10 +41,21 @@ const messageSchema = new mongoose.Schema({
       type: Date,
       default: Date.now
     }
-  }]
+  }],
+  companyId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Company',
+    required: true
+  }
 }, {
   timestamps: true // adds createdAt and updatedAt
 });
+
+// Add indexes for better query performance
+messageSchema.index({ conversationId: 1, createdAt: -1 });
+messageSchema.index({ conversationId: 1, sender: 1 });
+messageSchema.index({ companyId: 1 });
+messageSchema.index({ conversationId: 1, companyId: 1 });
 
 // Add indexes for better query performance
 messageSchema.index({ conversationId: 1, createdAt: -1 });

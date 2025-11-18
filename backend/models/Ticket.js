@@ -42,10 +42,22 @@ const ticketSchema = new mongoose.Schema({
   assignedTo: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
+  },
+  companyId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Company',
+    required: true
   }
 }, {
   timestamps: true
 });
+
+// Add indexes for better performance with companyId queries
+ticketSchema.index({ companyId: 1 });
+ticketSchema.index({ status: 1, companyId: 1 });
+ticketSchema.index({ priority: 1, companyId: 1 });
+ticketSchema.index({ assignedTo: 1, companyId: 1 });
+ticketSchema.index({ createdBy: 1, companyId: 1 });
 
 // Pre-validate middleware to generate sequential ticket ID
 ticketSchema.pre('validate', async function(next) {

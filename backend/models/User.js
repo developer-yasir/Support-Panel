@@ -58,10 +58,20 @@ const userSchema = new mongoose.Schema({
   },
   passwordResetExpires: {
     type: Date
+  },
+  companyId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Company',
+    required: true // All users must belong to a company
   }
 }, {
   timestamps: true
 });
+
+// Add index for better performance with companyId queries
+userSchema.index({ companyId: 1 });
+userSchema.index({ email: 1, companyId: 1 });
+userSchema.index({ role: 1, companyId: 1 });
 
 // Hash password before saving
 userSchema.pre('save', async function(next) {
