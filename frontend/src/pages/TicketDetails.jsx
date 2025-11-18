@@ -48,7 +48,7 @@ const TicketDetails = () => {
             priority: 'high',
             createdAt: new Date().toISOString(),
             lastActivity: new Date().toISOString(),
-            requester: {
+            createdBy: {
               name: 'Sarah Johnson',
               email: 'sarah.j@example.com',
               company: 'Tech Innovations Inc.',
@@ -289,10 +289,10 @@ const TicketDetails = () => {
                 <div className="freshdesk-message-header">
                   <div className="freshdesk-message-author">
                     <div className="freshdesk-message-author-avatar" style={{background: 'linear-gradient(135deg, #4f46e5, #7c3aed)'}}>
-                      {ticket.requester?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'R'}
+                      {(ticket.createdBy?.name || ticket.requester?.name)?.split(' ').map(n => n[0]).join('').toUpperCase() || 'R'}
                     </div>
                     <div className="freshdesk-message-author-info">
-                      <span className="freshdesk-message-author-name">{ticket.requester?.name || 'Requester'}</span>
+                      <span className="freshdesk-message-author-name">{ticket.createdBy?.name || ticket.requester?.name || 'Requester'}</span>
                       <span className="freshdesk-message-author-role">Requester</span>
                     </div>
                   </div>
@@ -420,8 +420,8 @@ const TicketDetails = () => {
                 <div className="freshdesk-property-item">
                   <label className="freshdesk-property-label">Requester</label>
                   <div className="freshdesk-property-value">
-                    {ticket.requester?.name || 'Unknown'}<br />
-                    <small>{ticket.requester?.email || 'No email provided'}</small>
+                    {ticket.createdBy?.name || ticket.requester?.name || 'Unknown'}<br />
+                    <small>{ticket.createdBy?.email || ticket.requester?.email || 'No email provided'}</small>
                   </div>
                 </div>
 
@@ -464,16 +464,16 @@ const TicketDetails = () => {
                 <h3 className="freshdesk-sidebar-title">Reporter Details</h3>
                 <div className="freshdesk-contact-info">
                   <div className="freshdesk-contact-item">
-                    <strong>Name:</strong> {ticket.requester?.name || 'Unknown'}
+                    <strong>Name:</strong> {ticket.createdBy?.name || ticket.requesterName || 'Unknown'}
                   </div>
                   <div className="freshdesk-contact-item">
-                    <strong>Email:</strong> {ticket.requester?.email || 'No email'}
+                    <strong>Email:</strong> {ticket.createdBy?.email || ticket.requesterEmail || 'No email'}
                   </div>
                   <div className="freshdesk-contact-item">
-                    <strong>Phone:</strong> {ticket.requester?.phone || 'No phone'}
+                    <strong>Phone:</strong> {ticket.createdBy?.phone || ticket.requesterPhone || 'No phone'}
                   </div>
                   <div className="freshdesk-contact-item">
-                    <strong>Company:</strong> {ticket.requester?.company || 'No company'}
+                    <strong>Company:</strong> {ticket.createdBy?.company || ticket.requesterCompany || 'No company'}
                   </div>
                 </div>
               </div>

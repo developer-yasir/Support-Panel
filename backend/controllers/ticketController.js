@@ -86,13 +86,13 @@ exports.getTicketById = async (req, res) => {
     
     // First try to find by custom ticketId
     ticket = await Ticket.findOne({ ticketId: req.params.id })
-      .populate('createdBy', 'name email')
+      .populate('createdBy', 'name email phone company')
       .populate('assignedTo', 'name email');
     
     // If not found by ticketId and the param looks like an ObjectId, try to find by _id
     if (!ticket && /^[0-9a-fA-F]{24}$/.test(req.params.id)) {
       ticket = await Ticket.findById(req.params.id)
-        .populate('createdBy', 'name email')
+        .populate('createdBy', 'name email phone company')
         .populate('assignedTo', 'name email');
     }
     
