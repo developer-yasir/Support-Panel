@@ -41,7 +41,6 @@ const OptimizedTicketRow = ({
     <tr 
       key={ticket.ticketId || ticket._id || ticket.id} 
       className={`freshdesk-ticket-row ticket-row ${isSelected ? 'selected' : ''}`}
-      onClick={handleClick}
     >
       <td>
         <input
@@ -52,11 +51,11 @@ const OptimizedTicketRow = ({
         />
       </td>
       <td>
-        <div className="freshdesk-ticket-id">{ticket.ticketId || ticket._id || ticket.id}</div>
+        <div className="freshdesk-ticket-id" onClick={handleClick}>{ticket.ticketId || ticket._id || ticket.id}</div>
       </td>
       <td>
-        <div className="freshdesk-ticket-subject">{ticket.title || ticket.subject}</div>
-        <div className="freshdesk-ticket-description">
+        <div className="freshdesk-ticket-subject" onClick={handleClick}>{ticket.title || ticket.subject}</div>
+        <div className="freshdesk-ticket-description" onClick={handleClick}>
           {ticket.description ? (ticket.description.substring(0, 100) + (ticket.description.length > 100 ? '...' : '')) : ''}
         </div>
       </td>

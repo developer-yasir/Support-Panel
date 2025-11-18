@@ -506,11 +506,6 @@
 
 .freshdesk-ticket-row {
   transition: background-color var(--transition-fast);
-  cursor: pointer;
-}
-
-.freshdesk-ticket-row:hover {
-  background-color: var(--gray-50);
 }
 
 .freshdesk-ticket-row.selected {
@@ -530,6 +525,14 @@
   padding: 0.25rem 0.75rem;
   border-radius: var(--border-radius-full);
   display: inline-block;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.freshdesk-ticket-id:hover {
+  background: var(--brand-primary)10;
+  color: var(--brand-primary);
+  transform: translateY(-1px);
 }
 
 /* Ticket subject and description */
@@ -538,6 +541,13 @@
   color: var(--gray-900);
   margin-bottom: var(--spacing-xs);
   font-size: 0.95rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.freshdesk-ticket-subject:hover {
+  color: var(--brand-primary);
+  transform: translateX(2px);
 }
 
 .freshdesk-ticket-description {
@@ -548,6 +558,13 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.freshdesk-ticket-description:hover {
+  color: var(--brand-primary);
+  transform: translateX(2px);
 }
 
 /* Requester info */
