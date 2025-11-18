@@ -19,6 +19,7 @@ import Chat from './pages/Chat';
 import Tickets from './pages/Tickets';
 import Agents from './pages/Agents';
 import AdminDashboard from './pages/AdminDashboard';
+import CompanySignup from './pages/CompanySignup';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
 import Design1 from './pages/ticketDetailDesigns/Design1';
@@ -40,6 +41,7 @@ function App() {
             <Route path="/2fa-setup" element={<TwoFactorSetup />} />
             <Route path="/2fa-verification" element={<TwoFactorVerification />} />
             <Route path="/verify-email" element={<EmailVerification />} />
+            <Route path="/signup" element={<CompanySignup />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <ErrorBoundary>
@@ -122,6 +124,9 @@ function App() {
             } />
 
             <Route path="/" element={
+              <CompanySignup />
+            } />
+            <Route path="/app" element={
               <ProtectedRoute>
                 <ErrorBoundary>
                   <Tickets />

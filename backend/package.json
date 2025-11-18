@@ -23,6 +23,7 @@
     "nodemailer": "^7.0.6",
     "qrcode": "^1.5.4",
     "speakeasy": "^2.0.0",
+    "vhost": "^3.0.2",
     "ws": "^8.18.3"
   },
   "devDependencies": {

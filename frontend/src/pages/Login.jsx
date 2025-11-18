@@ -293,7 +293,7 @@ const Login = () => {
 
             
             <div className="login-footer">
-              <p>Don't have an account? <Link to="/register" className="login-link">Sign up</Link></p>
+              <p>Don't have an account? <Link to="/signup" className="login-link">Create company account</Link></p>
             </div>
           </div>
         </div>

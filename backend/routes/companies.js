@@ -10,13 +10,17 @@ const {
   getCompanyAgents, 
   suspendCompany, 
   activateCompany, 
-  changePlan 
+  changePlan,
+  checkSubdomainAvailability,
+  getCompanySetupInfo
 } = require('../controllers/companyController');
 const { protect, adminOnly } = require('../middlewares/authMiddleware');
 const { tenantMiddleware, tenantAuthMiddleware } = require('../middlewares/tenantMiddleware');
 
-// Public route for company creation (during signup)
+// Public routes for company signup
 router.post('/', createCompany);
+router.get('/setup-info', getCompanySetupInfo);
+router.get('/check-subdomain/:subdomain', checkSubdomainAvailability);
 
 // Get company by subdomain (for subdomain routing - public)
 router.get('/subdomain/:subdomain', getCompanyBySubdomain);

@@ -10,12 +10,21 @@ const tenantMiddleware = async (req, res, next) => {
     let companyId = null;
     let company = null;
 
-    // Method 1: Try to get company from subdomain (e.g., company1.yourapp.com)
-    if (req.headers.host) {
+    // Method 1: Try to get company from Express subdomain (when using vhost or express subdomain feature)
+    if (req.subdomain && req.subdomain !== 'www' && req.subdomain !== 'api') {
+      company = await Company.findOne({
+        subdomain: req.subdomain.toLowerCase(),
+        active: true,
+        suspended: false
+      });
+    }
+
+    // Method 2: Try to get company from host header (fallback if subdomain property isn't set)
+    if (!company && req.headers.host) {
       const host = req.headers.host;
       const subdomain = extractSubdomain(host);
       
-      if (subdomain && subdomain !== 'www') {
+      if (subdomain && subdomain !== 'www' && subdomain !== req.subdomain) {
         company = await Company.findOne({
           subdomain: subdomain,
           active: true,
@@ -24,7 +33,7 @@ const tenantMiddleware = async (req, res, next) => {
       }
     }
 
-    // Method 2: Try to get company from Authorization header (for API calls)
+    // Method 3: Try to get company from Authorization header (for API calls)
     if (!company && req.headers.authorization) {
       const token = req.headers.authorization.replace('Bearer ', '');
       // Here you would normally decode JWT and get company info
@@ -42,12 +51,12 @@ const tenantMiddleware = async (req, res, next) => {
       }
     }
 
-    // Method 3: Try to get from company header
+    // Method 4: Try to get from company header
     if (!company && req.headers['x-company-id']) {
       company = await Company.findById(req.headers['x-company-id']);
     }
 
-    // Method 4: Try to get from cookie (for frontend requests)
+    // Method 5: Try to get from cookie (for frontend requests)
     if (!company && req.cookies && req.cookies.companyId) {
       company = await Company.findById(req.cookies.companyId);
     }
@@ -63,6 +72,7 @@ const tenantMiddleware = async (req, res, next) => {
       req.companyId = company._id;
       req.company = company;
       req.tenant = company; // alias
+      req.subdomain = req.subdomain || company.subdomain; // Ensure subdomain is set
     } else {
       // For now, allow requests without company for signup/login
       // In production, you might want to be more restrictive

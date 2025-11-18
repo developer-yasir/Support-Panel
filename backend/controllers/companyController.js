@@ -1,6 +1,8 @@
 const Company = require('../models/Company');
 const User = require('../models/User');
 const { generate } = require('generate-password');
+const jwt = require('jsonwebtoken');
+const config = require('../config/config');
 
 // Create a new company (for signup process)
 exports.createCompany = async (req, res) => {
@@ -14,6 +16,21 @@ exports.createCompany = async (req, res) => {
       ownerEmail,
       ownerPassword
     } = req.body;
+
+    // Validate required fields
+    if (!name || !subdomain || !billingEmail || !contactEmail || !ownerName || !ownerEmail || !ownerPassword) {
+      return res.status(400).json({ 
+        message: 'All fields are required: name, subdomain, billingEmail, contactEmail, ownerName, ownerEmail, ownerPassword' 
+      });
+    }
+
+    // Basic validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(billingEmail) || !emailRegex.test(contactEmail) || !emailRegex.test(ownerEmail)) {
+      return res.status(400).json({ 
+        message: 'Please provide valid email addresses' 
+      });
+    }
 
     // Check if subdomain is already taken
     const existingCompany = await Company.findOne({ subdomain: subdomain.toLowerCase() });
@@ -31,12 +48,23 @@ exports.createCompany = async (req, res) => {
       });
     }
 
+    // Check if owner email is already taken
+    const existingUser = await User.findOne({ email: ownerEmail.toLowerCase() });
+    if (existingUser) {
+      return res.status(400).json({ 
+        message: 'A user is already registered with this email address.' 
+      });
+    }
+
     // Create the company
     const company = new Company({
       name,
       subdomain: subdomain.toLowerCase(),
       billingEmail: billingEmail.toLowerCase(),
-      contactEmail: contactEmail.toLowerCase()
+      contactEmail: contactEmail.toLowerCase(),
+      // Set up free plan by default
+      plan: 'free',
+      features: getPlanFeatures('free')
     });
 
     await company.save();
@@ -48,6 +76,7 @@ exports.createCompany = async (req, res) => {
       password: ownerPassword,
       role: 'admin',
       isActive: true,
+      isEmailVerified: true, // Auto-verify for signup
       companyId: company._id
     });
 
@@ -57,23 +86,127 @@ exports.createCompany = async (req, res) => {
     company.ownerId = ownerUser._id;
     await company.save();
 
-    // Return success response without sensitive data
+    // Generate JWT token for the new user
+    const token = jwt.sign(
+      { id: ownerUser._id, companyId: company._id },
+      config.jwtSecret,
+      { expiresIn: '30d' }
+    );
+
+    // Return success response with token
     res.status(201).json({
       message: 'Company created successfully',
+      token,
       company: {
         id: company._id,
         name: company.name,
         subdomain: company.subdomain,
-        billingEmail: company.billingEmail
+        billingEmail: company.billingEmail,
+        plan: company.plan,
+        features: company.features
       },
-      owner: {
+      user: {
         id: ownerUser._id,
         name: ownerUser.name,
-        email: ownerUser.email
+        email: ownerUser.email,
+        role: ownerUser.role
       }
     });
   } catch (error) {
     console.error('Error creating company:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Check if subdomain is available
+exports.checkSubdomainAvailability = async (req, res) => {
+  try {
+    const { subdomain } = req.params;
+    
+    if (!subdomain) {
+      return res.status(400).json({ message: 'Subdomain parameter is required' });
+    }
+
+    const existingCompany = await Company.findOne({ 
+      subdomain: subdomain.toLowerCase() 
+    });
+    
+    res.json({
+      available: !existingCompany,
+      subdomain: subdomain.toLowerCase()
+    });
+  } catch (error) {
+    console.error('Error checking subdomain availability:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Get company setup information (for signup form)
+exports.getCompanySetupInfo = async (req, res) => {
+  try {
+    const plans = {
+      free: {
+        name: 'Free',
+        price: 0,
+        features: {
+          agentSeats: 1,
+          ticketVolume: 100,
+          customFields: false,
+          reporting: false,
+          apiAccess: false,
+          customBranding: false,
+          sso: false
+        }
+      },
+      starter: {
+        name: 'Starter',
+        price: 29,
+        features: {
+          agentSeats: 3,
+          ticketVolume: 500,
+          customFields: true,
+          reporting: true,
+          apiAccess: false,
+          customBranding: false,
+          sso: false
+        }
+      },
+      professional: {
+        name: 'Professional',
+        price: 79,
+        features: {
+          agentSeats: 10,
+          ticketVolume: 2000,
+          customFields: true,
+          reporting: true,
+          apiAccess: true,
+          customBranding: true,
+          sso: false
+        }
+      },
+      enterprise: {
+        name: 'Enterprise',
+        price: 199,
+        features: {
+          agentSeats: 50,
+          ticketVolume: 10000,
+          customFields: true,
+          reporting: true,
+          apiAccess: true,
+          customBranding: true,
+          sso: true
+        }
+      }
+    };
+
+    res.json({
+      plans,
+      defaultPlan: 'free',
+      termsOfService: 'Standard terms and conditions apply',
+      privacyPolicy: 'User data is protected according to our privacy policy'
+    });
+  } catch (error) {
+    console.error('Error getting setup info:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };

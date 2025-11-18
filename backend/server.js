@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const helmet = require('helmet');
 const WebSocket = require('ws');
+const vhost = require('vhost');
 
 // Load environment variables
 dotenv.config();
@@ -18,10 +19,10 @@ const companiesRoutes = require('./routes/companies');
 const chatRoutes = require('./routes/chat');
 const twoFactorRoutes = require('./routes/twoFactor');
 
-// Initialize app
+// Initialize main app
 const app = express();
 
-// Middleware
+// Middleware for main app
 app.use(helmet());
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
@@ -29,7 +30,7 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Routes
+// Main API routes (for main domain like app.yourapp.com)
 app.use('/api/auth', authRoutes);
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/comments', commentRoutes);
@@ -39,12 +40,59 @@ app.use('/api/companies', companiesRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/2fa', twoFactorRoutes);
 
+// Initialize subdomain app
+const subdomainApp = express();
+subdomainApp.use(express.json());
+
+// Apply the same security and CORS middleware to subdomain app
+subdomainApp.use(helmet());
+subdomainApp.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests from any subdomain of your main domain
+    if (!origin || origin.includes(process.env.MAIN_DOMAIN || 'yourapp.com')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
+
+// Apply tenant middleware to subdomain routes
+const { tenantMiddleware } = require('./middlewares/tenantMiddleware');
+subdomainApp.use(tenantMiddleware);
+
+// Subdomain API routes (same as main app, but with tenant isolation)
+subdomainApp.use('/api/auth', authRoutes);
+subdomainApp.use('/api/tickets', ticketRoutes);
+subdomainApp.use('/api/comments', commentRoutes);
+subdomainApp.use('/api/users', userRoutes);
+subdomainApp.use('/api/contacts', contactsRoutes);
+subdomainApp.use('/api/companies', companiesRoutes);
+subdomainApp.use('/api/chat', chatRoutes);
+subdomainApp.use('/api/2fa', twoFactorRoutes);
+
+// Health check for subdomains
+subdomainApp.get('/api/', (req, res) => {
+  res.status(200).json({ 
+    message: 'Company subdomain API is running', 
+    company: req.company ? req.company.name : 'No company context',
+    subdomain: req.subdomain
+  });
+});
+
+// Mount subdomain app to handle all subdomain requests
+app.use(vhost('*.' + (process.env.MAIN_DOMAIN || 'yourapp.com'), subdomainApp));
+
 // Health check endpoint
 app.get('/', (req, res) => {
   res.status(200).json({ message: 'Support Panel API is running' });
 });
 
 // Connect to MongoDB
+// Set up subdomain configuration
+app.set('subdomain offset', 1); // This tells Express to expect subdomain as the first part
+
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/supportpanel')
   .then(() => {
     console.log('Connected to MongoDB');
