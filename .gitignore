@@ -72,6 +72,11 @@ typings/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.*.local
+.env.*.development
+.env.*.production
+.env.*.test
+.env.*.staging
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
@@ -146,3 +151,10 @@ temp/
 # Build artifacts
 *.zip
 *.tar.gz
+
+# SaaS specific
+tenant_configs/
+tenant_data/
+customer_backups/
+billing_data/
+ssl_certificates/
