@@ -1,114 +1,386 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
+import './CreateTicketStyles.css';
 
 const CreateTicket = () => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     priority: 'medium',
+    type: 'Question',
     status: 'open',
-    escalationLevel: 1
+    category: '',
+    city: '',
+    country: '',
+    tags: '',
+    storeLocationCode: '',
+    contact: '',
+    cc: '',
+    company: '',
+    group: '',
+    agent: ''
   });
+  
+  const [contacts, setContacts] = useState([]);
+  const [companies, setCompanies] = useState([]);
+  const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [errors, setErrors] = useState({});
   const navigate = useNavigate();
 
-  const handleChange = (e) => {
+  useEffect(() => {
+    // Fetch contacts, companies, and agents
+    const fetchData = async () => {
+      try {
+        const contactsResponse = await api.get('/contacts');
+        setContacts(contactsResponse.data);
+
+        const companiesResponse = await api.get('/companies');
+        setCompanies(companiesResponse.data);
+
+        const agentsResponse = await api.get('/users?role=support_agent');
+        setAgents(agentsResponse.data);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        // Fallback to sample data if API fails
+        setContacts([
+          { _id: 'c1', name: 'John Doe', email: 'john@example.com' },
+          { _id: 'c2', name: 'Jane Smith', email: 'jane@example.com' },
+          { _id: 'c3', name: 'Bob Johnson', email: 'bob@example.com' }
+        ]);
+        
+        setCompanies([
+          { _id: 'comp1', name: 'ABC Corp' },
+          { _id: 'comp2', name: 'XYZ Ltd' },
+          { _id: 'comp3', name: '123 Industries' }
+        ]);
+        
+        setAgents([
+          { _id: 'a1', name: 'Alice Cooper', email: 'alice@support.com' },
+          { _id: 'a2', name: 'Bob Marley', email: 'bob@support.com' },
+          { _id: 'a3', name: 'Carol King', email: 'carol@support.com' }
+        ]);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
+    
+    // Clear error for this field when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  };
+
+  const handleAddCCTag = (e) => {
+    if (e.key === 'Enter' && e.target.value) {
+      e.preventDefault();
+      const newTag = e.target.value.trim();
+      if (newTag) {
+        const currentCC = formData.cc ? formData.cc.split(',').map(tag => tag.trim()) : [];
+        if (!currentCC.includes(newTag)) {
+          setFormData(prev => ({
+            ...prev,
+            cc: [...currentCC, newTag].join(',')
+          }));
+        }
+        e.target.value = '';
+      }
+    }
+  };
+
+  const handleAddTag = (e) => {
+    if (e.key === 'Enter' && e.target.value) {
+      e.preventDefault();
+      const newTag = e.target.value.trim();
+      if (newTag) {
+        const currentTags = formData.tags ? formData.tags.split(',').map(tag => tag.trim()) : [];
+        if (!currentTags.includes(newTag)) {
+          setFormData(prev => ({
+            ...prev,
+            tags: [...currentTags, newTag].join(',')
+          }));
+        }
+        e.target.value = '';
+      }
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
+    
+    // Validation
+    const newErrors = {};
+    if (!formData.title.trim()) newErrors.title = 'Subject is required';
+    if (!formData.description.trim()) newErrors.description = 'Description is required';
+    if (!formData.contact) newErrors.contact = 'Contact is required';
 
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setLoading(true);
+    
     try {
-      const response = await api.post('/tickets', formData);
-      navigate(`/ticket/${response.data._id}`);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to create ticket');
+      const submitData = {
+        title: formData.title,
+        description: formData.description,
+        priority: formData.priority,
+        status: formData.status,
+        createdBy: formData.contact, // This might need to be handled differently depending on your backend
+        assignedTo: formData.agent || undefined,
+        company: formData.company || undefined
+      };
+
+      const response = await api.post('/tickets', submitData);
+      alert('Ticket created successfully!');
+      navigate('/tickets');
+    } catch (error) {
+      console.error('Error creating ticket:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to create ticket';
+      alert(`Error: ${errorMessage}`);
+    } finally {
       setLoading(false);
     }
   };
 
+  const handleCreateAnother = async (e) => {
+    e.preventDefault();
+    
+    // Validation
+    const newErrors = {};
+    if (!formData.title.trim()) newErrors.title = 'Subject is required';
+    if (!formData.description.trim()) newErrors.description = 'Description is required';
+    if (!formData.contact) newErrors.contact = 'Contact is required';
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      const submitData = {
+        title: formData.title,
+        description: formData.description,
+        priority: formData.priority,
+        status: formData.status,
+        createdBy: formData.contact, // This might need to be handled differently depending on your backend
+        assignedTo: formData.agent || undefined,
+        company: formData.company || undefined
+      };
+
+      const response = await api.post('/tickets', submitData);
+      alert('Ticket created successfully!');
+      
+      // Reset form for another ticket
+      setFormData({
+        title: '',
+        description: '',
+        priority: 'medium',
+        type: 'Question',
+        status: 'open',
+        category: '',
+        city: '',
+        country: '',
+        tags: '',
+        storeLocationCode: '',
+        contact: '',
+        cc: '',
+        company: '',
+        group: '',
+        agent: ''
+      });
+    } catch (error) {
+      console.error('Error creating ticket:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to create ticket';
+      alert(`Error: ${errorMessage}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancel = () => {
+    navigate('/tickets');
+  };
+
+  const getContactById = (id) => {
+    return contacts.find(contact => contact._id === id);
+  };
+
+  const getCompanyById = (id) => {
+    return companies.find(company => company._id === id);
+  };
+
+  const getAgentById = (id) => {
+    return agents.find(agent => agent._id === id);
+  };
+
   return (
-    <div className="dashboard">
+    <div className="freshdesk-create-ticket-page">
       <Navbar />
-      <div className="dashboard__layout">
+      <div className="freshdesk-layout">
         <Sidebar />
-        <div className="container dashboard__container">
-          <div className="dashboard__header">
-            <div className="dashboard-header__content">
-              <div className="dashboard-header__title-wrapper">
-                <h1 className="dashboard-header__title">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="icon dashboard-header__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="28" height="28">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  Create New Ticket
-                </h1>
-                <p className="dashboard-header__subtitle">Submit a new support ticket</p>
-              </div>
+        <div className="freshdesk-create-ticket-content">
+          <div className="freshdesk-page-header">
+            <h1 className="freshdesk-page-title">Create Ticket</h1>
+            <div className="freshdesk-header-actions">
+              <button 
+                onClick={handleCancel} 
+                className="freshdesk-btn freshdesk-btn--secondary"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleCreateAnother}
+                disabled={loading}
+                className="freshdesk-btn freshdesk-btn--secondary"
+              >
+                Create Another
+              </button>
+              <button 
+                onClick={handleSubmit}
+                disabled={loading}
+                className="freshdesk-btn freshdesk-btn--primary"
+              >
+                {loading ? 'Creating...' : 'Create Ticket'}
+              </button>
             </div>
           </div>
 
-          <div className="card">
-            <div className="card__body">
-              {error && (
-                <div className="alert alert--danger">
-                  <div className="alert__icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+          <div className="freshdesk-create-ticket-form">
+            <form onSubmit={handleSubmit}>
+              <div className="freshdesk-form-section">
+                <div className="freshdesk-form-row">
+                  <div className="freshdesk-form-group">
+                    <label className="freshdesk-form-label">Contact *</label>
+                    <div className="freshdesk-flex-row">
+                      <select
+                        name="contact"
+                        value={formData.contact}
+                        onChange={handleInputChange}
+                        className={`freshdesk-form-select ${errors.contact ? 'freshdesk-form-error' : ''}`}
+                      >
+                        <option value="">Select Contact</option>
+                        {contacts.map(contact => (
+                          <option key={contact._id} value={contact._id}>
+                            {contact.name} ({contact.email})
+                          </option>
+                        ))}
+                      </select>
+                      <button type="button" className="freshdesk-add-btn">
+                        Add new contact
+                      </button>
+                    </div>
+                    {errors.contact && (
+                      <div className="freshdesk-error-message">{errors.contact}</div>
+                    )}
                   </div>
-                  {error}
-                </div>
-              )}
 
-              <form onSubmit={handleSubmit} className="create-ticket-form">
-                <div className="form-group">
-                  <label htmlFor="title" className="form-label required">Ticket Title</label>
+                  <div className="freshdesk-form-group">
+                    <label className="freshdesk-form-label">Add Cc</label>
+                    <div className="freshdesk-tag-input">
+                      <div className="freshdesk-tags-container">
+                        {formData.cc && formData.cc.split(',').filter(tag => tag.trim()).map((tag, index) => (
+                          <span key={index} className="freshdesk-tag">
+                            {tag.trim()}
+                          </span>
+                        ))}
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Type and press Enter to add CC"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && e.target.value) {
+                            e.preventDefault();
+                            const newTag = e.target.value.trim();
+                            if (newTag) {
+                              const currentCC = formData.cc ? formData.cc.split(',').map(tag => tag.trim()) : [];
+                              if (!currentCC.includes(newTag)) {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  cc: [...currentCC, newTag].join(',')
+                                }));
+                              }
+                            }
+                            e.target.value = '';
+                          }
+                        }}
+                        className="freshdesk-tag-input-field"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="freshdesk-form-group">
+                  <label className="freshdesk-form-label">Subject *</label>
                   <input
                     type="text"
-                    id="title"
                     name="title"
                     value={formData.title}
-                    onChange={handleChange}
-                    className="form-control"
-                    placeholder="Briefly describe the issue"
-                    required
+                    onChange={handleInputChange}
+                    className={`freshdesk-form-input ${errors.title ? 'freshdesk-form-error' : ''}`}
+                    placeholder="Enter subject"
                   />
+                  {errors.title && (
+                    <div className="freshdesk-error-message">{errors.title}</div>
+                  )}
                 </div>
 
-                <div className="form-group">
-                  <label htmlFor="description" className="form-label required">Description</label>
-                  <textarea
-                    id="description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleChange}
-                    className="form-control"
-                    rows="5"
-                    placeholder="Detailed description of the issue..."
-                    required
-                  />
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label htmlFor="priority" className="form-label">Priority</label>
+                <div className="freshdesk-form-row">
+                  <div className="freshdesk-form-group">
+                    <label className="freshdesk-form-label">Type</label>
                     <select
-                      id="priority"
+                      name="type"
+                      value={formData.type}
+                      onChange={handleInputChange}
+                      className="freshdesk-form-select"
+                    >
+                      <option value="Question">Question</option>
+                      <option value="Incident">Incident</option>
+                      <option value="Problem">Problem</option>
+                      <option value="Change">Change</option>
+                    </select>
+                  </div>
+
+                  <div className="freshdesk-form-group">
+                    <label className="freshdesk-form-label">Status</label>
+                    <select
+                      name="status"
+                      value={formData.status}
+                      onChange={handleInputChange}
+                      className="freshdesk-form-select"
+                    >
+                      <option value="open">Open</option>
+                      <option value="in_progress">In Progress</option>
+                      <option value="pending">Pending</option>
+                      <option value="resolved">Resolved</option>
+                      <option value="closed">Closed</option>
+                    </select>
+                  </div>
+
+                  <div className="freshdesk-form-group">
+                    <label className="freshdesk-form-label">Priority</label>
+                    <select
                       name="priority"
                       value={formData.priority}
-                      onChange={handleChange}
-                      className="form-control form-control--select"
+                      onChange={handleInputChange}
+                      className="freshdesk-form-select"
                     >
                       <option value="low">Low</option>
                       <option value="medium">Medium</option>
@@ -116,62 +388,209 @@ const CreateTicket = () => {
                       <option value="urgent">Urgent</option>
                     </select>
                   </div>
+                </div>
 
-                  <div className="form-group">
-                    <label htmlFor="status" className="form-label">Status</label>
+                <div className="freshdesk-form-row">
+                  <div className="freshdesk-form-group">
+                    <label className="freshdesk-form-label">Group</label>
                     <select
-                      id="status"
-                      name="status"
-                      value={formData.status}
-                      onChange={handleChange}
-                      className="form-control form-control--select"
+                      name="group"
+                      value={formData.group}
+                      onChange={handleInputChange}
+                      className="freshdesk-form-select"
                     >
-                      <option value="open">Open</option>
-                      <option value="in_progress">In Progress</option>
-                      <option value="resolved">Resolved</option>
-                      <option value="closed">Closed</option>
+                      <option value="">Select Group</option>
+                      <option value="technical">Technical Support</option>
+                      <option value="billing">Billing</option>
+                      <option value="sales">Sales</option>
                     </select>
                   </div>
 
-                  <div className="form-group">
-                    <label htmlFor="escalationLevel" className="form-label">Escalation Level</label>
+                  <div className="freshdesk-form-group">
+                    <label className="freshdesk-form-label">Agent</label>
                     <select
-                      id="escalationLevel"
-                      name="escalationLevel"
-                      value={formData.escalationLevel}
-                      onChange={handleChange}
-                      className="form-control form-control--select"
+                      name="agent"
+                      value={formData.agent}
+                      onChange={handleInputChange}
+                      className="freshdesk-form-select"
                     >
-                      <option value={1}>Level 1</option>
-                      <option value={2}>Level 2</option>
-                      <option value={3}>Level 3</option>
+                      <option value="">Select Agent</option>
+                      {agents.map(agent => (
+                        <option key={agent._id} value={agent._id}>
+                          {agent.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="freshdesk-form-group">
+                    <label className="freshdesk-form-label">Company</label>
+                    <select
+                      name="company"
+                      value={formData.company}
+                      onChange={handleInputChange}
+                      className="freshdesk-form-select"
+                    >
+                      <option value="">Select Company</option>
+                      {companies.map(company => (
+                        <option key={company._id} value={company._id}>
+                          {company.name}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>
 
-                <div className="form-actions">
-                  <button
-                    type="button"
-                    className="btn btn--outline"
-                    onClick={() => navigate('/tickets')}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="btn btn--primary"
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <>
-                        <span className="btn-text">Creating Ticket...</span>
-                        <div className="btn--loading"></div>
-                      </>
-                    ) : 'Create Ticket'}
-                  </button>
+                <div className="freshdesk-form-group">
+                  <label className="freshdesk-form-label">Description *</label>
+                  <textarea
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    className={`freshdesk-form-textarea ${errors.description ? 'freshdesk-form-error' : ''}`}
+                    rows="6"
+                    placeholder="Describe the issue here..."
+                  />
+                  {errors.description && (
+                    <div className="freshdesk-error-message">{errors.description}</div>
+                  )}
                 </div>
-              </form>
-            </div>
+              </div>
+
+              {/* Additional Fields Section */}
+              <div className="freshdesk-form-section freshdesk-form-section--border-top">
+                <h3 className="freshdesk-section-title">Additional Fields</h3>
+                
+                <div className="freshdesk-form-row">
+                  <div className="freshdesk-form-group">
+                    <label className="freshdesk-form-label">Category</label>
+                    <select
+                      name="category"
+                      value={formData.category}
+                      onChange={handleInputChange}
+                      className="freshdesk-form-select"
+                    >
+                      <option value="">Select Category</option>
+                      <option value="technical">Technical Issue</option>
+                      <option value="billing">Billing Query</option>
+                      <option value="account">Account Issue</option>
+                      <option value="feature">Feature Request</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+
+                  <div className="freshdesk-form-group">
+                    <label className="freshdesk-form-label">Store/Location/Site Code</label>
+                    <input
+                      type="text"
+                      name="storeLocationCode"
+                      value={formData.storeLocationCode}
+                      onChange={handleInputChange}
+                      className="freshdesk-form-input"
+                      placeholder="Enter store/location/site code"
+                    />
+                  </div>
+                </div>
+
+                <div className="freshdesk-form-row">
+                  <div className="freshdesk-form-group">
+                    <label className="freshdesk-form-label">City</label>
+                    <input
+                      type="text"
+                      name="city"
+                      value={formData.city}
+                      onChange={handleInputChange}
+                      className="freshdesk-form-input"
+                      placeholder="Enter city"
+                    />
+                  </div>
+
+                  <div className="freshdesk-form-group">
+                    <label className="freshdesk-form-label">Country</label>
+                    <select
+                      name="country"
+                      value={formData.country}
+                      onChange={handleInputChange}
+                      className="freshdesk-form-select"
+                    >
+                      <option value="">Select Country</option>
+                      <option value="US">United States</option>
+                      <option value="UK">United Kingdom</option>
+                      <option value="CA">Canada</option>
+                      <option value="AU">Australia</option>
+                      <option value="DE">Germany</option>
+                      <option value="FR">France</option>
+                      <option value="IN">India</option>
+                      <option value="JP">Japan</option>
+                      <option value="CN">China</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="freshdesk-form-group">
+                  <label className="freshdesk-form-label">Tags</label>
+                  <div className="freshdesk-tag-input">
+                    <div className="freshdesk-tags-container">
+                      {formData.tags && formData.tags.split(',').filter(tag => tag.trim()).map((tag, index) => (
+                        <span key={index} className="freshdesk-tag">
+                          {tag.trim()}
+                        </span>
+                      ))}
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Type and press Enter to add tags"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && e.target.value) {
+                          e.preventDefault();
+                          const newTag = e.target.value.trim();
+                          if (newTag) {
+                            const currentTags = formData.tags ? formData.tags.split(',').map(tag => tag.trim()) : [];
+                            if (!currentTags.includes(newTag)) {
+                              setFormData(prev => ({
+                                ...prev,
+                                tags: [...currentTags, newTag].join(',')
+                              }));
+                            }
+                          }
+                          e.target.value = '';
+                        }
+                      }}
+                      className="freshdesk-tag-input-field"
+                    />
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      {/* Form Actions at Bottom */}
+      <div className="freshdesk-create-ticket-actions">
+        <div className="freshdesk-actions-container">
+          <button 
+            onClick={handleCancel} 
+            className="freshdesk-btn freshdesk-btn--secondary"
+          >
+            Cancel
+          </button>
+          <div className="freshdesk-actions-right">
+            <button 
+              onClick={handleCreateAnother}
+              disabled={loading}
+              className="freshdesk-btn freshdesk-btn--secondary"
+            >
+              Create Another
+            </button>
+            <button 
+              onClick={handleSubmit}
+              disabled={loading}
+              className="freshdesk-btn freshdesk-btn--primary"
+            >
+              {loading ? 'Creating...' : 'Create Ticket'}
+            </button>
           </div>
         </div>
       </div>

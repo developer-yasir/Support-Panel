@@ -1,0 +1,316 @@
+/* Create Ticket Page Styles */
+.freshdesk-create-ticket-page {
+  min-height: 100vh;
+  background-color: var(--gray-100);
+}
+
+.freshdesk-create-ticket-content {
+  flex: 1;
+  padding: 0 var(--spacing-xl) var(--spacing-xl);
+}
+
+.freshdesk-page-header {
+  background: white;
+  border-bottom: 1px solid var(--gray-200);
+  padding: var(--spacing-xl) var(--spacing-xl);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 72px; /* Adjust for navbar */
+  z-index: 98;
+}
+
+.freshdesk-page-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin: 0;
+}
+
+.freshdesk-header-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.freshdesk-create-ticket-form {
+  margin-top: var(--spacing-xl);
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--border-radius-xl);
+  padding: var(--spacing-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.freshdesk-form-section {
+  margin-bottom: var(--spacing-xl);
+}
+
+.freshdesk-form-section--border-top {
+  border-top: 1px solid var(--gray-200);
+  padding-top: var(--spacing-xl);
+}
+
+.freshdesk-section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--gray-800);
+  margin: 0 0 var(--spacing-lg) 0;
+}
+
+.freshdesk-form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--spacing-xl);
+  margin-bottom: var(--spacing-lg);
+}
+
+.freshdesk-form-group {
+  margin-bottom: var(--spacing-lg);
+}
+
+.freshdesk-form-label {
+  display: block;
+  font-weight: 500;
+  color: var(--gray-700);
+  margin-bottom: var(--spacing-xs);
+  font-size: 0.9rem;
+}
+
+.freshdesk-flex-row {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.freshdesk-form-input,
+.freshdesk-form-select {
+  width: 100%;
+  padding: 0.5rem var(--spacing-md);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--border-radius-lg);
+  font-size: 0.9rem;
+  background-color: white;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-xs);
+}
+
+.freshdesk-form-input:focus,
+.freshdesk-form-select:focus {
+  outline: none;
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.freshdesk-form-input {
+  cursor: text;
+}
+
+.freshdesk-form-textarea {
+  width: 100%;
+  padding: 0.75rem var(--spacing-md);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--border-radius-lg);
+  font-size: 0.9rem;
+  resize: vertical;
+  min-height: 120px;
+  font-family: inherit;
+  transition: all var(--transition-fast);
+  background-color: white;
+  box-shadow: var(--shadow-xs);
+}
+
+.freshdesk-form-textarea:focus {
+  outline: none;
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.freshdesk-add-btn {
+  padding: 0.5rem 1rem;
+  border-radius: var(--border-radius-lg);
+  background: var(--gray-100);
+  color: var(--gray-700);
+  border: 1px solid var(--gray-300);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.freshdesk-add-btn:hover {
+  background: var(--gray-200);
+  border-color: var(--gray-400);
+}
+
+/* Tag Input Styles */
+.freshdesk-tag-input {
+  position: relative;
+  width: 100%;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--border-radius-lg);
+  padding: 0.25rem var(--spacing-md);
+  background-color: white;
+  transition: all var(--transition-fast);
+}
+
+.freshdesk-tag-input:focus-within {
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.freshdesk-tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  margin-bottom: 0.25rem;
+}
+
+.freshdesk-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  background: var(--brand-primary)10;
+  color: var(--brand-primary);
+  border-radius: var(--border-radius-full);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.freshdesk-tag-input-field {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.9rem;
+  padding: 0.25rem 0;
+}
+
+.freshdesk-form-error {
+  border-color: var(--danger-500) !important;
+}
+
+.freshdesk-error-message {
+  color: var(--danger-600);
+  font-size: 0.8rem;
+  margin-top: var(--spacing-xs);
+  font-weight: 500;
+}
+
+/* Create Ticket Actions */
+.freshdesk-create-ticket-actions {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  border-top: 1px solid var(--gray-200);
+  padding: var(--spacing-lg) var(--spacing-xl);
+  z-index: 100;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  margin-left: var(--current-sidebar-width, 260px);
+  transition: margin-left var(--transition-normal);
+}
+
+.freshdesk-actions-container {
+  max-width: 100%;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.freshdesk-actions-right {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+/* Dark Mode Support for Create Ticket Page */
+[data-theme="dark"] .freshdesk-create-ticket-page,
+.dark-theme .freshdesk-create-ticket-page {
+  background-color: var(--background-primary);
+}
+
+[data-theme="dark"] .freshdesk-create-ticket-content,
+.dark-theme .freshdesk-create-ticket-content {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .freshdesk-page-header,
+.dark-theme .freshdesk-page-header {
+  background: var(--gray-100);
+  border-color: var(--gray-300);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .freshdesk-page-title,
+.dark-theme .freshdesk-page-title {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .freshdesk-create-ticket-form,
+.dark-theme .freshdesk-create-ticket-form {
+  background: var(--gray-100);
+  border-color: var(--gray-300);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .freshdesk-form-label,
+.dark-theme .freshdesk-form-label {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .freshdesk-form-input,
+[data-theme="dark"] .freshdesk-form-select,
+[data-theme="dark"] .freshdesk-form-textarea,
+.dark-theme .freshdesk-form-input,
+.dark-theme .freshdesk-form-select,
+.dark-theme .freshdesk-form-textarea {
+  background: var(--gray-200);
+  border-color: var(--gray-400);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .freshdesk-add-btn,
+.dark-theme .freshdesk-add-btn {
+  background: var(--gray-200);
+  border-color: var(--gray-400);
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .freshdesk-add-btn:hover,
+.dark-theme .freshdesk-add-btn:hover {
+  background: var(--gray-300);
+  border-color: var(--gray-500);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .freshdesk-tag-input,
+.dark-theme .freshdesk-tag-input {
+  background: var(--gray-200);
+  border-color: var(--gray-400);
+}
+
+[data-theme="dark"] .freshdesk-tag,
+.dark-theme .freshdesk-tag {
+  background: var(--brand-primary)20;
+  color: var(--brand-primary);
+}
+
+[data-theme="dark"] .freshdesk-section-title,
+.dark-theme .freshdesk-section-title {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .freshdesk-form-section--border-top,
+.dark-theme .freshdesk-form-section--border-top {
+  border-color: var(--gray-300);
+}
+
+[data-theme="dark"] .freshdesk-create-ticket-actions,
+.dark-theme .freshdesk-create-ticket-actions {
+  background: var(--gray-100);
+  border-color: var(--gray-300);
+  color: var(--text-primary);
+}
