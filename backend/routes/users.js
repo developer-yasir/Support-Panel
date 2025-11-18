@@ -25,4 +25,22 @@ router.route('/:id')
 router.route('/:id/toggle-status')
   .put(adminOnly, updateUserStatus);  // Only admins can update user status
 
+// Route specifically for getting agents (support agents only)
+router.route('/agents')
+  .get(protect, async (req, res) => {
+    try {
+      // Allow authenticated users to get a list of agents
+      // This endpoint will return only active agents
+      const User = require('../models/User');
+      const agents = await User.find({ 
+        role: 'support_agent',
+        isActive: true 
+      }, 'name email _id');
+      res.json(agents);
+    } catch (err) {
+      console.error('Error fetching agents:', err);
+      res.status(500).json({ message: 'Server error', error: err.message });
+    }
+  });
+
 module.exports = router;

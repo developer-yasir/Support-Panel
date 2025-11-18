@@ -106,18 +106,15 @@ const TicketDetails = () => {
 
     const fetchAgents = async () => {
       try {
-        // Try to fetch agents, but catch the error gracefully
-        const response = await api.get('/users?role=support_agent');
+        // Try to fetch agents using the new endpoint
+        const response = await api.get('/users/agents');
         setAgents(response.data);
       } catch (error) {
         console.error('Error fetching agents:', error);
         
-        // If user doesn't have permission to get all users, we might need to create a different endpoint
-        // or use a fallback. For now, let's just log the error and use an empty array
-        // This is acceptable since not all users may have permission to see all agents
+        // If user doesn't have permission to get agents, use fallback
         if (error.response?.status === 403) {
           console.warn('User does not have permission to fetch agents list');
-          // We'll continue with an empty agents list and update the UI to handle this
         } else {
           // For other errors, show fallback agents
           setAgents([
