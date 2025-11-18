@@ -16,8 +16,13 @@ exports.protect = async (req, res, next) => {
     // Verify token
     const decoded = jwt.verify(token, config.jwtSecret);
     
-    // Get user from token
-    req.user = await User.findById(decoded.id).select('-password');
+    // Get user from token (including company info)
+    req.user = await User.findById(decoded.id).select('-password').populate('companyId');
+    
+    // Also set companyId directly for convenience
+    if (req.user && req.user.companyId) {
+      req.companyId = req.user.companyId._id;
+    }
     
     next();
   } catch (error) {

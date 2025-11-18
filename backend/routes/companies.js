@@ -1,22 +1,51 @@
-// routes/companies.js
 const express = require('express');
 const router = express.Router();
-const { getAllCompanies, getCompanyById, createCompany } = require('../controllers/companiesController');
-const { protect } = require('../middlewares/authMiddleware');
+const { 
+  createCompany, 
+  getCompanyById, 
+  getCompanyBySubdomain, 
+  getCurrentCompany, 
+  updateCompany, 
+  getCompanyStats, 
+  getCompanyAgents, 
+  suspendCompany, 
+  activateCompany, 
+  changePlan 
+} = require('../controllers/companyController');
+const { protect, adminOnly } = require('../middlewares/authMiddleware');
+const { tenantMiddleware, tenantAuthMiddleware } = require('../middlewares/tenantMiddleware');
 
-// @desc    Get all companies
-// @route   GET /api/companies
-// @access  Private
-router.get('/', protect, getAllCompanies);
+// Public route for company creation (during signup)
+router.post('/', createCompany);
 
-// @desc    Get company by ID
-// @route   GET /api/companies/:id
-// @access  Private
-router.get('/:id', protect, getCompanyById);
+// Get company by subdomain (for subdomain routing - public)
+router.get('/subdomain/:subdomain', getCompanyBySubdomain);
 
-// @desc    Create a new company
-// @route   POST /api/companies
-// @access  Private
-router.post('/', protect, createCompany);
+// All other routes require authentication
+router.use(protect);
+
+// Routes that require tenant context
+router.use(tenantMiddleware);
+
+// Get current company (for authenticated users)
+router.get('/current', getCurrentCompany);
+
+// Update company (requires tenant auth)
+router.put('/current', tenantAuthMiddleware, updateCompany);
+
+// Get company stats (requires tenant auth)
+router.get('/current/stats', tenantAuthMiddleware, getCompanyStats);
+
+// Get company agents (requires tenant auth)
+router.get('/current/agents', tenantAuthMiddleware, getCompanyAgents);
+
+// Routes for admin management of companies (require admin access)
+router.use('/admin', adminOnly);
+
+// Admin routes for managing all companies
+router.get('/admin/:id', getCompanyById);
+router.put('/admin/:id/suspend', suspendCompany);
+router.put('/admin/:id/activate', activateCompany);
+router.put('/admin/:id/plan', changePlan);
 
 module.exports = router;

@@ -7,13 +7,19 @@ exports.createTicket = async (req, res) => {
   try {
     const { title, description, priority, dueDate, assignedTo } = req.body;
     
+    // Verify company context exists
+    if (!req.companyId) {
+      return res.status(400).json({ message: 'Company context required to create ticket' });
+    }
+    
     const ticket = new Ticket({
       title,
       description,
       priority,
       dueDate,
       assignedTo,
-      createdBy: req.user.id
+      createdBy: req.user.id,
+      companyId: req.companyId
     });
     
     await ticket.save();
@@ -59,8 +65,13 @@ exports.createTicket = async (req, res) => {
 // Get all tickets
 exports.getTickets = async (req, res) => {
   try {
+    // Verify company context exists
+    if (!req.companyId) {
+      return res.status(400).json({ message: 'Company context required to get tickets' });
+    }
+    
     const { status, priority, assignedTo, dueDate, escalationLevel } = req.query;
-    let filter = {};
+    let filter = { companyId: req.companyId }; // Add company filter
     
     if (status) filter.status = status;
     if (priority) filter.priority = priority;
@@ -82,16 +93,27 @@ exports.getTickets = async (req, res) => {
 // Get ticket by ID
 exports.getTicketById = async (req, res) => {
   try {
+    // Verify company context exists
+    if (!req.companyId) {
+      return res.status(400).json({ message: 'Company context required to get ticket' });
+    }
+    
     let ticket;
     
-    // First try to find by custom ticketId
-    ticket = await Ticket.findOne({ ticketId: req.params.id })
+    // First try to find by custom ticketId with company filter
+    ticket = await Ticket.findOne({ 
+      ticketId: req.params.id,
+      companyId: req.companyId 
+    })
       .populate('createdBy', 'name email phone company')
       .populate('assignedTo', 'name email');
     
-    // If not found by ticketId and the param looks like an ObjectId, try to find by _id
+    // If not found by ticketId and the param looks like an ObjectId, try to find by _id with company filter
     if (!ticket && /^[0-9a-fA-F]{24}$/.test(req.params.id)) {
-      ticket = await Ticket.findById(req.params.id)
+      ticket = await Ticket.findOne({
+        _id: req.params.id,
+        companyId: req.companyId
+      })
         .populate('createdBy', 'name email phone company')
         .populate('assignedTo', 'name email');
     }
@@ -110,16 +132,28 @@ exports.getTicketById = async (req, res) => {
 exports.updateTicket = async (req, res) => {
   try {
     console.log('Update ticket request:', req.params.id, req.body);
+    
+    // Verify company context exists
+    if (!req.companyId) {
+      return res.status(400).json({ message: 'Company context required to update ticket' });
+    }
+    
     const { title, description, priority, status, assignedTo, dueDate, escalationLevel } = req.body;
     
     let ticket;
     
-    // Find ticket by custom ticketId
-    ticket = await Ticket.findOne({ ticketId: req.params.id });
+    // Find ticket by custom ticketId with company filter
+    ticket = await Ticket.findOne({ 
+      ticketId: req.params.id,
+      companyId: req.companyId 
+    });
     
-    // If not found by ticketId and the param looks like an ObjectId, try to find by _id
+    // If not found by ticketId and the param looks like an ObjectId, try to find by _id with company filter
     if (!ticket && /^[0-9a-fA-F]{24}$/.test(req.params.id)) {
-      ticket = await Ticket.findById(req.params.id);
+      ticket = await Ticket.findOne({
+        _id: req.params.id,
+        companyId: req.companyId 
+      });
     }
     
     if (!ticket) {
@@ -209,14 +243,25 @@ exports.updateTicket = async (req, res) => {
 // Delete ticket
 exports.deleteTicket = async (req, res) => {
   try {
+    // Verify company context exists
+    if (!req.companyId) {
+      return res.status(400).json({ message: 'Company context required to delete ticket' });
+    }
+    
     let ticket;
     
-    // Find ticket by custom ticketId
-    ticket = await Ticket.findOne({ ticketId: req.params.id });
+    // Find ticket by custom ticketId with company filter
+    ticket = await Ticket.findOne({ 
+      ticketId: req.params.id,
+      companyId: req.companyId 
+    });
     
-    // If not found by ticketId and the param looks like an ObjectId, try to find by _id
+    // If not found by ticketId and the param looks like an ObjectId, try to find by _id with company filter
     if (!ticket && /^[0-9a-fA-F]{24}$/.test(req.params.id)) {
-      ticket = await Ticket.findById(req.params.id);
+      ticket = await Ticket.findOne({
+        _id: req.params.id,
+        companyId: req.companyId 
+      });
     }
     
     if (!ticket) {
@@ -244,14 +289,25 @@ exports.deleteTicket = async (req, res) => {
 // Escalate ticket
 exports.escalateTicket = async (req, res) => {
   try {
+    // Verify company context exists
+    if (!req.companyId) {
+      return res.status(400).json({ message: 'Company context required to escalate ticket' });
+    }
+    
     let ticket;
     
-    // Find ticket by custom ticketId
-    ticket = await Ticket.findOne({ ticketId: req.params.id });
+    // Find ticket by custom ticketId with company filter
+    ticket = await Ticket.findOne({ 
+      ticketId: req.params.id,
+      companyId: req.companyId 
+    });
     
-    // If not found by ticketId and the param looks like an ObjectId, try to find by _id
+    // If not found by ticketId and the param looks like an ObjectId, try to find by _id with company filter
     if (!ticket && /^[0-9a-fA-F]{24}$/.test(req.params.id)) {
-      ticket = await Ticket.findById(req.params.id);
+      ticket = await Ticket.findOne({
+        _id: req.params.id,
+        companyId: req.companyId 
+      });
     }
     
     if (!ticket) {
@@ -284,8 +340,13 @@ exports.escalateTicket = async (req, res) => {
 // Get ticket statistics
 exports.getTicketStats = async (req, res) => {
   try {
+    // Verify company context exists
+    if (!req.companyId) {
+      return res.status(400).json({ message: 'Company context required for statistics' });
+    }
+    
     const { startDate, endDate } = req.query;
-    let filter = {};
+    let filter = { companyId: req.companyId }; // Add company filter
 
     // Add date range filter if provided
     if (startDate || endDate) {
@@ -330,15 +391,21 @@ exports.getTicketStats = async (req, res) => {
 // Get ticket trends data for charts
 exports.getTicketTrends = async (req, res) => {
   try {
+    // Verify company context exists
+    if (!req.companyId) {
+      return res.status(400).json({ message: 'Company context required for statistics' });
+    }
+    
     const { days = 30 } = req.query;
     const endDate = new Date();
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    // Aggregate ticket counts by day
+    // Aggregate ticket counts by day with company filter
     const ticketTrends = await Ticket.aggregate([
       {
         $match: {
+          companyId: req.companyId, // Add company filter
           createdAt: {
             $gte: startDate,
             $lte: endDate
@@ -385,8 +452,13 @@ exports.getTicketTrends = async (req, res) => {
 // Get ticket distribution by priority
 exports.getTicketDistribution = async (req, res) => {
   try {
+    // Verify company context exists
+    if (!req.companyId) {
+      return res.status(400).json({ message: 'Company context required for statistics' });
+    }
+    
     const { startDate, endDate } = req.query;
-    let dateFilter = {};
+    let dateFilter = { companyId: req.companyId }; // Add company filter
 
     // Add date range filter if provided
     if (startDate || endDate) {
@@ -424,15 +496,21 @@ exports.getTicketDistribution = async (req, res) => {
 // Get ticket resolution rates over time
 exports.getResolutionRates = async (req, res) => {
   try {
+    // Verify company context exists
+    if (!req.companyId) {
+      return res.status(400).json({ message: 'Company context required for statistics' });
+    }
+    
     const { days = 30 } = req.query;
     const endDate = new Date();
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    // Aggregate resolution rates by day
+    // Aggregate resolution rates by day with company filter
     const resolutionRates = await Ticket.aggregate([
       {
         $match: {
+          companyId: req.companyId, // Add company filter
           updatedAt: {
             $gte: startDate,
             $lte: endDate
@@ -480,8 +558,13 @@ exports.getResolutionRates = async (req, res) => {
 // Get agent performance data
 exports.getAgentPerformance = async (req, res) => {
   try {
+    // Verify company context exists
+    if (!req.companyId) {
+      return res.status(400).json({ message: 'Company context required for statistics' });
+    }
+    
     const { startDate, endDate } = req.query;
-    let dateFilter = {};
+    let dateFilter = { companyId: req.companyId }; // Add company filter
 
     // Add date range filter if provided
     if (startDate || endDate) {
@@ -494,7 +577,7 @@ exports.getAgentPerformance = async (req, res) => {
       }
     }
 
-    // Aggregate ticket data by assigned agent
+    // Aggregate ticket data by assigned agent with company filter
     const agentPerformance = await Ticket.aggregate([
       {
         $match: dateFilter
@@ -533,6 +616,17 @@ exports.getAgentPerformance = async (req, res) => {
         }
       },
       {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'agentInfo',
+          pipeline: [
+            { $match: { companyId: req.companyId } } // Only get agents from the same company
+          ]
+        }
+      },
+      {
         $unwind: '$agentInfo'
       },
       {
@@ -566,8 +660,13 @@ exports.getAgentPerformance = async (req, res) => {
 // Get recent activity
 exports.getRecentActivity = async (req, res) => {
   try {
-    // Get the 10 most recently created tickets
-    const recentTickets = await Ticket.find()
+    // Verify company context exists
+    if (!req.companyId) {
+      return res.status(400).json({ message: 'Company context required for statistics' });
+    }
+    
+    // Get the 10 most recently created tickets for this company
+    const recentTickets = await Ticket.find({ companyId: req.companyId })
       .populate('createdBy', 'name email')
       .populate('assignedTo', 'name email')
       .sort({ createdAt: -1 })
@@ -582,8 +681,13 @@ exports.getRecentActivity = async (req, res) => {
 // Get company ticket statistics
 exports.getCompanyTicketStats = async (req, res) => {
   try {
+    // Verify company context exists
+    if (!req.companyId) {
+      return res.status(400).json({ message: 'Company context required for statistics' });
+    }
+    
     const { startDate, endDate } = req.query;
-    let dateFilter = {};
+    let dateFilter = { companyId: req.companyId }; // Add company filter
 
     // Add date range filter if provided
     if (startDate || endDate) {
@@ -647,8 +751,13 @@ exports.getCompanyTicketStats = async (req, res) => {
 // Get department statistics
 exports.getDepartmentStats = async (req, res) => {
   try {
+    // Verify company context exists
+    if (!req.companyId) {
+      return res.status(400).json({ message: 'Company context required for statistics' });
+    }
+    
     const { startDate, endDate } = req.query;
-    let dateFilter = {};
+    let dateFilter = { companyId: req.companyId }; // Add company filter
 
     // Add date range filter if provided
     if (startDate || endDate) {
@@ -663,6 +772,7 @@ exports.getDepartmentStats = async (req, res) => {
 
     // In a real application, this would pull from department information
     // For now, we'll return mock data showing ticket distribution by department
+    // This should be updated to use actual department data in the future
     const departmentStats = [
       { department: 'Technical Support', ticketCount: Math.floor(Math.random() * 100) + 50, resolvedCount: Math.floor(Math.random() * 100) + 40 },
       { department: 'Billing', ticketCount: Math.floor(Math.random() * 80) + 30, resolvedCount: Math.floor(Math.random() * 80) + 25 },
@@ -679,8 +789,13 @@ exports.getDepartmentStats = async (req, res) => {
 // Get response time metrics
 exports.getResponseTimeMetrics = async (req, res) => {
   try {
+    // Verify company context exists
+    if (!req.companyId) {
+      return res.status(400).json({ message: 'Company context required for statistics' });
+    }
+    
     const { startDate, endDate } = req.query;
-    let dateFilter = {};
+    let dateFilter = { companyId: req.companyId }; // Add company filter
 
     // Add date range filter if provided
     if (startDate || endDate) {
@@ -743,8 +858,13 @@ exports.getResponseTimeMetrics = async (req, res) => {
 // Get ticket age analysis
 exports.getTicketAgeAnalysis = async (req, res) => {
   try {
+    // Verify company context exists
+    if (!req.companyId) {
+      return res.status(400).json({ message: 'Company context required for statistics' });
+    }
+    
     const { startDate, endDate } = req.query;
-    let dateFilter = {};
+    let dateFilter = { companyId: req.companyId }; // Add company filter
 
     // Add date range filter if provided
     if (startDate || endDate) {
@@ -821,12 +941,18 @@ exports.getTicketCategories = async (req, res) => {
 // Get upcoming breaches
 exports.getUpcomingBreaches = async (req, res) => {
   try {
+    // Verify company context exists
+    if (!req.companyId) {
+      return res.status(400).json({ message: 'Company context required for statistics' });
+    }
+    
     // Find tickets that are approaching their due date (within 24 hours)
     const now = new Date();
     const tomorrow = new Date(now);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     const ticketsAtRisk = await Ticket.find({
+      companyId: req.companyId, // Add company filter
       status: { $in: ['open', 'in_progress'] },
       dueDate: { 
         $gte: now,
