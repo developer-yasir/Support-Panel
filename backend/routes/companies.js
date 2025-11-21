@@ -14,6 +14,8 @@ const {
   checkSubdomainAvailability,
   getCompanySetupInfo
 } = require('../controllers/companyController');
+
+const { getAllCompanies } = require('../controllers/companiesController');
 const { protect, adminOnly } = require('../middlewares/authMiddleware');
 const { tenantMiddleware, tenantAuthMiddleware } = require('../middlewares/tenantMiddleware');
 
@@ -24,6 +26,9 @@ router.get('/check-subdomain/:subdomain', checkSubdomainAvailability);
 
 // Get company by subdomain (for subdomain routing - public)
 router.get('/subdomain/:subdomain', getCompanyBySubdomain);
+
+// Get all companies (public route)
+router.get('/', getAllCompanies);
 
 // All other routes require authentication
 router.use(protect);

@@ -37,27 +37,39 @@ const CreateTicket = () => {
       try {
         const contactsResponse = await api.get('/contacts');
         setContacts(contactsResponse.data);
-
-        const companiesResponse = await api.get('/companies');
-        setCompanies(companiesResponse.data);
-
-        const agentsResponse = await api.get('/users/agents');
-        setAgents(agentsResponse.data);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error fetching contacts:', error);
         // Fallback to sample data if API fails
         setContacts([
           { _id: 'c1', name: 'John Doe', email: 'john@example.com' },
           { _id: 'c2', name: 'Jane Smith', email: 'jane@example.com' },
           { _id: 'c3', name: 'Bob Johnson', email: 'bob@example.com' }
         ]);
-        
+      }
+
+      try {
+        const companiesResponse = await api.get('/companies');
+        setCompanies(companiesResponse.data);
+      } catch (error) {
+        console.error('Error fetching companies:', error);
         setCompanies([
           { _id: 'comp1', name: 'ABC Corp' },
           { _id: 'comp2', name: 'XYZ Ltd' },
           { _id: 'comp3', name: '123 Industries' }
         ]);
-        
+      }
+
+      try {
+        const agentsResponse = await api.get('/users/agents');
+        setAgents(agentsResponse.data);
+      } catch (error) {
+        console.error('Error fetching agents:', error);
+        // Check if the error is related to authentication
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          // Show a warning to the user about authentication
+          console.warn('Authentication required to fetch agents. Using sample data.');
+        }
+        // Fallback to sample data if API fails
         setAgents([
           { _id: 'a1', name: 'Alice Cooper', email: 'alice@support.com' },
           { _id: 'a2', name: 'Bob Marley', email: 'bob@support.com' },
@@ -297,7 +309,7 @@ const CreateTicket = () => {
                     <div className="freshdesk-tag-input">
                       <div className="freshdesk-tags-container">
                         {formData.cc && formData.cc.split(',').filter(tag => tag.trim()).map((tag, index) => (
-                          <span key={`${tag.trim()}-${index}`} className="freshdesk-tag">
+                          <span key={`cc-${index}`} className="freshdesk-tag">
                             {tag.trim()}
                           </span>
                         ))}
@@ -533,7 +545,7 @@ const CreateTicket = () => {
                   <div className="freshdesk-tag-input">
                     <div className="freshdesk-tags-container">
                       {formData.tags && formData.tags.split(',').filter(tag => tag.trim()).map((tag, index) => (
-                        <span key={`${tag.trim()}-${index}`} className="freshdesk-tag">
+                        <span key={`tag-${index}`} className="freshdesk-tag">
                           {tag.trim()}
                         </span>
                       ))}

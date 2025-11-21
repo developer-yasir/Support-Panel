@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
+import './CompanySignup.css';
 
 const CompanySignup = () => {
   const [formData, setFormData] = useState({
@@ -181,196 +182,219 @@ const CompanySignup = () => {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-        <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-            <div className="text-center">
-              <div className="mx-auto h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
-                <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                Company Created Successfully!
-              </h2>
-              <p className="mt-2 text-center text-sm text-gray-600">
-                You will be redirected to your company dashboard shortly...
-              </p>
+      <div className="company-signup-success-container">
+        <div className="company-signup-success-card">
+          <div className="company-signup-success-icon-container">
+            <div className="company-signup-success-icon">
+              <svg className="company-signup-success-check" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
             </div>
           </div>
+          <h2 className="company-signup-success-title">
+            Company Created Successfully!
+          </h2>
+          <p className="company-signup-success-message">
+            You will be redirected to your company dashboard shortly...
+          </p>
+          <p className="company-signup-success-submessage">
+            Your dedicated subdomain: <strong>{formData.subdomain}.{window.location.hostname.replace('www.', '')}</strong>
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
-      {/* Freshdesk-style header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <svg className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                </svg>
-              </div>
-              <span className="ml-2 text-xl font-bold text-gray-900">Support Panel</span>
-            </div>
-            <div className="flex items-center space-x-4">
-              <a href="/login" className="text-sm text-gray-600 hover:text-gray-900">
-                Sign In
-              </a>
-            </div>
+    <div className="company-signup-container">
+      {/* Header */}
+      <div className="company-signup-header">
+        <div className="company-signup-header-content">
+          <a href="/" className="company-signup-brand">
+            <svg className="company-signup-brand-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+            </svg>
+            Support Panel
+          </a>
+          <div className="company-signup-signin-links">
+            <a href="/agent-login" className="company-signup-signin-link">
+              Agent Sign In
+            </a>
+            <a href="/login" className="company-signup-signin-link ml-4">
+              Customer Sign In
+            </a>
           </div>
         </div>
       </div>
 
-      <div className="flex flex-col items-center py-8 px-4 sm:px-6 lg:px-8">
-        <div className="w-full max-w-6xl space-y-8">
-          {/* Hero Section */}
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">
-              Create Your Company Account
-            </h1>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Get started with the most intuitive customer support software. 
-              Create your company and start resolving tickets in minutes.
-            </p>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-            <div className="grid grid-cols-1 lg:grid-cols-3">
-              {/* Plan Selection Sidebar */}
-              <div className="lg:col-span-1 bg-gray-50 p-8">
-                <h3 className="text-lg font-semibold text-gray-900 mb-6">Choose Your Plan</h3>
+      <div className="company-signup-content">
+        <div className="company-signup-card">
+          <div className="company-signup-grid">
+            {/* Multi-tenant Hero Section */}
+            <div className="company-signup-hero">
+              <div className="hero-content">
+                <h1 className="company-signup-hero-title">
+                  Create Your Dedicated Support Platform
+                </h1>
+                <p className="company-signup-hero-subtitle">
+                  Get your own white-label customer support solution with a unique subdomain
+                </p>
                 
-                {setupInfo && Object.entries(setupInfo.plans).map(([key, plan]) => (
-                  <div 
-                    key={key}
-                    className={`border rounded-lg p-6 mb-4 cursor-pointer transition-all duration-200 ${
-                      selectedPlan === key 
-                        ? 'border-blue-500 bg-blue-50 shadow-md transform scale-105' 
-                        : 'border-gray-200 hover:border-gray-300 bg-white'
-                    }`}
-                    onClick={() => setSelectedPlan(key)}
-                  >
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h4 className="font-bold text-gray-900">{plan.name}</h4>
-                        {plan.price > 0 ? (
-                          <div className="mt-2">
-                            <span className="text-3xl font-bold text-gray-900">${plan.price}</span>
-                            <span className="text-gray-600">/month</span>
-                          </div>
-                        ) : (
-                          <div className="mt-2">
-                            <span className="text-3xl font-bold text-gray-900">Free</span>
+                {/* Multi-tenant Benefits */}
+                <div className="company-signup-features-grid">
+                  <div className="company-signup-feature-card">
+                    <div className="company-signup-feature-icon">
+                      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" className="h-6 w-6">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                    </div>
+                    <h3 className="company-signup-feature-title">Dedicated Environment</h3>
+                    <p className="company-signup-feature-description">Your data and customers are isolated in your own secure environment</p>
+                  </div>
+                  
+                  <div className="company-signup-feature-card">
+                    <div className="company-signup-feature-icon">
+                      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" className="h-6 w-6">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    </div>
+                    <h3 className="company-signup-feature-title">Performance Optimized</h3>
+                    <p className="company-signup-feature-description">Dedicated resources ensure fast response times for your support team</p>
+                  </div>
+                  
+                  <div className="company-signup-feature-card">
+                    <div className="company-signup-feature-icon">
+                      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" className="h-6 w-6">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                    </div>
+                    <h3 className="company-signup-feature-title">Secure & Compliant</h3>
+                    <p className="company-signup-feature-description">Enterprise-grade security with data protection and compliance features</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Multi-tenant Architecture Info */}
+              <div className="architecture-card">
+                <h3 className="architecture-title">How Our Multi-Tenant Architecture Works</h3>
+                <div className="architecture-grid">
+                  <div className="architecture-item">
+                    <div className="architecture-number">1</div>
+                    <h4>Unique Subdomain</h4>
+                    <p>Get your own subdomain like {formData.subdomain || 'mycompany'}.yourapp.com</p>
+                  </div>
+                  <div className="architecture-item">
+                    <div className="architecture-number">2</div>
+                    <h4>Data Isolation</h4>
+                    <p>Your data is completely separated from other tenants</p>
+                  </div>
+                  <div className="architecture-item">
+                    <div className="architecture-number">3</div>
+                    <h4>Dedicated Resources</h4>
+                    <p>Guaranteed performance for your support operations</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Main Form Section */}
+            <div className="company-signup-form-container">
+              {errors.general && (
+                <div className="alert alert--error">
+                  <div className="alert-content">
+                    <svg className="alert-icon" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                    <span className="alert-message">{errors.general}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Plan Selection */}
+              <div className="company-signup-plan-section">
+                <h3 className="company-signup-plan-title">Choose Your Plan</h3>
+                <p className="company-signup-plan-subtitle">All plans include your dedicated support environment</p>
+                <div className="company-signup-plan-cards">
+                  {setupInfo && Object.entries(setupInfo.plans).map(([key, plan]) => (
+                    <div 
+                      key={key}
+                      className={`company-signup-plan-card ${selectedPlan === key ? 'company-signup-plan-card--selected' : ''}`}
+                      onClick={() => setSelectedPlan(key)}
+                    >
+                      <div className="company-signup-plan-header">
+                        <div>
+                          <h4 className="company-signup-plan-name">{plan.name}</h4>
+                          {plan.price > 0 ? (
+                            <div className="company-signup-plan-price">
+                              <span className="company-signup-plan-amount">${plan.price}</span>
+                              <span className="company-signup-plan-period">/month</span>
+                            </div>
+                          ) : (
+                            <div className="company-signup-plan-price">
+                              <span className="company-signup-plan-amount">Free</span>
+                            </div>
+                          )}
+                        </div>
+                        {selectedPlan === key && (
+                          <div className="company-signup-plan-checkmark">
+                            <svg className="h-5 w-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
                           </div>
                         )}
                       </div>
-                      {selectedPlan === key && (
-                        <div className="h-6 w-6 rounded-full bg-blue-500 flex items-center justify-center">
-                          <svg className="h-4 w-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      
+                      <ul className="company-signup-plan-features">
+                        <li className="company-signup-plan-feature">
+                          <svg className="company-signup-feature-icon text-green-500" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                           </svg>
-                        </div>
-                      )}
+                          {plan.features.agentSeats} agent{plan.features.agentSeats !== 1 ? 's' : ''} included
+                        </li>
+                        <li className="company-signup-plan-feature">
+                          <svg className="company-signup-feature-icon text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                          {plan.features.ticketVolume.toLocaleString()} tickets/month
+                        </li>
+                        {plan.features.customFields && (
+                          <li className="company-signup-plan-feature">
+                            <svg className="company-signup-feature-icon text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                            Custom Fields
+                          </li>
+                        )}
+                        {plan.features.reporting && (
+                          <li className="company-signup-plan-feature">
+                            <svg className="company-signup-feature-icon text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                            Advanced Reporting
+                          </li>
+                        )}
+                        {plan.features.apiAccess && (
+                          <li className="company-signup-plan-feature">
+                            <svg className="company-signup-feature-icon text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                            API Access
+                          </li>
+                        )}
+                      </ul>
                     </div>
-                    
-                    <ul className="space-y-2 text-sm text-gray-600">
-                      <li className="flex items-center">
-                        <svg className="h-4 w-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        {plan.features.agentSeats} agent{plan.features.agentSeats !== 1 ? 's' : ''}
-                      </li>
-                      <li className="flex items-center">
-                        <svg className="h-4 w-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        {plan.features.ticketVolume.toLocaleString()} tickets/month
-                      </li>
-                      {plan.features.customFields && (
-                        <li className="flex items-center">
-                          <svg className="h-4 w-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                          Custom Fields
-                        </li>
-                      )}
-                      {plan.features.reporting && (
-                        <li className="flex items-center">
-                          <svg className="h-4 w-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                          Advanced Reporting
-                        </li>
-                      )}
-                      {plan.features.apiAccess && (
-                        <li className="flex items-center">
-                          <svg className="h-4 w-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                          API Access
-                        </li>
-                      )}
-                    </ul>
-                  </div>
-                ))}
-
-                <div className="mt-8 p-6 bg-blue-50 rounded-lg border border-blue-100">
-                  <h4 className="font-medium text-blue-900 mb-3">What's included in all plans:</h4>
-                  <ul className="text-sm text-blue-800 space-y-2">
-                    <li className="flex items-center">
-                      <svg className="h-4 w-4 text-blue-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      Unlimited tickets
-                    </li>
-                    <li className="flex items-center">
-                      <svg className="h-4 w-4 text-blue-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      Email & Chat support
-                    </li>
-                    <li className="flex items-center">
-                      <svg className="h-4 w-4 text-blue-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      Knowledge base
-                    </li>
-                    <li className="flex items-center">
-                      <svg className="h-4 w-4 text-blue-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      Mobile app
-                    </li>
-                  </ul>
+                  ))}
                 </div>
               </div>
 
               {/* Signup Form */}
-              <div className="lg:col-span-2 p-8">
-                {errors.general && (
-                  <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-                    <div className="flex">
-                      <div className="flex-shrink-0">
-                        <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                      <div className="ml-3">
-                        <h3 className="text-sm font-medium text-red-800">{errors.general}</h3>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <form className="space-y-6" onSubmit={handleSubmit}>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+              <form className="company-signup-form" onSubmit={handleSubmit}>
+                <div className="signup-form-grid">
+                  <div className="form-section">
+                    <h3 className="form-section-title">Company Details</h3>
+                    
+                    <div className="form-group">
+                      <label htmlFor="name" className="form-label">
                         Company Name *
                       </label>
                       <input
@@ -379,16 +403,14 @@ const CompanySignup = () => {
                         type="text"
                         value={formData.name}
                         onChange={handleChange}
-                        className={`w-full px-4 py-3 border ${
-                          errors.name ? 'border-red-300' : 'border-gray-300'
-                        } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors`}
+                        className={`form-input ${errors.name ? 'form-input--error' : ''}`}
                         placeholder="Enter your company name"
                       />
-                      {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
+                      {errors.name && <p className="form-error">{errors.name}</p>}
                     </div>
 
-                    <div>
-                      <label htmlFor="subdomain" className="block text-sm font-medium text-gray-700 mb-1">
+                    <div className="form-group">
+                      <label htmlFor="subdomain" className="form-label">
                         Subdomain *
                       </label>
                       <div className="relative">
@@ -398,23 +420,22 @@ const CompanySignup = () => {
                           type="text"
                           value={formData.subdomain}
                           onChange={handleChange}
-                          className={`w-full px-4 py-3 border ${
-                            errors.subdomain ? 'border-red-300' : 'border-gray-300'
-                          } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors`}
+                          className={`form-input ${errors.subdomain ? 'form-input--error' : ''}`}
                           placeholder="your-company"
                         />
-                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                          <span className="text-gray-500 text-sm">.{window.location.hostname.replace('www.', '')}</span>
+                        <div className="subdomain-suffix">
+                          .{window.location.hostname.replace('www.', '')}
                         </div>
                         {availabilityCheck.checking && (
-                          <div className="absolute inset-y-0 right-20 flex items-center pr-3">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                          <div className="subdomain-checking">
+                            <div className="spinner"></div>
                           </div>
                         )}
                       </div>
-                      {errors.subdomain && <p className="mt-1 text-sm text-red-600">{errors.subdomain}</p>}
+                      <p className="subdomain-help">This will be your unique support portal URL</p>
+                      {errors.subdomain && <p className="form-error">{errors.subdomain}</p>}
                       {availabilityCheck.subdomain === true && (
-                        <p className="mt-1 text-sm text-green-600 flex items-center">
+                        <p className="availability-message available">
                           <svg className="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                           </svg>
@@ -422,7 +443,7 @@ const CompanySignup = () => {
                         </p>
                       )}
                       {availabilityCheck.subdomain === false && formData.subdomain && availabilityCheck.subdomain !== null && !errors.subdomain && (
-                        <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <p className="availability-message not-available">
                           <svg className="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                           </svg>
@@ -430,11 +451,9 @@ const CompanySignup = () => {
                         </p>
                       )}
                     </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label htmlFor="billingEmail" className="block text-sm font-medium text-gray-700 mb-1">
+                    <div className="form-group">
+                      <label htmlFor="billingEmail" className="form-label">
                         Billing Email *
                       </label>
                       <input
@@ -443,16 +462,14 @@ const CompanySignup = () => {
                         type="email"
                         value={formData.billingEmail}
                         onChange={handleChange}
-                        className={`w-full px-4 py-3 border ${
-                          errors.billingEmail ? 'border-red-300' : 'border-gray-300'
-                        } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors`}
+                        className={`form-input ${errors.billingEmail ? 'form-input--error' : ''}`}
                         placeholder="billing@company.com"
                       />
-                      {errors.billingEmail && <p className="mt-1 text-sm text-red-600">{errors.billingEmail}</p>}
+                      {errors.billingEmail && <p className="form-error">{errors.billingEmail}</p>}
                     </div>
 
-                    <div>
-                      <label htmlFor="contactEmail" className="block text-sm font-medium text-gray-700 mb-1">
+                    <div className="form-group">
+                      <label htmlFor="contactEmail" className="form-label">
                         Contact Email *
                       </label>
                       <input
@@ -461,18 +478,18 @@ const CompanySignup = () => {
                         type="email"
                         value={formData.contactEmail}
                         onChange={handleChange}
-                        className={`w-full px-4 py-3 border ${
-                          errors.contactEmail ? 'border-red-300' : 'border-gray-300'
-                        } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors`}
+                        className={`form-input ${errors.contactEmail ? 'form-input--error' : ''}`}
                         placeholder="contact@company.com"
                       />
-                      {errors.contactEmail && <p className="mt-1 text-sm text-red-600">{errors.contactEmail}</p>}
+                      {errors.contactEmail && <p className="form-error">{errors.contactEmail}</p>}
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label htmlFor="ownerName" className="block text-sm font-medium text-gray-700 mb-1">
+                  <div className="form-section">
+                    <h3 className="form-section-title">Owner Account</h3>
+                    
+                    <div className="form-group">
+                      <label htmlFor="ownerName" className="form-label">
                         Owner/Manager Name *
                       </label>
                       <input
@@ -481,16 +498,14 @@ const CompanySignup = () => {
                         type="text"
                         value={formData.ownerName}
                         onChange={handleChange}
-                        className={`w-full px-4 py-3 border ${
-                          errors.ownerName ? 'border-red-300' : 'border-gray-300'
-                        } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors`}
+                        className={`form-input ${errors.ownerName ? 'form-input--error' : ''}`}
                         placeholder="John Doe"
                       />
-                      {errors.ownerName && <p className="mt-1 text-sm text-red-600">{errors.ownerName}</p>}
+                      {errors.ownerName && <p className="form-error">{errors.ownerName}</p>}
                     </div>
 
-                    <div>
-                      <label htmlFor="ownerEmail" className="block text-sm font-medium text-gray-700 mb-1">
+                    <div className="form-group">
+                      <label htmlFor="ownerEmail" className="form-label">
                         Owner Email *
                       </label>
                       <input
@@ -499,18 +514,14 @@ const CompanySignup = () => {
                         type="email"
                         value={formData.ownerEmail}
                         onChange={handleChange}
-                        className={`w-full px-4 py-3 border ${
-                          errors.ownerEmail ? 'border-red-300' : 'border-gray-300'
-                        } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors`}
+                        className={`form-input ${errors.ownerEmail ? 'form-input--error' : ''}`}
                         placeholder="john@company.com"
                       />
-                      {errors.ownerEmail && <p className="mt-1 text-sm text-red-600">{errors.ownerEmail}</p>}
+                      {errors.ownerEmail && <p className="form-error">{errors.ownerEmail}</p>}
                     </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label htmlFor="ownerPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                    <div className="form-group">
+                      <label htmlFor="ownerPassword" className="form-label">
                         Password *
                       </label>
                       <input
@@ -519,16 +530,15 @@ const CompanySignup = () => {
                         type="password"
                         value={formData.ownerPassword}
                         onChange={handleChange}
-                        className={`w-full px-4 py-3 border ${
-                          errors.ownerPassword ? 'border-red-300' : 'border-gray-300'
-                        } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors`}
+                        className={`form-input ${errors.ownerPassword ? 'form-input--error' : ''}`}
                         placeholder="••••••••"
                       />
-                      {errors.ownerPassword && <p className="mt-1 text-sm text-red-600">{errors.ownerPassword}</p>}
+                      {errors.ownerPassword && <p className="form-error">{errors.ownerPassword}</p>}
+                      <p className="password-hint">Use at least 6 characters with a mix of letters and numbers</p>
                     </div>
 
-                    <div>
-                      <label htmlFor="ownerPasswordConfirm" className="block text-sm font-medium text-gray-700 mb-1">
+                    <div className="form-group">
+                      <label htmlFor="ownerPasswordConfirm" className="form-label">
                         Confirm Password *
                       </label>
                       <input
@@ -537,91 +547,102 @@ const CompanySignup = () => {
                         type="password"
                         value={formData.ownerPasswordConfirm}
                         onChange={handleChange}
-                        className={`w-full px-4 py-3 border ${
-                          errors.ownerPasswordConfirm ? 'border-red-300' : 'border-gray-300'
-                        } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors`}
+                        className={`form-input ${errors.ownerPasswordConfirm ? 'form-input--error' : ''}`}
                         placeholder="••••••••"
                       />
-                      {errors.ownerPasswordConfirm && <p className="mt-1 text-sm text-red-600">{errors.ownerPasswordConfirm}</p>}
+                      {errors.ownerPasswordConfirm && <p className="form-error">{errors.ownerPasswordConfirm}</p>}
                     </div>
                   </div>
-
-                  <div className="flex items-start">
-                    <div className="flex items-center h-5">
-                      <input
-                        id="terms"
-                        name="terms"
-                        type="checkbox"
-                        required
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                    </div>
-                    <div className="ml-3 text-sm">
-                      <label htmlFor="terms" className="text-gray-700">
-                        I agree to the <a href="#" className="text-blue-600 hover:text-blue-500">Terms of Service</a> and <a href="#" className="text-blue-600 hover:text-blue-500">Privacy Policy</a>
-                      </label>
-                    </div>
-                  </div>
-
-                  <div className="pt-4">
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                    >
-                      {loading ? (
-                        <>
-                          <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          Creating Company...
-                        </>
-                      ) : (
-                        `Start Free Trial${selectedPlan !== 'free' ? ` - $${getPlanFeatures(selectedPlan)?.price}/month` : ' - No Credit Card Required'}`
-                      )}
-                    </button>
-                  </div>
-                </form>
-
-                <div className="mt-8">
-                  <p className="text-center text-sm text-gray-600">
-                    Already have an account?{' '}
-                    <a href="/login" className="font-medium text-blue-600 hover:text-blue-500">
-                      Sign in
-                    </a>
-                  </p>
                 </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Footer with trust indicators */}
-          <div className="mt-12 text-center">
-            <div className="flex justify-center items-center space-x-8 mb-6">
-              <div className="flex items-center text-sm text-gray-500">
-                <svg className="h-4 w-4 text-green-500 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-                SSL Secured
-              </div>
-              <div className="flex items-center text-sm text-gray-500">
-                <svg className="h-4 w-4 text-green-500 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-                99.9% Uptime
-              </div>
-              <div className="flex items-center text-sm text-gray-500">
-                <svg className="h-4 w-4 text-green-500 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-                24/7 Support
+                <div className="terms-section">
+                  <div className="checkbox-group">
+                    <input
+                      id="terms"
+                      name="terms"
+                      type="checkbox"
+                      required
+                      className="checkbox-input"
+                    />
+                    <label htmlFor="terms" className="checkbox-label">
+                      I agree to the <a href="#" className="link">Terms of Service</a> and <a href="#" className="link">Privacy Policy</a>
+                    </label>
+                  </div>
+                  <div className="checkbox-group">
+                    <input
+                      id="dataConsent"
+                      name="dataConsent"
+                      type="checkbox"
+                      required
+                      className="checkbox-input"
+                    />
+                    <label htmlFor="dataConsent" className="checkbox-label">
+                      I understand that my data will be securely stored in a dedicated environment and isolated from other tenants
+                    </label>
+                  </div>
+                </div>
+
+                <div className="form-actions">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="submit-btn"
+                  >
+                    {loading ? (
+                      <>
+                        <span className="spinner"></span>
+                        Setting Up Your Environment...
+                      </>
+                    ) : (
+                      `Create Company${selectedPlan !== 'free' ? ` - $${getPlanFeatures(selectedPlan)?.price}/month` : ' - Free Forever'}` 
+                    )}
+                  </button>
+                </div>
+              </form>
+
+              <div className="signin-link">
+                <p className="text-sm text-gray-600">
+                  Are you an agent?{' '}
+                  <a href="/agent-login" className="font-medium text-blue-600 hover:text-blue-500">
+                    Sign in as agent
+                  </a>
+                </p>
+                <p className="text-sm text-gray-600">
+                  Already have an account?{' '}
+                  <a href="/login" className="font-medium text-blue-600 hover:text-blue-500">
+                    Sign in
+                  </a>
+                </p>
               </div>
             </div>
-            <p className="text-xs text-gray-500">
-              Join thousands of companies using our platform to provide exceptional customer support.
-            </p>
           </div>
+        </div>
+
+        {/* Footer with trust indicators */}
+        <div className="mt-12 text-center">
+          <div className="flex justify-center items-center space-x-8 mb-6">
+            <div className="flex items-center text-sm text-gray-500">
+              <svg className="h-4 w-4 text-green-500 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+              SSL Secured
+            </div>
+            <div className="flex items-center text-sm text-gray-500">
+              <svg className="h-4 w-4 text-green-500 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+              99.9% Uptime
+            </div>
+            <div className="flex items-center text-sm text-gray-500">
+              <svg className="h-4 w-4 text-green-500 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+              24/7 Support
+            </div>
+          </div>
+          <p className="text-xs text-gray-500">
+            Join thousands of companies using our platform to provide exceptional customer support.
+          </p>
         </div>
       </div>
     </div>

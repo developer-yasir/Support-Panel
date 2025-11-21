@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useDashboardSettings } from '../contexts/DashboardSettingsContext';
 import { useTheme } from '../contexts/ThemeContext';
 import Navbar from '../components/Navbar';
@@ -199,6 +200,21 @@ const Settings = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+        
+        <div className="card settings__card">
+          <div className="card__body">
+            <div className="settings__section">
+              <h3 className="settings__section-title">Company Management</h3>
+              <p className="settings__help-text">Manage your company account and settings</p>
+              
+              <div className="settings__actions">
+                <Link to="/create-company" className="btn btn--primary settings__create-company-btn">
+                  Create Company
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </div>

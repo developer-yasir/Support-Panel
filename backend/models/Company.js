@@ -121,8 +121,7 @@ const companySchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for faster lookups
-companySchema.index({ subdomain: 1 });
+// Index for faster lookups (excluding subdomain since it's already indexed via unique: true)
 companySchema.index({ domain: 1 });
 companySchema.index({ billingEmail: 1 });
 companySchema.index({ active: 1 });

@@ -22,12 +22,50 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // Create user (without saving to DB yet)
+    // For individual registration, assign to a default company if no company context exists
+    // In a real application, you might want to create a default "personal" company for each user
+    // or have users join existing companies in a separate flow
+    
+    // For now, let's create a simple personal account scenario by assigning to a default company
+    // This assumes there's a default company for individual users (e.g., for testing purposes)
+    // In production, you'd likely have users join existing companies or create their own
+    
+    // For this multi-tenant system, individual registration is primarily for company creation
+    // So we'll require the user to be part of a company. Let's assume they'll join a company later.
+    // For now, we'll create a placeholder company for all individual users
+    
+    // Find or create a default company for individual users
+    const Company = require('../models/Company');
+    let defaultCompany = await Company.findOne({ name: 'Default Individual Users' });
+    
+    if (!defaultCompany) {
+      // Create a default company for individual users
+      defaultCompany = new Company({
+        name: 'Default Individual Users',
+        subdomain: 'defaultusers',
+        billingEmail: 'billing@default.com',
+        contactEmail: 'contact@default.com',
+        plan: 'free',
+        features: {
+          agentSeats: 1,
+          ticketVolume: 100,
+          customFields: false,
+          reporting: false,
+          apiAccess: false,
+          customBranding: false,
+          sso: false
+        }
+      });
+      await defaultCompany.save();
+    }
+
+    // Create user with company assignment
     const user = new User({
       name,
       email,
       password,
-      role: role || 'support_agent'
+      role: role || 'support_agent',
+      companyId: defaultCompany._id // Assign to the default company
     });
 
     // Generate email verification token
@@ -93,15 +131,22 @@ exports.verifyEmail = async (req, res) => {
     user.emailVerificationExpires = undefined;
     await user.save();
 
+    // Populate company information
+    const populatedUser = await User.findById(user._id)
+      .populate('companyId', 'name subdomain plan features')
+      .select('-password');
+
     // Generate token (default to no remember me for registration)
     const token = generateToken(user._id, false);
 
     res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      isEmailVerified: user.isEmailVerified,
+      _id: populatedUser._id,
+      name: populatedUser.name,
+      email: populatedUser.email,
+      role: populatedUser.role,
+      isEmailVerified: populatedUser.isEmailVerified,
+      companyId: populatedUser.companyId._id,
+      company: populatedUser.companyId,
       token
     });
   } catch (error) {
@@ -156,13 +201,20 @@ exports.login = async (req, res) => {
     // Generate token with remember me option
     const token = generateToken(user._id, rememberMe);
 
+    // Populate company information
+    const populatedUser = await User.findById(user._id)
+      .populate('companyId', 'name subdomain plan features')
+      .select('-password');
+
     res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      isEmailVerified: user.isEmailVerified,
-      twoFactorEnabled: user.twoFactorEnabled,
+      _id: populatedUser._id,
+      name: populatedUser.name,
+      email: populatedUser.email,
+      role: populatedUser.role,
+      isEmailVerified: populatedUser.isEmailVerified,
+      twoFactorEnabled: populatedUser.twoFactorEnabled,
+      companyId: populatedUser.companyId._id,
+      company: populatedUser.companyId,
       token
     });
   } catch (error) {
@@ -258,7 +310,9 @@ exports.resetPassword = async (req, res) => {
 exports.getProfile = async (req, res) => {
   try {
     // req.user is set by the protect middleware
-    const user = await User.findById(req.user.id).select('-password');
+    const user = await User.findById(req.user.id)
+      .populate('companyId', 'name subdomain plan features') // Populate company information
+      .select('-password');
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }

@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Ticket = require('./models/Ticket');
 const User = require('./models/User');
+const Company = require('./models/Company');
 require('dotenv').config();
 
 const seedTickets = async () => {
@@ -10,7 +11,7 @@ const seedTickets = async () => {
     console.log('Connected to MongoDB');
 
     // Get all users to assign tickets to
-    const users = await User.find({});
+    const users = await User.find({}).populate('companyId');
     if (users.length === 0) {
       console.log('No users found. Please run seedCompanies.js first to create users.');
       process.exit(1);
@@ -20,7 +21,7 @@ const seedTickets = async () => {
     await Ticket.deleteMany({});
     console.log('Cleared existing tickets');
 
-    // Sample tickets data - ticketId will be generated automatically
+    // Sample tickets data - ticketId and companyId will be set based on the user's company
     const sampleTickets = [
       {
         title: 'Customer unable to login to dashboard',
@@ -30,7 +31,8 @@ const seedTickets = async () => {
         escalationLevel: 2,
         dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
         createdBy: users[0]._id,
-        assignedTo: users[1] ? users[1]._id : null
+        assignedTo: users[1] ? users[1]._id : null,
+        companyId: users[0].companyId // Use the user's company
       },
       {
         title: 'API rate limit exceeded error',
@@ -40,7 +42,8 @@ const seedTickets = async () => {
         escalationLevel: 3,
         dueDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000), // 1 day from now
         createdBy: users[1] ? users[1]._id : users[0]._id,
-        assignedTo: users[2] ? users[2]._id : null
+        assignedTo: users[2] ? users[2]._id : null,
+        companyId: users[1] ? users[1].companyId : users[0].companyId
       },
       {
         title: 'Billing discrepancy on last invoice',
@@ -50,7 +53,8 @@ const seedTickets = async () => {
         escalationLevel: 1,
         dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
         createdBy: users[2] ? users[2]._id : users[0]._id,
-        assignedTo: users[0]._id
+        assignedTo: users[0]._id,
+        companyId: users[2] ? users[2].companyId : users[0].companyId
       },
       {
         title: 'Feature request - custom reporting',
@@ -60,7 +64,8 @@ const seedTickets = async () => {
         escalationLevel: 1,
         dueDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
         createdBy: users[0]._id,
-        assignedTo: users[1] ? users[1]._id : null
+        assignedTo: users[1] ? users[1]._id : null,
+        companyId: users[0].companyId
       },
       {
         title: 'Email notifications not working',
@@ -70,7 +75,8 @@ const seedTickets = async () => {
         escalationLevel: 2,
         dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
         createdBy: users[1] ? users[1]._id : users[0]._id,
-        assignedTo: users[0]._id
+        assignedTo: users[0]._id,
+        companyId: users[1] ? users[1].companyId : users[0].companyId
       }
     ];
 
@@ -78,7 +84,7 @@ const seedTickets = async () => {
     for (const ticketData of sampleTickets) {
       const ticket = new Ticket(ticketData);
       await ticket.save();
-      console.log(`Created ticket: ${ticket.title}`);
+      console.log(`Created ticket: ${ticket.title} for company ID: ${ticket.companyId}`);
     }
 
     console.log('Ticket seeding completed successfully!');

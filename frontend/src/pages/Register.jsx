@@ -366,7 +366,7 @@ const Register = () => {
             </form>
             
             <div className="login-footer">
-              <p>Want to create a company account? <Link to="/signup" className="login-link">Create company account</Link></p>
+              <p>Are you an agent? <Link to="/agent-login" className="login-link">Sign in as agent</Link></p>
               <p className="mt-2">Already have an account? <Link to="/login" className="login-link">Sign in</Link></p>
             </div>
           </div>

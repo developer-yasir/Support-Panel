@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import Login from './pages/Login';
+import AgentLogin from './pages/AgentLogin';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
@@ -20,6 +21,7 @@ import Tickets from './pages/Tickets';
 import Agents from './pages/Agents';
 import AdminDashboard from './pages/AdminDashboard';
 import CompanySignup from './pages/CompanySignup';
+import CompanyCreation from './pages/CompanyCreation';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
 import Design1 from './pages/ticketDetailDesigns/Design1';
@@ -35,6 +37,7 @@ function App() {
         <div className="app">
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/agent-login" element={<AgentLogin />} />
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
@@ -124,7 +127,12 @@ function App() {
             } />
 
             <Route path="/" element={
-              <CompanySignup />
+              <Login />
+            } />
+            <Route path="/create-company" element={
+              <ProtectedRoute>
+                <CompanyCreation />
+              </ProtectedRoute>
             } />
             <Route path="/app" element={
               <ProtectedRoute>

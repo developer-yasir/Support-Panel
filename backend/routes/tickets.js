@@ -21,6 +21,7 @@ const {
   getUpcomingBreaches
 } = require('../controllers/ticketController');
 const { protect } = require('../middlewares/authMiddleware');
+const { companyContextMiddleware } = require('../middlewares/companyContextMiddleware');
 
 // All routes are protected
 router.use(protect);

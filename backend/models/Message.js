@@ -57,8 +57,4 @@ messageSchema.index({ conversationId: 1, sender: 1 });
 messageSchema.index({ companyId: 1 });
 messageSchema.index({ conversationId: 1, companyId: 1 });
 
-// Add indexes for better query performance
-messageSchema.index({ conversationId: 1, createdAt: -1 });
-messageSchema.index({ conversationId: 1, sender: 1 });
-
 module.exports = mongoose.model('Message', messageSchema);

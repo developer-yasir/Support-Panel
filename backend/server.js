@@ -19,6 +19,9 @@ const companiesRoutes = require('./routes/companies');
 const chatRoutes = require('./routes/chat');
 const twoFactorRoutes = require('./routes/twoFactor');
 
+// Import tenant middleware first
+const { tenantMiddleware } = require('./middlewares/tenantMiddleware');
+
 // Initialize main app
 const app = express();
 
@@ -59,18 +62,17 @@ subdomainApp.use(cors({
 }));
 
 // Apply tenant middleware to subdomain routes
-const { tenantMiddleware } = require('./middlewares/tenantMiddleware');
 subdomainApp.use(tenantMiddleware);
 
 // Subdomain API routes (same as main app, but with tenant isolation)
 subdomainApp.use('/api/auth', authRoutes);
-subdomainApp.use('/api/tickets', ticketRoutes);
-subdomainApp.use('/api/comments', commentRoutes);
-subdomainApp.use('/api/users', userRoutes);
-subdomainApp.use('/api/contacts', contactsRoutes);
-subdomainApp.use('/api/companies', companiesRoutes);
-subdomainApp.use('/api/chat', chatRoutes);
-subdomainApp.use('/api/2fa', twoFactorRoutes);
+subdomainApp.use('/api/tickets', tenantMiddleware, ticketRoutes);
+subdomainApp.use('/api/comments', tenantMiddleware, commentRoutes);
+subdomainApp.use('/api/users', tenantMiddleware, userRoutes);
+subdomainApp.use('/api/contacts', tenantMiddleware, contactsRoutes);
+subdomainApp.use('/api/companies', tenantMiddleware, companiesRoutes);
+subdomainApp.use('/api/chat', tenantMiddleware, chatRoutes);
+subdomainApp.use('/api/2fa', tenantMiddleware, twoFactorRoutes);
 
 // Health check for subdomains
 subdomainApp.get('/api/', (req, res) => {
