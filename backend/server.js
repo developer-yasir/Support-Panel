@@ -35,13 +35,13 @@ app.use(express.json());
 
 // Main API routes (for main domain like app.yourapp.com)
 app.use('/api/auth', authRoutes);
-app.use('/api/tickets', ticketRoutes);
-app.use('/api/comments', commentRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/contacts', contactsRoutes);
-app.use('/api/companies', companiesRoutes);
-app.use('/api/chat', chatRoutes);
-app.use('/api/2fa', twoFactorRoutes);
+app.use('/api/tickets', tenantMiddleware, ticketRoutes);
+app.use('/api/comments', tenantMiddleware, commentRoutes);
+app.use('/api/users', tenantMiddleware, userRoutes);
+app.use('/api/contacts', tenantMiddleware, contactsRoutes);
+app.use('/api/companies', tenantMiddleware, companiesRoutes);
+app.use('/api/chat', tenantMiddleware, chatRoutes);
+app.use('/api/2fa', tenantMiddleware, twoFactorRoutes);
 
 // Initialize subdomain app
 const subdomainApp = express();

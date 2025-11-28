@@ -31,7 +31,8 @@ const Sidebar = () => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
         </svg>
       ),
-      path: '/overview'
+      path: '/overview',
+      allowedRoles: ['admin', 'support_agent', 'customer']
     },
     {
       id: 'tickets',
@@ -41,10 +42,10 @@ const Sidebar = () => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
         </svg>
       ),
-      path: '/tickets'
+      path: '/tickets',
+      allowedRoles: ['admin', 'support_agent', 'customer']
     },
-
-    {
+    ...(currentUser?.role === 'admin' || currentUser?.role === 'support_agent' ? [{
       id: 'agents',
       title: 'Agents',
       icon: (
@@ -52,9 +53,10 @@ const Sidebar = () => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
         </svg>
       ),
-      path: '/agents'
-    },
-    {
+      path: '/agents',
+      allowedRoles: ['admin', 'support_agent']
+    }] : []),
+    ...(currentUser?.role === 'admin' ? [{
       id: 'companies',
       title: 'Companies',
       icon: (
@@ -62,9 +64,10 @@ const Sidebar = () => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
         </svg>
       ),
-      path: '/companies'
-    },
-    {
+      path: '/companies',
+      allowedRoles: ['admin']
+    }] : []),
+    ...(currentUser?.role === 'admin' || currentUser?.role === 'support_agent' ? [{
       id: 'reports',
       title: 'Reports',
       icon: (
@@ -72,8 +75,9 @@ const Sidebar = () => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
         </svg>
       ),
-      path: '/reports'
-    },
+      path: '/reports',
+      allowedRoles: ['admin', 'support_agent']
+    }] : []),
     {
       id: 'chat',
       title: 'Live Chat',
@@ -82,7 +86,8 @@ const Sidebar = () => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
         </svg>
       ),
-      path: '/chat'
+      path: '/chat',
+      allowedRoles: ['admin', 'support_agent', 'customer']
     },
     {
       id: 'settings',
@@ -93,7 +98,8 @@ const Sidebar = () => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
       ),
-      path: '/settings'
+      path: '/settings',
+      allowedRoles: ['admin', 'support_agent', 'customer']
     },
     ...(currentUser?.role === 'admin' ? [{
       id: 'admin',
@@ -103,9 +109,15 @@ const Sidebar = () => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
         </svg>
       ),
-      path: '/admin'
+      path: '/admin',
+      allowedRoles: ['admin']
     }] : [])
   ];
+
+  // Filter menu items based on user role
+  const visibleMenuItems = menuItems.filter(item => 
+    !item.allowedRoles || item.allowedRoles.includes(currentUser?.role)
+  );
 
   const isActive = (path) => {
     // Check for exact match, handle special case for root path which should highlight tickets
@@ -144,7 +156,7 @@ const Sidebar = () => {
       </div>
       
       <div className="sidebar__menu">
-        {menuItems.map((item) => (
+        {visibleMenuItems.map((item) => (
           <div key={item.id}>
             {item.submenu ? (
               <div>

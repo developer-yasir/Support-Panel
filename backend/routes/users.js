@@ -8,34 +8,42 @@ const {
   deleteUser
 } = require('../controllers/userController');
 const User = require('../models/User'); // Moved import to top
-const { protect, adminOnly } = require('../middlewares/authMiddleware');
+const { protect, adminOnly, authorize } = require('../middlewares/authMiddleware');
+const { tenantMiddleware } = require('../middlewares/tenantMiddleware');
+const { checkPermission, canAccessResource, ownerOnly } = require('../middlewares/permissionMiddleware');
 
 // All routes are protected
 router.use(protect);
 
+// User management - only for admins or company owners
 router.route('/')
-  .get(adminOnly, getUsers)  // Only admins can get users
-  .post(adminOnly, createUser);  // Only admins can create users
+  .get([checkPermission('read:users'), authorize('admin')], getUsers)  // Only admins can get all users
+  .post([checkPermission('write:users'), authorize('admin')], createUser);  // Only admins can create users
 
 router.route('/:id')
-  .get(getUserById)
-  .put(adminOnly, updateUserStatus)  // Only admins can update user status
-  .delete(adminOnly, deleteUser);  // Only admins can delete users
+  .get(canAccessResource('user'), getUserById)
+  .put([ownerOnly, checkPermission('write:users'), authorize('admin')], updateUserStatus)  // Only admins can update user status
+  .delete([checkPermission('delete:users'), authorize('admin')], deleteUser);  // Only admins can delete users
 
 // Additional route for toggling user status
 router.route('/:id/toggle-status')
-  .put(adminOnly, updateUserStatus);  // Only admins can update user status
+  .put([checkPermission('write:users'), authorize('admin')], updateUserStatus);  // Only admins can update user status
 
 // Route specifically for getting agents (support agents only)
 router.route('/agents')
-  .get(protect, async (req, res) => {
+  .get(protect, tenantMiddleware, async (req, res) => {
     try {
-      // Allow authenticated users to get a list of agents
-      // This endpoint will return only active agents
+      // Verify company context exists
+      if (!req.companyId) {
+        return res.status(400).json({ message: 'Company context required to get agents' });
+      }
+      
+      // Allow authenticated users to get a list of agents from their company only
       const agents = await User.find({ 
-        role: 'support_agent',
-        isActive: true 
-      }).select('name email _id');
+        role: { $in: ['support_agent', 'admin'] },  // Include both agents and admin
+        isActive: true,
+        companyId: req.companyId  // Critical: Only agents from the same company
+      }).select('name email role _id');
       res.json(agents);
     } catch (err) {
       console.error('Error fetching agents:', err);

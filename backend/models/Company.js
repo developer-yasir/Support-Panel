@@ -116,6 +116,11 @@ const companySchema = new mongoose.Schema({
   suspended: {
     type: Boolean,
     default: false
+  },
+  ownerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
   }
 }, {
   timestamps: true

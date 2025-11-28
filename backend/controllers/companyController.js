@@ -4,7 +4,7 @@ const { generate } = require('generate-password');
 const jwt = require('jsonwebtoken');
 const config = require('../config/config');
 
-// Create a new company (for signup process)
+// Create a new company (for signup process or existing user creating company)
 exports.createCompany = async (req, res) => {
   try {
     const { 
@@ -12,15 +12,36 @@ exports.createCompany = async (req, res) => {
       subdomain, 
       billingEmail, 
       contactEmail,
-      ownerName,
-      ownerEmail,
-      ownerPassword
+      ownerName: providedOwnerName,
+      ownerEmail: providedOwnerEmail,
+      ownerPassword: providedOwnerPassword
     } = req.body;
 
+    // Check if this is from an authenticated user (creating company from within the app)
+    // req.user would be available if the route is protected
+    let ownerName, ownerEmail;
+    
+    if (req.user) {
+      // Use the authenticated user as the owner
+      ownerName = req.user.name;
+      ownerEmail = req.user.email;
+    } else {
+      // Use the provided owner information (for signup process)
+      ownerName = providedOwnerName;
+      ownerEmail = providedOwnerEmail;
+    }
+
     // Validate required fields
-    if (!name || !subdomain || !billingEmail || !contactEmail || !ownerName || !ownerEmail || !ownerPassword) {
+    if (!name || !subdomain || !billingEmail || !contactEmail || !ownerName || !ownerEmail) {
       return res.status(400).json({ 
-        message: 'All fields are required: name, subdomain, billingEmail, contactEmail, ownerName, ownerEmail, ownerPassword' 
+        message: 'All fields are required: name, subdomain, billingEmail, contactEmail, ownerName, ownerEmail' 
+      });
+    }
+    
+    // For signup process (unauthenticated), ownerPassword is required
+    if (!req.user && !providedOwnerPassword) {
+      return res.status(400).json({ 
+        message: 'Owner password is required for new signups' 
       });
     }
 
@@ -48,12 +69,15 @@ exports.createCompany = async (req, res) => {
       });
     }
 
-    // Check if owner email is already taken
-    const existingUser = await User.findOne({ email: ownerEmail.toLowerCase() });
-    if (existingUser) {
-      return res.status(400).json({ 
-        message: 'A user is already registered with this email address.' 
-      });
+    // Check if this is a new signup (unauthenticated) vs existing user creating company
+    if (!req.user) {
+      // Check if owner email is already taken (for signup process)
+      const existingUser = await User.findOne({ email: ownerEmail.toLowerCase() });
+      if (existingUser) {
+        return res.status(400).json({ 
+          message: 'A user is already registered with this email address.' 
+        });
+      }
     }
 
     // Create the company
@@ -69,49 +93,90 @@ exports.createCompany = async (req, res) => {
 
     await company.save();
 
-    // Create the owner/admin user for this company
-    const ownerUser = new User({
-      name: ownerName,
-      email: ownerEmail.toLowerCase(),
-      password: ownerPassword,
-      role: 'admin',
-      isActive: true,
-      isEmailVerified: true, // Auto-verify for signup
-      companyId: company._id
-    });
+    let ownerUser;
+    
+    if (req.user) {
+      // For existing authenticated users, update their company assignment
+      // The authenticated user becomes the admin of the new company
+      await User.findByIdAndUpdate(
+        req.user.id,
+        { 
+          role: 'admin',
+          companyId: company._id
+        }
+      );
+      
+      // Update the req.user object to reflect the new company assignment
+      req.user.role = 'admin';
+      req.user.companyId = company._id;
+      ownerUser = req.user; // Use the existing user
+    } else {
+      // For new signups, create a new owner user
+      ownerUser = new User({
+        name: ownerName,
+        email: ownerEmail.toLowerCase(),
+        password: providedOwnerPassword, // Use the password that was provided
+        role: 'admin',
+        isActive: true,
+        isEmailVerified: true, // Auto-verify for signup
+        companyId: company._id
+      });
 
-    await ownerUser.save();
+      await ownerUser.save();
+    }
 
     // Update company with owner information
     company.ownerId = ownerUser._id;
     await company.save();
 
-    // Generate JWT token for the new user
-    const token = jwt.sign(
-      { id: ownerUser._id, companyId: company._id },
-      config.jwtSecret,
-      { expiresIn: '30d' }
-    );
+    if (req.user) {
+      // For authenticated users, update the current user's session data
+      // Don't generate a new token, just return company info
+      res.status(201).json({
+        message: 'Company created successfully',
+        company: {
+          id: company._id,
+          name: company.name,
+          subdomain: company.subdomain,
+          billingEmail: company.billingEmail,
+          plan: company.plan,
+          features: company.features
+        },
+        user: {
+          id: req.user.id,
+          name: req.user.name,
+          email: req.user.email,
+          role: 'admin' // Updated to admin since they're now an admin of this new company
+        }
+      });
+    } else {
+      // Generate JWT token for the new user (for signup process)
+      const token = jwt.sign(
+        { id: ownerUser._id, companyId: company._id },
+        config.jwtSecret,
+        { expiresIn: '30d' }
+      );
 
-    // Return success response with token
-    res.status(201).json({
-      message: 'Company created successfully',
-      token,
-      company: {
-        id: company._id,
-        name: company.name,
-        subdomain: company.subdomain,
-        billingEmail: company.billingEmail,
-        plan: company.plan,
-        features: company.features
-      },
-      user: {
-        id: ownerUser._id,
-        name: ownerUser.name,
-        email: ownerUser.email,
-        role: ownerUser.role
-      }
-    });
+      // Return success response with token (for signup process)
+      res.status(201).json({
+        message: 'Company created successfully',
+        token,
+        company: {
+          id: company._id,
+          name: company.name,
+          subdomain: company.subdomain,
+          billingEmail: company.billingEmail,
+          plan: company.plan,
+          features: company.features
+        },
+        user: {
+          id: ownerUser._id,
+          name: ownerUser.name,
+          email: ownerUser.email,
+          role: ownerUser.role
+        }
+      });
+    }
   } catch (error) {
     console.error('Error creating company:', error);
     res.status(500).json({ message: 'Server error', error: error.message });

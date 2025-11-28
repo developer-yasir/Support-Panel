@@ -20,60 +20,62 @@ const {
   getTicketCategories,
   getUpcomingBreaches
 } = require('../controllers/ticketController');
-const { protect } = require('../middlewares/authMiddleware');
+const { protect, authorize } = require('../middlewares/authMiddleware');
 const { companyContextMiddleware } = require('../middlewares/companyContextMiddleware');
+const { checkPermission } = require('../middlewares/permissionMiddleware');
 
 // All routes are protected
 router.use(protect);
 
+// Public ticket access (for customers)
 router.route('/')
-  .post(createTicket)
-  .get(getTickets);
+  .post(checkPermission('write:tickets'), createTicket)
+  .get(checkPermission('read:tickets'), getTickets);
 
+// Statistics - accessible to agents and above
 router.route('/stats')
-  .get(getTicketStats);
+  .get(checkPermission('read:reports'), getTicketStats);
 
 router.route('/trends')
-  .get(getTicketTrends);
+  .get(checkPermission('read:reports'), getTicketTrends);
 
 router.route('/distribution')
-  .get(getTicketDistribution);
+  .get(checkPermission('read:reports'), getTicketDistribution);
 
 router.route('/resolution-rates')
-  .get(getResolutionRates);
+  .get(checkPermission('read:reports'), getResolutionRates);
 
+// Agent performance - only accessible to admins and agents
 router.route('/agents')
-  .get(getAgentPerformance);
+  .get([checkPermission('read:reports'), checkPermission('read:agents')], getAgentPerformance);
 
 router.route('/activity')
-  .get(getRecentActivity);
+  .get(checkPermission('read:reports'), getRecentActivity);
 
 router.route('/company-stats')
-  .get(getCompanyTicketStats);
-
-
+  .get(checkPermission('read:reports'), getCompanyTicketStats);
 
 router.route('/departments')
-  .get(getDepartmentStats);
+  .get(checkPermission('read:reports'), getDepartmentStats);
 
 router.route('/response-time')
-  .get(getResponseTimeMetrics);
+  .get(checkPermission('read:reports'), getResponseTimeMetrics);
 
 router.route('/age-analysis')
-  .get(getTicketAgeAnalysis);
+  .get(checkPermission('read:reports'), getTicketAgeAnalysis);
 
 router.route('/categories')
-  .get(getTicketCategories);
+  .get(checkPermission('read:reports'), getTicketCategories);
 
 router.route('/breaches')
-  .get(getUpcomingBreaches);
+  .get(checkPermission('read:reports'), getUpcomingBreaches);
 
 router.route('/:id')
-  .get(getTicketById)
-  .put(updateTicket)
-  .delete(deleteTicket);
+  .get(checkPermission('read:tickets'), getTicketById)
+  .put(checkPermission('write:tickets'), updateTicket)
+  .delete([checkPermission('delete:tickets'), authorize('admin')], deleteTicket);  // Only admins can delete
 
 router.route('/:id/escalate')
-  .post(escalateTicket);
+  .post(checkPermission('write:tickets'), escalateTicket);
 
 module.exports = router;

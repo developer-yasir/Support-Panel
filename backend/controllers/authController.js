@@ -60,11 +60,15 @@ exports.register = async (req, res) => {
     }
 
     // Create user with company assignment
+    // For individual registration, assign default role
+    // Company owners will be handled separately in company creation
+    const defaultRole = role || 'support_agent';
+    
     const user = new User({
       name,
       email,
       password,
-      role: role || 'support_agent',
+      role: defaultRole,
       companyId: defaultCompany._id // Assign to the default company
     });
 
