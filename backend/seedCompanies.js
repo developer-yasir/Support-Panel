@@ -60,6 +60,7 @@ const seedCompanies = async () => {
       password: 'admin123', // This will be hashed automatically
       role: 'admin',
       company: 'System Admin',
+      isEmailVerified: true, // Set email as verified for seeded users
       companyId: adminCompany._id
     });
     
@@ -81,6 +82,7 @@ const seedCompanies = async () => {
           password: 'password123', // This will be hashed automatically
           company: company.name,
           phone: `+1-555-${Math.floor(1000 + Math.random() * 9000)}`,
+          isEmailVerified: true, // Set email as verified for seeded users
           companyId: company._id
         });
 

@@ -1469,3 +1469,60 @@
     font-size: 0.9rem;
   }
 }
+
+/* Modal Styles */
+.freshdesk-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.freshdesk-modal {
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.freshdesk-modal-header {
+  padding: 1.5rem 1.5rem 0.5rem 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.freshdesk-modal-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.freshdesk-modal-body {
+  padding: 1.5rem;
+}
+
+.freshdesk-modal-body p {
+  margin: 0 0 0.5rem 0;
+  color: #4b5563;
+}
+
+.freshdesk-modal-footer {
+  padding: 0.75rem 1.5rem 1.5rem 1.5rem;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.freshdesk-modal-footer .freshdesk-btn {
+  min-width: 80px;
+}

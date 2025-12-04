@@ -21,11 +21,12 @@ const {
   getUpcomingBreaches
 } = require('../controllers/ticketController');
 const { protect, authorize } = require('../middlewares/authMiddleware');
-const { companyContextMiddleware } = require('../middlewares/companyContextMiddleware');
+const { tenantMiddleware } = require('../middlewares/tenantMiddleware');
 const { checkPermission } = require('../middlewares/permissionMiddleware');
 
-// All routes are protected
+// All routes are protected - apply authentication first, then tenant context
 router.use(protect);
+router.use(tenantMiddleware); // Apply tenant context after authentication
 
 // Public ticket access (for customers)
 router.route('/')

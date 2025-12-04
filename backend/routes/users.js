@@ -12,8 +12,9 @@ const { protect, adminOnly, authorize } = require('../middlewares/authMiddleware
 const { tenantMiddleware } = require('../middlewares/tenantMiddleware');
 const { checkPermission, canAccessResource, ownerOnly } = require('../middlewares/permissionMiddleware');
 
-// All routes are protected
+// All routes are protected - apply authentication first, then tenant context
 router.use(protect);
+router.use(tenantMiddleware); // Apply tenant context after authentication
 
 // User management - only for admins or company owners
 router.route('/')
@@ -30,16 +31,17 @@ router.route('/:id/toggle-status')
   .put([checkPermission('write:users'), authorize('admin')], updateUserStatus);  // Only admins can update user status
 
 // Route specifically for getting agents (support agents only)
+// tenantMiddleware is already applied at the router level
 router.route('/agents')
-  .get(protect, tenantMiddleware, async (req, res) => {
+  .get(async (req, res) => {
     try {
       // Verify company context exists
       if (!req.companyId) {
         return res.status(400).json({ message: 'Company context required to get agents' });
       }
-      
+
       // Allow authenticated users to get a list of agents from their company only
-      const agents = await User.find({ 
+      const agents = await User.find({
         role: { $in: ['support_agent', 'admin'] },  // Include both agents and admin
         isActive: true,
         companyId: req.companyId  // Critical: Only agents from the same company

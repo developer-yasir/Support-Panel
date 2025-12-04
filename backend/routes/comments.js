@@ -7,9 +7,11 @@ const {
   deleteComment
 } = require('../controllers/commentController');
 const { protect } = require('../middlewares/authMiddleware');
+const { tenantMiddleware } = require('../middlewares/tenantMiddleware');
 
-// All routes are protected
+// All routes are protected - apply authentication first, then tenant context
 router.use(protect);
+router.use(tenantMiddleware); // Apply tenant context after authentication
 
 router.route('/')
   .post(addComment);

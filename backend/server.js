@@ -35,13 +35,13 @@ app.use(express.json());
 
 // Main API routes (for main domain like app.yourapp.com)
 app.use('/api/auth', authRoutes);
-app.use('/api/tickets', tenantMiddleware, ticketRoutes);
-app.use('/api/comments', tenantMiddleware, commentRoutes);
-app.use('/api/users', tenantMiddleware, userRoutes);
-app.use('/api/contacts', tenantMiddleware, contactsRoutes);
-app.use('/api/companies', tenantMiddleware, companiesRoutes);
-app.use('/api/chat', tenantMiddleware, chatRoutes);
-app.use('/api/2fa', tenantMiddleware, twoFactorRoutes);
+app.use('/api/tickets', ticketRoutes);  // Apply tenant context after auth in route file
+app.use('/api/comments', commentRoutes);  // Apply tenant context after auth in route file
+app.use('/api/users', userRoutes);  // Apply tenant context after auth in route file
+app.use('/api/contacts', contactsRoutes);  // Apply tenant context after auth in route file
+app.use('/api/companies', companiesRoutes);  // Apply tenant context after auth in route file
+app.use('/api/chat', chatRoutes);  // Apply tenant context after auth in route file
+app.use('/api/2fa', twoFactorRoutes);  // Apply tenant context after auth in route file
 
 // Initialize subdomain app
 const subdomainApp = express();
@@ -62,17 +62,18 @@ subdomainApp.use(cors({
 }));
 
 // Apply tenant middleware to subdomain routes
+// This is appropriate for subdomain-based tenant identification
 subdomainApp.use(tenantMiddleware);
 
 // Subdomain API routes (same as main app, but with tenant isolation)
 subdomainApp.use('/api/auth', authRoutes);
-subdomainApp.use('/api/tickets', tenantMiddleware, ticketRoutes);
-subdomainApp.use('/api/comments', tenantMiddleware, commentRoutes);
-subdomainApp.use('/api/users', tenantMiddleware, userRoutes);
-subdomainApp.use('/api/contacts', tenantMiddleware, contactsRoutes);
-subdomainApp.use('/api/companies', tenantMiddleware, companiesRoutes);
-subdomainApp.use('/api/chat', tenantMiddleware, chatRoutes);
-subdomainApp.use('/api/2fa', tenantMiddleware, twoFactorRoutes);
+subdomainApp.use('/api/tickets', ticketRoutes);  // Tenant context handled in route after auth
+subdomainApp.use('/api/comments', commentRoutes);  // Tenant context handled in route after auth
+subdomainApp.use('/api/users', userRoutes);  // Tenant context handled in route after auth
+subdomainApp.use('/api/contacts', contactsRoutes);  // Tenant context handled in route after auth
+subdomainApp.use('/api/companies', companiesRoutes);  // Tenant context handled in route after auth
+subdomainApp.use('/api/chat', chatRoutes);  // Tenant context handled in route after auth
+subdomainApp.use('/api/2fa', twoFactorRoutes);  // Tenant context handled in route after auth
 
 // Health check for subdomains
 subdomainApp.get('/api/', (req, res) => {
@@ -84,6 +85,8 @@ subdomainApp.get('/api/', (req, res) => {
 });
 
 // Mount subdomain app to handle all subdomain requests
+// For subdomain requests, tenant identification happens via subdomain first
+// so we apply tenantMiddleware first, then auth
 app.use(vhost('*.' + (process.env.MAIN_DOMAIN || 'yourapp.com'), subdomainApp));
 
 // Health check endpoint

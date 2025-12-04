@@ -1,6 +1,6 @@
 const Ticket = require('../models/Ticket');
 const User = require('../models/User');
-const { sendTicketNotification } = require('../config/email');
+const { sendTicketNotification, sendTicketUpdateNotification } = require('../config/email');
 
 // Create a new ticket
 exports.createTicket = async (req, res) => {
@@ -30,19 +30,20 @@ exports.createTicket = async (req, res) => {
     
     // Send email notification for new ticket
     try {
-      if (ticket.createdBy.email) {
+      if (ticket.createdBy && ticket.createdBy.email) {
         await sendTicketNotification(
           ticket.createdBy.email,
-          ticket.createdBy.name,
+          ticket.createdBy.name || 'User',
           ticket
         );
       }
-      
+
       // Also notify the assigned user if different from creator
-      if (ticket.assignedTo && ticket.assignedTo.email && ticket.assignedTo._id.toString() !== ticket.createdBy._id.toString()) {
+      if (ticket.assignedTo && ticket.assignedTo.email && ticket.createdBy && ticket.assignedTo._id && ticket.createdBy._id &&
+          ticket.assignedTo._id.toString() !== ticket.createdBy._id.toString()) {
         await sendTicketNotification(
           ticket.assignedTo.email,
-          ticket.assignedTo.name,
+          ticket.assignedTo.name || 'User',
           ticket
         );
       }
@@ -207,19 +208,20 @@ exports.updateTicket = async (req, res) => {
     
     // Send email notification for ticket update
     try {
-      if (ticket.createdBy.email) {
+      if (ticket.createdBy && ticket.createdBy.email) {
         await sendTicketUpdateNotification(
           ticket.createdBy.email,
-          ticket.createdBy.name,
+          ticket.createdBy.name || 'User',
           ticket
         );
       }
-      
+
       // Also notify the assigned user if different from creator
-      if (ticket.assignedTo && ticket.assignedTo.email && ticket.assignedTo._id.toString() !== ticket.createdBy._id.toString()) {
+      if (ticket.assignedTo && ticket.assignedTo.email && ticket.createdBy && ticket.assignedTo._id && ticket.createdBy._id &&
+          ticket.assignedTo._id.toString() !== ticket.createdBy._id.toString()) {
         await sendTicketUpdateNotification(
           ticket.assignedTo.email,
-          ticket.assignedTo.name,
+          ticket.assignedTo.name || 'User',
           ticket
         );
       }
@@ -247,41 +249,47 @@ exports.deleteTicket = async (req, res) => {
     if (!req.companyId) {
       return res.status(400).json({ message: 'Company context required to delete ticket' });
     }
-    
+
     let ticket;
-    
+
     // Find ticket by custom ticketId with company filter
-    ticket = await Ticket.findOne({ 
+    ticket = await Ticket.findOne({
       ticketId: req.params.id,
-      companyId: req.companyId 
+      companyId: req.companyId
     });
-    
+
     // If not found by ticketId and the param looks like an ObjectId, try to find by _id with company filter
     if (!ticket && /^[0-9a-fA-F]{24}$/.test(req.params.id)) {
       ticket = await Ticket.findOne({
         _id: req.params.id,
-        companyId: req.companyId 
+        companyId: req.companyId
       });
     }
-    
+
     if (!ticket) {
       return res.status(404).json({ message: 'Ticket not found' });
     }
-    
+
     // Check if user is authorized to delete ticket
-    if (ticket.createdBy.toString() !== req.user.id && req.user.role !== 'admin') {
+    if (ticket.createdBy && ticket.createdBy.toString() !== req.user.id && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Not authorized to delete this ticket' });
     }
-    
-    await ticket.remove();
-    
+
+    // Delete the ticket - use deleteOne to ensure company isolation
+    const result = await Ticket.deleteOne({ _id: ticket._id, companyId: req.companyId });
+
+    if (result.deletedCount === 0) {
+      return res.status(500).json({ message: 'Error deleting ticket' });
+    }
+
     // Broadcast ticket deletion to WebSocket clients
     if (global.broadcastTicketUpdate) {
       global.broadcastTicketUpdate({ id: req.params.id, deleted: true });
     }
-    
+
     res.json({ message: 'Ticket removed' });
   } catch (error) {
+    console.error('Error deleting ticket:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };

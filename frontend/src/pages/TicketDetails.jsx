@@ -14,6 +14,7 @@ const TicketDetails = () => {
   const [replyLoading, setReplyLoading] = useState(false);
   const [ticketProperties, setTicketProperties] = useState({});
   const [agents, setAgents] = useState([]);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   // Initialize with sample ticket data for now
   useEffect(() => {
@@ -192,6 +193,18 @@ const TicketDetails = () => {
 
   const handleAssigneeChange = (agentId) => {
     handlePropertyChange('assigneeId', agentId);
+  };
+
+  const handleDeleteTicket = async () => {
+    if (!ticket?._id) return;
+
+    try {
+      await api.delete(`/tickets/${ticket._id}`);
+      navigate('/tickets'); // Redirect to tickets list after deletion
+    } catch (err) {
+      console.error('Error deleting ticket:', err);
+      alert('Failed to delete ticket: ' + (err.response?.data?.message || err.message));
+    }
   };
 
   if (loading) {
@@ -444,16 +457,10 @@ const TicketDetails = () => {
               <div className="freshdesk-sidebar-section">
                 <h3 className="freshdesk-sidebar-title">Actions</h3>
                 <div className="freshdesk-action-buttons">
-                  <button className="freshdesk-btn freshdesk-btn--secondary freshdesk-btn--block">
-                    Add Time Entry
-                  </button>
-                  <button className="freshdesk-btn freshdesk-btn--secondary freshdesk-btn--block">
-                    Merge Ticket
-                  </button>
-                  <button className="freshdesk-btn freshdesk-btn--secondary freshdesk-btn--block">
-                    Transfer Ticket
-                  </button>
-                  <button className="freshdesk-btn freshdesk-btn--danger freshdesk-btn--block">
+                  <button
+                    className="freshdesk-btn freshdesk-btn--danger freshdesk-btn--block"
+                    onClick={() => setShowDeleteModal(true)}
+                  >
                     Delete Ticket
                   </button>
                 </div>
@@ -481,6 +488,35 @@ const TicketDetails = () => {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="freshdesk-modal-overlay">
+          <div className="freshdesk-modal">
+            <div className="freshdesk-modal-header">
+              <h3>Confirm Deletion</h3>
+            </div>
+            <div className="freshdesk-modal-body">
+              <p>Are you sure you want to delete this ticket?</p>
+              <p>This action cannot be undone.</p>
+            </div>
+            <div className="freshdesk-modal-footer">
+              <button
+                className="freshdesk-btn freshdesk-btn--secondary"
+                onClick={() => setShowDeleteModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="freshdesk-btn freshdesk-btn--danger"
+                onClick={handleDeleteTicket}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
