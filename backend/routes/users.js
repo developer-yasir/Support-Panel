@@ -5,7 +5,8 @@ const {
   getUserById,
   createUser,
   updateUserStatus,
-  deleteUser
+  deleteUser,
+  updateUser
 } = require('../controllers/userController');
 const User = require('../models/User'); // Moved import to top
 const { protect, adminOnly, authorize } = require('../middlewares/authMiddleware');
@@ -16,19 +17,19 @@ const { checkPermission, canAccessResource, ownerOnly } = require('../middleware
 router.use(protect);
 router.use(tenantMiddleware); // Apply tenant context after authentication
 
-// User management - only for admins or company owners
+// User management - for admins and company managers
 router.route('/')
-  .get([checkPermission('read:users'), authorize('admin')], getUsers)  // Only admins can get all users
-  .post([checkPermission('write:users'), authorize('admin')], createUser);  // Only admins can create users
+  .get([checkPermission('read:users')], getUsers)  // Permission middleware handles role checking
+  .post([checkPermission('write:users')], createUser);  // Permission middleware handles role checking
 
 router.route('/:id')
   .get(canAccessResource('user'), getUserById)
-  .put([ownerOnly, checkPermission('write:users'), authorize('admin')], updateUserStatus)  // Only admins can update user status
-  .delete([checkPermission('delete:users'), authorize('admin')], deleteUser);  // Only admins can delete users
+  .put([checkPermission('write:users')], updateUser)  // Permission middleware handles role checking
+  .delete([checkPermission('delete:users')], deleteUser);  // Permission middleware handles role checking
 
 // Additional route for toggling user status
 router.route('/:id/toggle-status')
-  .put([checkPermission('write:users'), authorize('admin')], updateUserStatus);  // Only admins can update user status
+  .put([checkPermission('write:users')], updateUserStatus);  // Permission middleware handles role checking
 
 // Route specifically for getting agents (support agents only)
 // tenantMiddleware is already applied at the router level
