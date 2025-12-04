@@ -26,6 +26,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
 import Design1 from './pages/ticketDetailDesigns/Design1';
 import TicketDetails from './pages/TicketDetails';
+import UserManagement from './pages/UserManagement';
 import ErrorBoundary from './components/ErrorBoundary';
 
 // Removed KnowledgeBase and Community imports
@@ -117,7 +118,12 @@ function App() {
                 </ErrorBoundary>
               </ProtectedRoute>
             } />
-            
+            <Route path="/users" element={
+              <ProtectedRoute>
+                <UserManagement />
+              </ProtectedRoute>
+            } />
+
             <Route path="/admin" element={
               <AdminProtectedRoute>
                 <ErrorBoundary>
