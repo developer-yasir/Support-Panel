@@ -1470,7 +1470,7 @@
   }
 }
 
-/* Modal Styles */
+/* Modal Styles - Added for delete confirmation modal */
 .freshdesk-modal-overlay {
   position: fixed;
   top: 0;

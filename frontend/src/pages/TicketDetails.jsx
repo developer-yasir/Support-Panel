@@ -15,6 +15,7 @@ const TicketDetails = () => {
   const [ticketProperties, setTicketProperties] = useState({});
   const [agents, setAgents] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  // Added state for showing delete confirmation modal
 
   // Initialize with sample ticket data for now
   useEffect(() => {

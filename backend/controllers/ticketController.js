@@ -3,6 +3,7 @@ const User = require('../models/User');
 const { sendTicketNotification, sendTicketUpdateNotification } = require('../config/email');
 
 // Create a new ticket
+// Updated to fix missing import for sendTicketUpdateNotification
 exports.createTicket = async (req, res) => {
   try {
     const { title, description, priority, dueDate, assignedTo } = req.body;
