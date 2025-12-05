@@ -1,5 +1,6 @@
 @import './styles.css';
 @import './custom-styles.css';
+@import "tailwindcss";
 
 @tailwind base;
 @tailwind components;

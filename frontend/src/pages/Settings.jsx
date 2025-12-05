@@ -8,77 +8,6 @@ import Navbar from '../components/Navbar';
 import './CompanySignup.css'; // Import plan card styles
 import './Settings.css'; // Import specific settings styles
 
-// Profile Settings Section Component
-const ProfileSettingsSection = ({ profile, onInputChange, onSave, saving, loading }) => {
-  if (loading) return <div className="loading">Loading profile settings...</div>;
-
-  return (
-    <div>
-      <div className="section-header">
-        <h1 className="section-title">
-          <svg xmlns="http://www.w3.org/2000/svg" className="section-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          </svg>
-          Profile Settings
-        </h1>
-        <p className="section-subtitle">Update your personal information used across the platform</p>
-      </div>
-
-      <div className="card settings__card">
-        <div className="card__body">
-          <div className="settings__section">
-            <form onSubmit={(e) => { e.preventDefault(); onSave(); }}>
-              <div className="form-group">
-                <label htmlFor="name" className="form-label">Full Name</label>
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  value={profile.name}
-                  onChange={onInputChange}
-                  className="form-control"
-                  placeholder="Enter your full name"
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="email" className="form-label">Email Address</label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={profile.email}
-                  onChange={onInputChange}
-                  className="form-control"
-                  placeholder="Enter your email"
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="phone" className="form-label">Phone Number</label>
-                <input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  value={profile.phone}
-                  onChange={onInputChange}
-                  className="form-control"
-                  placeholder="Enter your phone number"
-                />
-              </div>
-
-              <div className="settings__actions">
-                <button type="submit" className="btn btn--primary" disabled={saving}>
-                  {saving ? 'Saving...' : 'Save Profile'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // Notification Settings Section Component
 const NotificationSettingsSection = ({ settings, onInputChange, onSubmit, saving, loading }) => {
@@ -313,11 +242,47 @@ const SecuritySettingsSection = ({ settings, onInputChange, onSubmit, saving, lo
                 <p className="settings__help-text">Prompt to change password after certain period</p>
               </div>
 
-              <div className="settings__actions">
+              {/* Password Change Section */}
+              <div className="settings__section mt-4">
+                <h3 className="settings__section-title">Change Password</h3>
+                <div className="form-group">
+                  <label htmlFor="currentPassword" className="form-label">Current Password</label>
+                  <input
+                    id="currentPassword"
+                    name="currentPassword"
+                    type="password"
+                    className="form-control"
+                    placeholder="Enter your current password"
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="newPassword" className="form-label">New Password</label>
+                  <input
+                    id="newPassword"
+                    name="newPassword"
+                    type="password"
+                    className="form-control"
+                    placeholder="Enter your new password"
+                  />
+                  <p className="settings__help-text">Use 8 or more characters with a mix of letters, numbers & symbols</p>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="confirmNewPassword" className="form-label">Confirm New Password</label>
+                  <input
+                    id="confirmNewPassword"
+                    name="confirmNewPassword"
+                    type="password"
+                    className="form-control"
+                    placeholder="Confirm your new password"
+                  />
+                </div>
+                <button type="button" className="btn btn--secondary mt-2" onClick={handlePasswordUpdate}>Update Password</button>
+              </div>
+
+              <div className="settings__actions mt-4">
                 <button type="submit" className="btn btn--primary" disabled={saving}>
                   {saving ? 'Saving...' : 'Save Security Settings'}
                 </button>
-                <button type="button" className="btn btn--secondary ml-2">Change Password</button>
                 <button type="button" className="btn btn--outline ml-2">View Security Log</button>
               </div>
             </form>
@@ -1343,7 +1308,11 @@ const Settings = () => {
   const [profile, setProfile] = useState({
     name: user?.name || '',
     email: user?.email || '',
-    phone: user?.phone || ''
+    phone: user?.phone || '',
+    avatar: user?.avatar || '',
+    profileVisibility: user?.profileVisibility || 'public',
+    showEmail: user?.showEmail || true,
+    showPhone: user?.showPhone || false
   });
   const [security, setSecurity] = useState({
     twoFactorEnabled: false,
@@ -1447,6 +1416,49 @@ const Settings = () => {
       setTimeout(() => setSaveMessage(''), 3000);
     } catch (error) {
       setSaveMessage('Failed to save security settings: ' + error.response?.data?.message);
+      setTimeout(() => setSaveMessage(''), 3000);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handlePasswordUpdate = async () => {
+    const currentPassword = document.getElementById('currentPassword')?.value;
+    const newPassword = document.getElementById('newPassword')?.value;
+    const confirmNewPassword = document.getElementById('confirmNewPassword')?.value;
+
+    if (!currentPassword || !newPassword || !confirmNewPassword) {
+      setSaveMessage('Please fill in all password fields');
+      setTimeout(() => setSaveMessage(''), 3000);
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      setSaveMessage('New passwords do not match');
+      setTimeout(() => setSaveMessage(''), 3000);
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      setSaveMessage('New password must be at least 8 characters long');
+      setTimeout(() => setSaveMessage(''), 3000);
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await api.put('/auth/change-password', {
+        currentPassword,
+        newPassword
+      });
+      setSaveMessage('Password updated successfully!');
+      // Clear the password fields
+      document.getElementById('currentPassword').value = '';
+      document.getElementById('newPassword').value = '';
+      document.getElementById('confirmNewPassword').value = '';
+      setTimeout(() => setSaveMessage(''), 3000);
+    } catch (error) {
+      setSaveMessage('Failed to update password: ' + error.response?.data?.message || error.message);
       setTimeout(() => setSaveMessage(''), 3000);
     } finally {
       setSaving(false);
@@ -1559,7 +1571,7 @@ const Settings = () => {
   const handleInputChange = (e, section) => {
     const { name, value, type, checked } = e.target;
     const newValue = type === 'checkbox' ? checked : value;
-    
+
     switch(section) {
       case 'profile':
         setProfile(prev => ({ ...prev, [name]: newValue }));
@@ -1572,6 +1584,14 @@ const Settings = () => {
         break;
       case 'app':
         setAppSettings(prev => ({ ...prev, [name]: newValue }));
+        // If dark mode setting is changed, also toggle the theme
+        if (name === 'darkMode') {
+          if (newValue) {
+            setThemeMode('dark');
+          } else {
+            setThemeMode('light');
+          }
+        }
         break;
       default:
         break;

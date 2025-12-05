@@ -325,3 +325,49 @@ exports.getProfile = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
+// Update user profile
+exports.updateProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { name, email, phone, department, profileVisibility, showEmail, showPhone, timezone, notificationEmails, theme, avatar } = req.body;
+
+    // Find the user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Update only allowed fields (not sensitive fields like role, password, etc.)
+    if (name) user.name = name;
+    if (email && email !== user.email) {
+      // Check if email is already taken by another user
+      const existingUser = await User.findOne({ email: email, _id: { $ne: userId } });
+      if (existingUser) {
+        return res.status(400).json({ message: 'Email already exists' });
+      }
+      user.email = email;
+      user.isEmailVerified = false; // Reset email verification status if email changes
+    }
+    if (phone !== undefined) user.phone = phone;
+    if (department !== undefined) user.department = department;
+    if (profileVisibility !== undefined) user.profileVisibility = profileVisibility;
+    if (showEmail !== undefined) user.showEmail = showEmail;
+    if (showPhone !== undefined) user.showPhone = showPhone;
+    if (timezone !== undefined) user.timezone = timezone;
+    if (notificationEmails !== undefined) user.notificationEmails = notificationEmails;
+    if (theme !== undefined) user.theme = theme;
+    if (avatar !== undefined) user.avatar = avatar; // This will handle base64 or URL for avatar
+
+    await user.save();
+
+    // Return updated user profile without password
+    const updatedUser = await User.findById(user._id)
+      .populate('companyId', 'name subdomain plan features')
+      .select('-password');
+
+    res.json(updatedUser);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};

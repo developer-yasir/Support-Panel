@@ -63,6 +63,36 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Company',
     required: true // All users must belong to a company
+  },
+  avatar: {
+    type: String,
+    default: null
+  },
+  profileVisibility: {
+    type: String,
+    enum: ['public', 'company', 'private'],
+    default: 'public'
+  },
+  showEmail: {
+    type: Boolean,
+    default: true
+  },
+  showPhone: {
+    type: Boolean,
+    default: false
+  },
+  timezone: {
+    type: String,
+    default: 'UTC'
+  },
+  notificationEmails: {
+    type: Boolean,
+    default: true
+  },
+  theme: {
+    type: String,
+    enum: ['light', 'dark'],
+    default: 'light'
   }
 }, {
   timestamps: true

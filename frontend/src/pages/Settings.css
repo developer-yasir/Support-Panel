@@ -244,34 +244,34 @@
   .settings__container {
     padding: var(--spacing-lg) var(--spacing-md);
   }
-  
+
   .settings__title {
     font-size: 1.5rem;
   }
-  
+
   .settings-tabs__list {
     gap: var(--spacing-xs);
   }
-  
+
   .settings-tab {
     padding: var(--spacing-sm);
     font-size: 0.8rem;
   }
-  
+
   .settings__toggle-group {
     flex-direction: column;
     align-items: flex-start;
     gap: var(--spacing-xs);
   }
-  
+
   .settings__actions {
     flex-direction: column;
   }
-  
+
   .settings__save-btn {
     min-width: auto;
   }
-  
+
   .settings__section {
     padding: var(--spacing-md) 0;
   }
@@ -597,6 +597,88 @@
 .webhook-actions {
   display: flex;
   gap: var(--spacing-sm);
+}
+
+/* Profile Picture Upload Styles */
+.profile-picture-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.profile-picture-upload {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  align-items: flex-start;
+}
+
+.profile-picture-preview {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+}
+
+.profile-img-preview {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--gray-200);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.profile-img-placeholder {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: var(--gray-100);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 3px solid var(--gray-200);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.profile-img-icon {
+  width: 50px;
+  height: 50px;
+  color: var(--gray-400);
+}
+
+.file-input {
+  display: none;
+}
+
+.profile-picture-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  align-items: flex-start;
+  width: 100%;
+}
+
+.profile-picture-controls .btn {
+  margin-right: var(--spacing-sm);
+}
+
+@media (min-width: 768px) {
+  .profile-picture-upload {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+  
+  .profile-picture-preview {
+    margin-bottom: 0;
+    margin-right: var(--spacing-lg);
+  }
+  
+  .profile-picture-controls {
+    flex: 1;
+    align-items: flex-start;
+  }
 }
 
 /* Validation styles */
