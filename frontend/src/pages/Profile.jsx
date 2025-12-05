@@ -227,6 +227,26 @@ const Profile = () => {
                       </div>
                     )}
                   </div>
+                  <div className="profile-avatar-actions">
+                    <input
+                      id="avatar"
+                      name="avatar"
+                      type="file"
+                      accept="image/*"
+                      className="form-control file-input"
+                      onChange={handleAvatarChange}
+                    />
+                    <label htmlFor="avatar" className="btn btn--outline btn--small">Choose Photo</label>
+                    {profile.avatar && (
+                      <button
+                        type="button"
+                        className="btn btn--secondary btn--small ml-2"
+                        onClick={handleRemoveAvatar}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="profile-info-section">
@@ -407,7 +427,7 @@ const Profile = () => {
             </div>
 
 
-            {/* Privacy & Photo Card */}
+            {/* Privacy Card */}
             <div className="card profile-setting-card">
               <div className="card__header">
                 <h3 className="card__title">
@@ -419,46 +439,6 @@ const Profile = () => {
               </div>
               <div className="card__body">
                 <form onSubmit={handleSubmit}>
-                  {/* Photo Section */}
-                  <div className="mb-4 pb-4 border-b border-gray-200">
-                    <h4 className="form-label mb-3">Profile Photo</h4>
-                    <div className="text-center mb-3">
-                      {profile.avatar ? (
-                        <img src={profile.avatar} alt="Profile" className="profile-preview-image" />
-                      ) : (
-                        <div className="profile-preview-placeholder">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="profile-preview-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                          </svg>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">Upload New Photo</label>
-                      <input
-                        id="newAvatar"
-                        name="newAvatar"
-                        type="file"
-                        accept="image/*"
-                        className="form-control file-input"
-                        onChange={handleAvatarChange}
-                      />
-                      <label htmlFor="newAvatar" className="btn btn--outline btn--block">Choose File</label>
-                    </div>
-
-                    {profile.avatar && (
-                      <button
-                        type="button"
-                        onClick={handleRemoveAvatar}
-                        className="btn btn--danger btn--block mt-2"
-                      >
-                        Remove Photo
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Privacy Settings */}
                   <div className="form-group">
                     <label htmlFor="profileVisibility" className="form-label">Profile Visibility</label>
                     <select
@@ -537,7 +517,7 @@ const Profile = () => {
                     </div>
                   </div>
 
-                  <button type="submit" className="btn btn--primary btn--block">Save Settings</button>
+                  <button type="submit" className="btn btn--primary btn--block">Save Privacy Settings</button>
                 </form>
               </div>
             </div>
