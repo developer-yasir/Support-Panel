@@ -20,6 +20,25 @@ const Profile = () => {
     notificationEmails: true,
     theme: 'light'
   });
+
+  const calculateProfileCompletion = () => {
+    const requiredFields = [
+      'name',
+      'email',
+      'avatar',
+      'phone',
+      'department'
+    ];
+
+    const completedFields = requiredFields.filter(field => {
+      return profile[field] && profile[field].toString().trim() !== '';
+    });
+
+    const completionPercentage = Math.round((completedFields.length / requiredFields.length) * 100);
+    return { completedFields: completedFields.length, totalFields: requiredFields.length, completionPercentage };
+  };
+
+  const { completionPercentage } = calculateProfileCompletion();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -56,12 +75,25 @@ const Profile = () => {
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Check if file is an image
+      if (!file.type.match('image.*')) {
+        setError('Please select an image file (JPEG, PNG, GIF)');
+        return;
+      }
+
+      // Check file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('File size exceeds 5MB limit');
+        return;
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setProfile(prev => ({
           ...prev,
           avatar: reader.result
         }));
+        setError(''); // Clear any previous error
       };
       reader.readAsDataURL(file);
     }
@@ -194,10 +226,10 @@ const Profile = () => {
                       className="form-control file-input"
                       onChange={handleAvatarChange}
                     />
-                    <label htmlFor="avatar" className="btn btn--outline btn--small">Change Photo</label>
+                    <label htmlFor="avatar" className="btn btn--outline btn--small">Choose Photo</label>
                     {profile.avatar && (
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         className="btn btn--secondary btn--small ml-2"
                         onClick={handleRemoveAvatar}
                       >
@@ -206,18 +238,40 @@ const Profile = () => {
                     )}
                   </div>
                 </div>
-                
+
                 <div className="profile-info-section">
                   <div className="profile-name-role">
                     <h1 className="profile-name-large">{profile.name}</h1>
                     <p className="profile-role-large">
-                      {profile.role === 'admin' ? 'Administrator' : 
-                       profile.role === 'support_agent' ? 'Support Agent' : 
+                      {profile.role === 'admin' ? 'Administrator' :
+                       profile.role === 'support_agent' ? 'Support Agent' :
                        profile.role === 'customer' ? 'Customer' : 'User'}
                     </p>
                     <p className="profile-email-large">{profile.email}</p>
+
+                    {/* Profile Completion Indicator */}
+                    <div className="profile-completion-section">
+                      <div className="profile-completion-header">
+                        <span className="profile-completion-text">Profile Completion</span>
+                        <span className="profile-completion-percent">{completionPercentage}%</span>
+                      </div>
+                      <div className="profile-completion-bar">
+                        <div
+                          className="profile-completion-progress"
+                          style={{ width: `${completionPercentage}%` }}
+                        ></div>
+                      </div>
+                      <div className="profile-completion-details">
+                        <span className="profile-completion-status">
+                          {completionPercentage === 100 ? 'Complete!' :
+                           completionPercentage >= 75 ? 'Almost there!' :
+                           completionPercentage >= 50 ? 'Halfway there!' :
+                           'Just getting started!'}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  
+
                   <div className="profile-actions">
                     <button
                       onClick={handleSubmit}
