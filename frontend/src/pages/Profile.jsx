@@ -113,7 +113,17 @@ const Profile = () => {
     setError('');
 
     try {
-      const response = await api.put('/auth/profile', profile);
+      // Create a copy of profile to potentially modify
+      const profileData = { ...profile };
+
+      // Check if avatar is a new file (data URL) rather than existing avatar from server
+      if (profile.avatar && typeof profile.avatar === 'string' && profile.avatar.startsWith('data:image')) {
+        // If it's a data URL (newly selected file), we might need to handle differently
+        // depending on how your backend handles file uploads
+        // For now, assuming API can handle data URLs directly
+      }
+
+      const response = await api.put('/auth/profile', profileData);
       updateProfile(response.data);
       setMessage('Profile updated successfully!');
       setTimeout(() => setMessage(''), 3000);
@@ -215,26 +225,6 @@ const Profile = () => {
                       <div className="profile-initial-placeholder">
                         {profile.name?.charAt(0)?.toUpperCase() || 'U'}
                       </div>
-                    )}
-                  </div>
-                  <div className="profile-avatar-actions">
-                    <input
-                      id="avatar"
-                      name="avatar"
-                      type="file"
-                      accept="image/*"
-                      className="form-control file-input"
-                      onChange={handleAvatarChange}
-                    />
-                    <label htmlFor="avatar" className="btn btn--outline btn--small">Choose Photo</label>
-                    {profile.avatar && (
-                      <button
-                        type="button"
-                        className="btn btn--secondary btn--small ml-2"
-                        onClick={handleRemoveAvatar}
-                      >
-                        Remove
-                      </button>
                     )}
                   </div>
                 </div>
