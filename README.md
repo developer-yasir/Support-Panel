@@ -1,6 +1,6 @@
 # Support Panel
 
-A MERN stack application for managing support tickets with role-based access control.
+A MERN stack application for managing support tickets with role-based access control and comprehensive user settings.
 
 ## Features
 
@@ -9,6 +9,14 @@ A MERN stack application for managing support tickets with role-based access con
 - Create, read, update, and delete tickets
 - Add comments to tickets
 - Filter tickets by status and priority
+- Comprehensive user settings and preferences
+  - Profile management
+  - Notification preferences
+  - Security settings
+  - Billing & Plans management
+  - Team management
+  - Integrations
+  - Advanced preferences
 - Responsive UI with custom CSS
 
 ## Project Structure
@@ -16,7 +24,8 @@ A MERN stack application for managing support tickets with role-based access con
 ```
 support-panel/
 ├── backend/    # Node.js + Express + MongoDB
-└── frontend/   # React (Vite)
+├── frontend/   # React (Vite)
+└── README.md   # This file
 ```
 
 ## Prerequisites
@@ -80,12 +89,7 @@ support-panel/
 
 You can run both servers simultaneously using `concurrently`:
 
-1. Install concurrently globally (if not already installed):
-   ```bash
-   npm install -g concurrently
-   ```
-
-2. From the root directory, run:
+1. From the root directory, run:
    ```bash
    npm run dev
    ```
@@ -95,11 +99,33 @@ You can run both servers simultaneously using `concurrently`:
 1. Open your browser and navigate to `http://localhost:5173`
 2. Register a new account or login with existing credentials
 3. Create and manage support tickets
+4. Access comprehensive settings through the Settings page to customize your experience:
+   - Update your profile information
+   - Configure notification preferences
+   - Manage security settings
+   - Select and manage billing plans
+   - Invite and manage team members
+   - Configure integrations and webhooks
+   - Adjust advanced preferences
 
 ## Role-based Access
 
-- **Admin**: Can create, read, update, and delete all tickets and comments
+- **Admin**: Can create, read, update, and delete all tickets and comments, manage users, and configure system settings
 - **Support Agent**: Can create, read, update, and delete their own tickets and comments
+
+## Settings Page Features
+
+The Settings page provides a comprehensive user configuration interface with:
+
+- **Profile Tab**: Update personal information and contact details
+- **Billing & Plans**: View and manage subscription plans with different features
+- **Security**: Configure authentication and security preferences
+- **Notifications**: Customize notification preferences for different events
+- **Tickets**: Configure default ticket settings and categories
+- **Team**: Invite and manage team members (Admin only)
+- **Integrations**: Configure webhooks and API integrations
+- **Advanced**: Configure advanced application preferences
+- **Support & Help**: Access help resources and support
 
 ## API Endpoints
 
@@ -107,6 +133,8 @@ You can run both servers simultaneously using `concurrently`:
 - `POST /api/auth/register` - Register a new user
 - `POST /api/auth/login` - Login user
 - `POST /api/auth/logout` - Logout user
+- `GET /api/auth/profile` - Get current user profile
+- `PUT /api/auth/profile` - Update user profile
 
 ### Tickets
 - `POST /api/tickets` - Create a new ticket
@@ -121,6 +149,11 @@ You can run both servers simultaneously using `concurrently`:
 - `PUT /api/comments/:id` - Update a comment
 - `DELETE /api/comments/:id` - Delete a comment
 
+### Settings/Preferences
+- `GET /api/users/notification-settings` - Get user notification preferences
+- `PUT /api/users/notification-settings` - Update user notification preferences
+- `PUT /api/users/security-settings` - Update user security settings
+
 ## Development
 
 ### Backend
@@ -134,6 +167,7 @@ You can run both servers simultaneously using `concurrently`:
 - React Router for navigation
 - Axios for API calls
 - React Context for state management
+- Comprehensive settings interface with multiple tabs and configurations
 
 ## Contributing
 
@@ -144,5 +178,4 @@ You can run both servers simultaneously using `concurrently`:
 
 ## License
 
-MIT# Support-Panel
-# Support-Panel
+MIT
