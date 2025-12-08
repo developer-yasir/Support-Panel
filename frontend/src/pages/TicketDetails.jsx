@@ -16,6 +16,7 @@ const TicketDetails = () => {
   const [agents, setAgents] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   // Added state for showing delete confirmation modal
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Initialize with sample ticket data for now
   useEffect(() => {
@@ -381,11 +382,66 @@ const TicketDetails = () => {
             </div>
 
             {/* Sidebar */}
-            <div className="freshdesk-ticket-sidebar">
-              {/* Ticket Properties */}
-              <div className="freshdesk-sidebar-section">
-                <h3 className="freshdesk-sidebar-title">Properties</h3>
-                
+            <div className={`freshdesk-ticket-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
+              {!sidebarCollapsed && (
+                <div className="freshdesk-ticket-sidebar-content">
+                  {/* Ticket Status & Resolution */}
+                  <div className="freshdesk-sidebar-section">
+                    <div className="freshdesk-ticket-status-section">
+                      <div className="freshdesk-status-header">
+                        <div className="freshdesk-status-badge-container">
+                          <div className={`freshdesk-ticket-status-badge freshdesk-ticket-status-${ticketProperties.status || ticket.status}`}>
+                            {ticketProperties.status || ticket.status}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="freshdesk-property-item">
+                        <label className="freshdesk-property-label">Resolution Due</label>
+                        <input
+                          type="datetime-local"
+                          value={ticketProperties.dueDate ? new Date(ticketProperties.dueDate).toISOString().slice(0, 16) : ''}
+                          onChange={(e) => handlePropertyChange('dueDate', new Date(e.target.value))}
+                          className="freshdesk-property-input"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Ticket Properties */}
+                  <div className="freshdesk-sidebar-section">
+                    <h3 className="freshdesk-sidebar-title">Properties</h3>
+
+                    <div className="freshdesk-property-item">
+                      <label className="freshdesk-property-label">Tags</label>
+                      <div className="freshdesk-property-value">
+                        {ticket.tags && ticket.tags.length > 0 ? (
+                          <div className="freshdesk-tags-container">
+                            {ticket.tags.map((tag, index) => (
+                              <span key={index} className="freshdesk-tag-badge">{tag}</span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="freshdesk-placeholder">No tags</span>
+                        )}
+                      </div>
+                    </div>
+
+                <div className="freshdesk-property-item">
+                  <label className="freshdesk-property-label">Type</label>
+                  <select
+                    value={ticketProperties.type || ticket.type || 'Question'}
+                    onChange={(e) => handlePropertyChange('type', e.target.value)}
+                    className="freshdesk-property-select"
+                  >
+                    <option value="Question">Question</option>
+                    <option value="Incident">Incident</option>
+                    <option value="Problem">Problem</option>
+                    <option value="Change">Change</option>
+                    <option value="Feature Request">Feature Request</option>
+                  </select>
+                </div>
+
                 <div className="freshdesk-property-item">
                   <label className="freshdesk-property-label">Status</label>
                   <select
@@ -416,7 +472,22 @@ const TicketDetails = () => {
                 </div>
 
                 <div className="freshdesk-property-item">
-                  <label className="freshdesk-property-label">Assigned To</label>
+                  <label className="freshdesk-property-label">Group</label>
+                  <select
+                    value={ticketProperties.group || ticket.group || ''}
+                    onChange={(e) => handlePropertyChange('group', e.target.value)}
+                    className="freshdesk-property-select"
+                  >
+                    <option value="">Select Group</option>
+                    <option value="Technical Support">Technical Support</option>
+                    <option value="Billing">Billing</option>
+                    <option value="Sales">Sales</option>
+                    <option value="Account Management">Account Management</option>
+                  </select>
+                </div>
+
+                <div className="freshdesk-property-item">
+                  <label className="freshdesk-property-label">Agent</label>
                   <select
                     value={ticketProperties.assigneeId || ticket.assigneeId || ''}
                     onChange={(e) => handleAssigneeChange(e.target.value)}
@@ -429,6 +500,63 @@ const TicketDetails = () => {
                       </option>
                     ))}
                   </select>
+                </div>
+
+                <div className="freshdesk-property-item">
+                  <label className="freshdesk-property-label">Company</label>
+                  <div className="freshdesk-property-value">
+                    {ticket.companyId?.name || ticket.companyName || 'Unknown Company'}
+                  </div>
+                </div>
+
+                <div className="freshdesk-property-item">
+                  <label className="freshdesk-property-label">Category</label>
+                  <select
+                    value={ticketProperties.category || ticket.category || ''}
+                    onChange={(e) => handlePropertyChange('category', e.target.value)}
+                    className="freshdesk-property-select"
+                  >
+                    <option value="">Select Category</option>
+                    <option value="Technical">Technical</option>
+                    <option value="Sales">Sales</option>
+                    <option value="Billing">Billing</option>
+                    <option value="Account">Account</option>
+                    <option value="Feature Request">Feature Request</option>
+                    <option value="Bug Report">Bug Report</option>
+                  </select>
+                </div>
+
+                <div className="freshdesk-property-item">
+                  <label className="freshdesk-property-label">Store/Location/Site Code</label>
+                  <input
+                    type="text"
+                    value={ticketProperties.storeLocationCode || ticket.storeLocationCode || ''}
+                    onChange={(e) => handlePropertyChange('storeLocationCode', e.target.value)}
+                    placeholder="Enter code"
+                    className="freshdesk-property-input"
+                  />
+                </div>
+
+                <div className="freshdesk-property-item">
+                  <label className="freshdesk-property-label">City</label>
+                  <input
+                    type="text"
+                    value={ticketProperties.city || ticket.city || ''}
+                    onChange={(e) => handlePropertyChange('city', e.target.value)}
+                    placeholder="Enter city"
+                    className="freshdesk-property-input"
+                  />
+                </div>
+
+                <div className="freshdesk-property-item">
+                  <label className="freshdesk-property-label">Country</label>
+                  <input
+                    type="text"
+                    value={ticketProperties.country || ticket.country || ''}
+                    onChange={(e) => handlePropertyChange('country', e.target.value)}
+                    placeholder="Enter country"
+                    className="freshdesk-property-input"
+                  />
                 </div>
 
                 <div className="freshdesk-property-item">
@@ -485,10 +613,20 @@ const TicketDetails = () => {
                   </div>
                 </div>
               </div>
+
             </div>
+          )} {/* Close the conditional rendering */}
+
+          {/* Collapsible toggle button - always visible */}
+          <div className="freshdesk-sidebar-toggle">
+            <button
+              className="freshdesk-sidebar-toggle-btn"
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            >
+              {sidebarCollapsed ? '→' : '←'}
+            </button>
           </div>
-        </div>
-      </div>
+        </div> {/* Close the main freshdesk-ticket-sidebar div */}
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
@@ -519,7 +657,10 @@ const TicketDetails = () => {
         </div>
       )}
     </div>
+  </div>
+</div>
+</div>
   );
-};
+}
 
 export default TicketDetails;
