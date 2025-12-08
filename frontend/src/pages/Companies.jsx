@@ -15,7 +15,9 @@ const Companies = () => {
     const fetchCompanies = async () => {
       try {
         setLoading(true);
-        const response = await api.get('/companies');
+        // Admins get all companies from /companies/admin, regular users get current company
+        // For admin view of all companies, use the admin endpoint
+        const response = await api.get('/companies/admin');
         setCompanies(response.data);
       } catch (err) {
         console.error('Failed to fetch companies:', err);
