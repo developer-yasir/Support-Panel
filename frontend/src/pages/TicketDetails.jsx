@@ -18,6 +18,14 @@ const TicketDetails = () => {
   // Added state for showing delete confirmation modal
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  // State for new ticket actions
+  const [noteText, setNoteText] = useState('');
+  const [showForwardModal, setShowForwardModal] = useState(false);
+  const [forwardAgent, setForwardAgent] = useState('');
+  const [noteLoading, setNoteLoading] = useState(false);
+  const [forwardLoading, setForwardLoading] = useState(false);
+  const [isPublicReply, setIsPublicReply] = useState(true);
+
   // Initialize with sample ticket data for now
   useEffect(() => {
     const fetchTicketDetails = async () => {
@@ -143,7 +151,7 @@ const TicketDetails = () => {
       const response = await api.post(`/comments`, {
         ticketId: ticket._id,
         content: replyText,
-        isInternal: false
+        isInternal: !isPublicReply  // if not public, then it's internal
       });
 
       // Add the new comment to the ticket's comments in state
@@ -160,6 +168,77 @@ const TicketDetails = () => {
       alert('Failed to add reply: ' + (err.response?.data?.message || err.message));
     } finally {
       setReplyLoading(false);
+    }
+  };
+
+  const handleAddNote = async () => {
+    if (!noteText.trim()) return;
+
+    setNoteLoading(true);
+    try {
+      const response = await api.post(`/comments`, {
+        ticketId: ticket._id,
+        content: noteText,
+        isInternal: true  // Internal note, not sent to requester
+      });
+
+      // Add the new note to the ticket's comments in state
+      setTicket(prev => ({
+        ...prev,
+        comments: [...(prev.comments || []), response.data]
+      }));
+
+      // Clear the note text
+      setNoteText('');
+      // Close the note section (we'll implement this UI below)
+    } catch (err) {
+      console.error('Error adding note:', err);
+      alert('Failed to add note: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setNoteLoading(false);
+    }
+  };
+
+  const handleForward = async () => {
+    if (!forwardAgent) return;
+
+    setForwardLoading(true);
+    try {
+      // Update ticket assignee
+      const response = await api.patch(`/tickets/${ticket._id}`, {
+        assigneeId: forwardAgent
+      });
+
+      // Update ticket in state
+      setTicket(prev => ({
+        ...prev,
+        assigneeId: forwardAgent,
+        assignee: agents.find(agent => agent._id === forwardAgent) || null
+      }));
+
+      // Add a note about forwarding
+      const noteResponse = await api.post(`/comments`, {
+        ticketId: ticket._id,
+        content: `Ticket forwarded to ${agents.find(agent => agent._id === forwardAgent)?.name || 'agent'}`,
+        isInternal: true
+      });
+
+      // Add the forwarding note to comments
+      setTicket(prev => ({
+        ...prev,
+        comments: [...(prev.comments || []), noteResponse.data]
+      }));
+
+      // Reset and close modal
+      setForwardAgent('');
+      setShowForwardModal(false);
+
+      alert('Ticket forwarded successfully!');
+    } catch (err) {
+      console.error('Error forwarding ticket:', err);
+      alert('Failed to forward ticket: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setForwardLoading(false);
     }
   };
 
@@ -365,7 +444,11 @@ const TicketDetails = () => {
                 <div className="freshdesk-reply-actions">
                   <div className="freshdesk-reply-options">
                     <label className="freshdesk-checkbox-label">
-                      <input type="checkbox" />
+                      <input
+                        type="checkbox"
+                        checked={isPublicReply}
+                        onChange={(e) => setIsPublicReply(e.target.checked)}
+                      />
                       <span className="freshdesk-checkbox-custom"></span>
                       Make public reply
                     </label>
@@ -379,6 +462,79 @@ const TicketDetails = () => {
                   </button>
                 </div>
               </form>
+            </div>
+
+            {/* Ticket Action Buttons */}
+            <div className="freshdesk-ticket-actions">
+              <div className="freshdesk-action-buttons-row">
+                <button
+                  className="freshdesk-btn freshdesk-btn--primary freshdesk-action-btn"
+                  onClick={() => {
+                    // Scroll to the existing reply form and focus the textarea
+                    document.querySelector('.freshdesk-reply-textarea')?.focus();
+                    // Ensure it's set to public reply
+                    setIsPublicReply(true);
+                  }}
+                >
+                  <span className="btn-icon">💬</span> Reply
+                </button>
+                <button
+                  className="freshdesk-btn freshdesk-btn--secondary freshdesk-action-btn"
+                  onClick={() => {
+                    // Toggle visibility of the note form
+                    const noteForm = document.getElementById('note-section');
+                    if (noteForm.style.display === 'none' || noteForm.style.display === '') {
+                      noteForm.style.display = 'block';
+                      document.getElementById('note-textarea')?.focus();
+                      // Ensure it's set to internal (not public)
+                      setIsPublicReply(false);
+                    } else {
+                      noteForm.style.display = 'none';
+                      setNoteText('');
+                    }
+                  }}
+                >
+                  <span className="btn-icon">📝</span> Add Note
+                </button>
+                <button
+                  className="freshdesk-btn freshdesk-btn--outline freshdesk-action-btn"
+                  onClick={() => setShowForwardModal(true)}
+                >
+                  <span className="btn-icon">↪️</span> Forward
+                </button>
+              </div>
+
+              {/* Note Form - Hidden by default */}
+              <div id="note-section" className="freshdesk-note-form" style={{display: 'none', marginTop: '15px'}}>
+                <textarea
+                  id="note-textarea"
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                  placeholder="Type your internal note here..."
+                  className="freshdesk-reply-textarea"
+                  rows="3"
+                />
+                <div className="freshdesk-note-actions" style={{marginTop: '10px', display: 'flex', gap: '10px', justifyContent: 'flex-start'}}>
+                  <button
+                    type="button"
+                    onClick={handleAddNote}
+                    disabled={noteLoading || !noteText.trim()}
+                    className="freshdesk-btn freshdesk-btn--secondary freshdesk-note-submit"
+                  >
+                    {noteLoading ? 'Saving...' : 'Add Note'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNoteText('');
+                      document.getElementById('note-section').style.display = 'none';
+                    }}
+                    className="freshdesk-btn freshdesk-btn--outline"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* Sidebar */}
@@ -651,6 +807,51 @@ const TicketDetails = () => {
                 onClick={handleDeleteTicket}
               >
                 Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Forward Ticket Modal */}
+      {showForwardModal && (
+        <div className="freshdesk-modal-overlay">
+          <div className="freshdesk-modal">
+            <div className="freshdesk-modal-header">
+              <h3>Forward Ticket</h3>
+            </div>
+            <div className="freshdesk-modal-body">
+              <p>Select an agent to forward this ticket to:</p>
+              <select
+                value={forwardAgent}
+                onChange={(e) => setForwardAgent(e.target.value)}
+                className="freshdesk-property-select"
+                style={{width: '100%', marginTop: '10px'}}
+              >
+                <option value="">Select an agent</option>
+                {agents.map(agent => (
+                  <option key={agent._id} value={agent._id}>
+                    {agent.name} ({agent.email})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="freshdesk-modal-footer">
+              <button
+                className="freshdesk-btn freshdesk-btn--secondary"
+                onClick={() => {
+                  setShowForwardModal(false);
+                  setForwardAgent('');
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="freshdesk-btn freshdesk-btn--primary"
+                onClick={handleForward}
+                disabled={forwardLoading || !forwardAgent}
+              >
+                {forwardLoading ? 'Forwarding...' : 'Forward Ticket'}
               </button>
             </div>
           </div>
