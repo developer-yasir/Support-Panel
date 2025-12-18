@@ -14,8 +14,7 @@ const createMessage = async (req, res) => {
     const conversation = await Conversation.findOne({
       _id: conversationId,
       $or: [
-        { 'participants.userId': req.user.id },
-        { 'participants.customerId': req.user.id }
+        { 'participants.userId': req.user.id }
       ]
     });
 
@@ -72,12 +71,11 @@ const createMessage = async (req, res) => {
 
 const getConversations = async (req, res) => {
   try {
-    // Get conversations where the user is involved (either as agent, user, or customer)
+    // Get conversations where the user is involved (either as agent or user)
     const conversations = await Conversation.find({
       $or: [
         { 'participants.userId': req.user.id },
-        { 'participants.agentId': req.user.id },
-        { 'participants.customerId': req.user.id }
+        { 'participants.agentId': req.user.id }
       ]
     })
     .populate({
@@ -89,17 +87,16 @@ const getConversations = async (req, res) => {
     })
     .populate('participants.userId', 'name email avatar isActive')
     .populate('participants.agentId', 'name email avatar isActive')
-    .populate('participants.customerId', 'name email avatar isActive')
     .sort({ updatedAt: -1 });
 
     // Transform conversations to have a simpler structure for the frontend
     const transformedConversations = conversations.map(conv => {
-      // Determine the primary participant to show (prioritize customer, then user, then agent)
-      let primaryParticipant = conv.participants.customerId || conv.participants.userId || conv.participants.agentId;
+      // Determine the primary participant to show (user or agent)
+      let primaryParticipant = conv.participants.userId || conv.participants.agentId;
       if (!primaryParticipant && conv.participants.userId) {
         primaryParticipant = conv.participants.userId;
       }
-      
+
       return {
         id: conv._id,
         customerName: primaryParticipant?.name || 'Unknown',
@@ -108,8 +105,8 @@ const getConversations = async (req, res) => {
         lastMessageTime: conv.lastMessage?.createdAt || conv.updatedAt,
         unread: 0, // This would be calculated based on read receipts in a full implementation
         status: primaryParticipant?.isActive ? 'online' : 'offline', // Use actual active status
-        avatar: primaryParticipant?.avatar || 
-                 primaryParticipant?.name?.charAt(0).toUpperCase() + 
+        avatar: primaryParticipant?.avatar ||
+                 primaryParticipant?.name?.charAt(0).toUpperCase() +
                  (primaryParticipant?.name?.charAt(1) || '') || 'U',
         ...conv._doc
       };
@@ -130,8 +127,7 @@ const getMessages = async (req, res) => {
     const conversation = await Conversation.findOne({
       _id: conversationId,
       $or: [
-        { 'participants.userId': req.user.id },
-        { 'participants.customerId': req.user.id }
+        { 'participants.userId': req.user.id }
       ]
     });
 
@@ -181,9 +177,8 @@ const createConversation = async (req, res) => {
     // Create a new conversation
     const conversation = new Conversation({
       participants: {
-        userId: targetUser ? targetUser._id : req.user.id, // The customer/user in the conversation
-        agentId: targetUser ? req.user.id : null,          // The support agent (if this is initiated by an agent)
-        customerId: null                                   // customerId is for backward compatibility
+        userId: targetUser ? targetUser._id : req.user.id, // The user in the conversation
+        agentId: targetUser ? req.user.id : null          // The support agent (if this is initiated by an agent)
       },
       subject: subject || 'Support Chat',
       status: 'open'
@@ -197,7 +192,7 @@ const createConversation = async (req, res) => {
       text: message || 'New conversation started',
       sender: {
         id: req.user.id,
-        type: req.user.role === 'admin' || req.user.role === 'support_agent' ? 'agent' : 'customer'
+        type: req.user.role === 'superadmin' || req.user.role === 'support_agent' ? 'agent' : 'user'
       }
     });
 

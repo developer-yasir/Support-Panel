@@ -74,7 +74,7 @@ router.route('/breaches')
 router.route('/:id')
   .get(checkPermission('read:tickets'), getTicketById)
   .put(checkPermission('write:tickets'), updateTicket)
-  .delete([checkPermission('delete:tickets'), authorize('admin')], deleteTicket);  // Only admins can delete
+  .delete([checkPermission('delete:tickets'), authorize('superadmin')], deleteTicket);  // Only superadmins can delete
 
 router.route('/:id/escalate')
   .post(checkPermission('write:tickets'), escalateTicket);

@@ -41,9 +41,9 @@ exports.authorize = (...roles) => {
   };
 };
 
-// Convenience middleware for admin-only access
-exports.adminOnly = (req, res, next) => {
-  if (req.user.role !== 'admin') {
+// Convenience middleware for superadmin-only access
+exports.superadminOnly = (req, res, next) => {
+  if (req.user.role !== 'superadmin') {
     return res.status(403).json({
       message: 'Admin access required'
     });

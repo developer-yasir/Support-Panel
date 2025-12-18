@@ -9,28 +9,6 @@ const companyContextMiddleware = async (req, res, next) => {
   try {
     let company = null;
 
-    // Method 1: Try to get company from Express subdomain (when using vhost or express subdomain feature)
-    if (req.subdomain && req.subdomain !== 'www' && req.subdomain !== 'api') {
-      company = await Company.findOne({
-        subdomain: req.subdomain.toLowerCase(),
-        active: true,
-        suspended: false
-      });
-    }
-
-    // Method 2: Try to get company from host header (fallback if subdomain property isn't set)
-    if (!company && req.headers.host) {
-      const host = req.headers.host;
-      const subdomain = extractSubdomain(host);
-      
-      if (subdomain && subdomain !== 'www' && subdomain !== req.subdomain) {
-        company = await Company.findOne({
-          subdomain: subdomain,
-          active: true,
-          suspended: false
-        });
-      }
-    }
 
     // Method 3: After auth middleware has set req.user, try to get company from user
     // This will work if authentication middleware runs before this
@@ -59,7 +37,6 @@ const companyContextMiddleware = async (req, res, next) => {
       req.companyId = company._id;
       req.company = company;
       req.tenant = company; // alias
-      req.subdomain = req.subdomain || company.subdomain; // Ensure subdomain is set
     } else {
       // If no company is found through other means, check if the auth middleware 
       // has already set the company context (from user.companyId)

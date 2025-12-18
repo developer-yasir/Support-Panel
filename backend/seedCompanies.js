@@ -28,13 +28,11 @@ const seedCompanies = async () => {
     // Create companies first
     const createdCompanies = [];
     for (const companyName of companies) {
-      const subdomain = companyName.replace(/\s+/g, '').toLowerCase();
       
       const company = new Company({
         name: companyName,
-        subdomain: subdomain,
-        billingEmail: `billing@${subdomain}.com`,
-        contactEmail: `contact@${subdomain}.com`,
+        billingEmail: `billing@${companyName.replace(/\s+/g, '').toLowerCase()}.com`,
+        contactEmail: `contact@${companyName.replace(/\s+/g, '').toLowerCase()}.com`,
         plan: 'starter',
         features: {
           agentSeats: 3,
@@ -52,20 +50,20 @@ const seedCompanies = async () => {
       console.log(`Created company: ${companyName} with subdomain: ${subdomain}`);
     }
 
-    // Create an initial admin user
+    // Create an initial superadmin user
     const adminCompany = createdCompanies[0]; // Use first company
     const adminUser = new User({
       name: 'Admin User',
       email: 'admin@support.com',
       password: 'admin123', // This will be hashed automatically
-      role: 'admin',
+      role: 'superadmin',
       company: 'System Admin',
       isEmailVerified: true, // Set email as verified for seeded users
       companyId: adminCompany._id
     });
     
     await adminUser.save();
-    console.log(`Created admin user: ${adminUser.email}`);
+    console.log(`Created superadmin user: ${adminUser.email}`);
 
     // Create sample users for each company
     for (let i = 0; i < createdCompanies.length; i++) {

@@ -29,15 +29,31 @@ const Login = () => {
     setError('');
 
     try {
-
-      
       const response = await login(email, password, rememberMe);
-      
+
       if (response.success) {
-        navigate('/tickets');
+        // After successful login, check the user's role and redirect appropriately
+        try {
+          const profileResponse = await api.get('/auth/profile');
+          const userRole = profileResponse.data.role;
+
+          // Redirect based on role
+          if (userRole === 'support_agent' || userRole === 'admin') {
+            navigate('/tickets'); // Agents/admins go to tickets dashboard
+          } else if (userRole === 'company_manager') {
+            navigate('/tickets'); // Company managers go to their company dashboard
+          } else {
+            // Support agents or other roles
+            navigate('/tickets');
+          }
+        } catch (profileError) {
+          console.error('Error fetching profile:', profileError);
+          // Default redirect if profile can't be fetched
+          navigate('/tickets');
+        }
       } else {
         // Check if the error is related to email verification
-        if (response.message.includes('verify your email')) {
+        if (response.message && response.message.includes('verify your email')) {
           setEmailToVerify(email);
           // Redirect to verification page
           setTimeout(() => {
@@ -47,7 +63,7 @@ const Login = () => {
           // Redirect to 2FA verification page
           navigate(`/2fa-verification?email=${encodeURIComponent(email)}&rememberMe=${rememberMe}`);
         } else {
-          setError(response.message);
+          setError(response.message || 'An unexpected error occurred');
         }
       }
     } catch (err) {
@@ -293,8 +309,7 @@ const Login = () => {
 
             
             <div className="login-footer">
-              <p>Are you an agent? <Link to="/agent-login" className="login-link">Sign in as agent</Link></p>
-              <p>Don't have an account? <Link to="/register" className="login-link">Create account</Link></p>
+              <p>Don't have an account? <Link to="/signup" className="login-link">Create company account</Link></p>
             </div>
           </div>
         </div>

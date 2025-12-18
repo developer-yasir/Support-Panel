@@ -52,8 +52,7 @@ exports.updateComment = async (req, res) => {
       return res.status(404).json({ message: 'Comment not found' });
     }
     
-    // Check if user is authorized to update comment
-    if (comment.createdBy.toString() !== req.user.id && req.user.role !== 'admin') {
+    if (comment.createdBy.toString() !== req.user.id && req.user.role !== 'superadmin') {
       return res.status(403).json({ message: 'Not authorized to update this comment' });
     }
     
@@ -79,7 +78,7 @@ exports.deleteComment = async (req, res) => {
     }
     
     // Check if user is authorized to delete comment
-    if (comment.createdBy.toString() !== req.user.id && req.user.role !== 'admin') {
+    if (comment.createdBy.toString() !== req.user.id && req.user.role !== 'superadmin') {
       return res.status(403).json({ message: 'Not authorized to delete this comment' });
     }
     

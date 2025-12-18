@@ -29,7 +29,6 @@ const CompanyTickets = ({ startDate, endDate }) => {
           {
             id: 1,
             companyName: 'Tech Solutions Inc.',
-            domain: 'techsolutions.com',
             opened: 24,
             inProgress: 12,
             resolved: 32,
@@ -38,7 +37,6 @@ const CompanyTickets = ({ startDate, endDate }) => {
           {
             id: 2,
             companyName: 'Global Enterprises',
-            domain: 'globalent.com',
             opened: 18,
             inProgress: 9,
             resolved: 26,
@@ -47,7 +45,6 @@ const CompanyTickets = ({ startDate, endDate }) => {
           {
             id: 3,
             companyName: 'Innovate Co.',
-            domain: 'innovateco.com',
             opened: 15,
             inProgress: 7,
             resolved: 21,
@@ -56,7 +53,6 @@ const CompanyTickets = ({ startDate, endDate }) => {
           {
             id: 4,
             companyName: 'Digital Dynamics',
-            domain: 'digitaldynamics.com',
             opened: 12,
             inProgress: 5,
             resolved: 18,
@@ -65,7 +61,6 @@ const CompanyTickets = ({ startDate, endDate }) => {
           {
             id: 5,
             companyName: 'Cloud Services Ltd',
-            domain: 'cloudsvc.com',
             opened: 9,
             inProgress: 4,
             resolved: 15,
@@ -113,7 +108,6 @@ const CompanyTickets = ({ startDate, endDate }) => {
                         </div>
                         <div className="company-details">
                           <div className="company-name">{company.companyName}</div>
-                          <div className="company-domain">{company.domain}</div>
                         </div>
                       </div>
                     </td>

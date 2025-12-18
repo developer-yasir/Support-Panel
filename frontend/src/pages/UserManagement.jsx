@@ -318,7 +318,6 @@ const UserManagement = () => {
                   className="form-control form-control--select"
                   required
                 >
-                  <option value="customer">Customer</option>
                   <option value="support_agent">Support Agent</option>
                   <option value="company_manager">Company Manager</option>
                   {currentUser?.role === 'admin' && (
@@ -410,7 +409,6 @@ const UserManagement = () => {
                   className="form-control form-control--select"
                   required
                 >
-                  <option value="customer">Customer</option>
                   <option value="support_agent">Support Agent</option>
                   <option value="company_manager">Company Manager</option>
                   {currentUser?.role === 'admin' && (

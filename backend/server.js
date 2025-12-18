@@ -4,7 +4,6 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const helmet = require('helmet');
 const WebSocket = require('ws');
-const vhost = require('vhost');
 
 // Load environment variables
 dotenv.config();
@@ -18,6 +17,7 @@ const contactsRoutes = require('./routes/contacts');
 const companiesRoutes = require('./routes/companies');
 const chatRoutes = require('./routes/chat');
 const twoFactorRoutes = require('./routes/twoFactor');
+const partnershipsRoutes = require('./routes/partnerships');
 
 // Import tenant middleware first
 const { tenantMiddleware } = require('./middlewares/tenantMiddleware');
@@ -42,52 +42,7 @@ app.use('/api/contacts', contactsRoutes);  // Apply tenant context after auth in
 app.use('/api/companies', companiesRoutes);  // Apply tenant context after auth in route file
 app.use('/api/chat', chatRoutes);  // Apply tenant context after auth in route file
 app.use('/api/2fa', twoFactorRoutes);  // Apply tenant context after auth in route file
-
-// Initialize subdomain app
-const subdomainApp = express();
-subdomainApp.use(express.json());
-
-// Apply the same security and CORS middleware to subdomain app
-subdomainApp.use(helmet());
-subdomainApp.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests from any subdomain of your main domain
-    if (!origin || origin.includes(process.env.MAIN_DOMAIN || 'yourapp.com')) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true
-}));
-
-// Apply tenant middleware to subdomain routes
-// This is appropriate for subdomain-based tenant identification
-subdomainApp.use(tenantMiddleware);
-
-// Subdomain API routes (same as main app, but with tenant isolation)
-subdomainApp.use('/api/auth', authRoutes);
-subdomainApp.use('/api/tickets', ticketRoutes);  // Tenant context handled in route after auth
-subdomainApp.use('/api/comments', commentRoutes);  // Tenant context handled in route after auth
-subdomainApp.use('/api/users', userRoutes);  // Tenant context handled in route after auth
-subdomainApp.use('/api/contacts', contactsRoutes);  // Tenant context handled in route after auth
-subdomainApp.use('/api/companies', companiesRoutes);  // Tenant context handled in route after auth
-subdomainApp.use('/api/chat', chatRoutes);  // Tenant context handled in route after auth
-subdomainApp.use('/api/2fa', twoFactorRoutes);  // Tenant context handled in route after auth
-
-// Health check for subdomains
-subdomainApp.get('/api/', (req, res) => {
-  res.status(200).json({ 
-    message: 'Company subdomain API is running', 
-    company: req.company ? req.company.name : 'No company context',
-    subdomain: req.subdomain
-  });
-});
-
-// Mount subdomain app to handle all subdomain requests
-// For subdomain requests, tenant identification happens via subdomain first
-// so we apply tenantMiddleware first, then auth
-app.use(vhost('*.' + (process.env.MAIN_DOMAIN || 'yourapp.com'), subdomainApp));
+app.use('/api/partnerships', partnershipsRoutes);  // Apply tenant context after auth in route file
 
 // Health check endpoint
 app.get('/', (req, res) => {
@@ -95,8 +50,6 @@ app.get('/', (req, res) => {
 });
 
 // Connect to MongoDB
-// Set up subdomain configuration
-app.set('subdomain offset', 1); // This tells Express to expect subdomain as the first part
 
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/supportpanel')
   .then(() => {

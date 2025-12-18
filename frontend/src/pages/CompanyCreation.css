@@ -1,4 +1,113 @@
 /* Company Creation Page Styles - Match Main Login Theme */
+.login-left {
+  background: #ffffff;
+  color: var(--gray-900);
+  border-right: 1px solid var(--gray-200);
+}
+
+.login-left::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--gray-50) 0%, var(--white) 100%);
+  z-index: 0;
+}
+
+.login-brand {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  margin-bottom: var(--spacing-3xl);
+}
+
+.login-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  background: var(--brand-primary);
+  border-radius: 50%;
+  margin: 0 auto var(--spacing-lg);
+  color: white;
+}
+
+.login-logo-icon {
+  width: 40px;
+  height: 40px;
+  color: white;
+}
+
+.login-brand-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0 0 var(--spacing-sm) 0;
+  color: var(--gray-900);
+  background: none;
+  -webkit-background-clip: initial;
+  -webkit-text-fill-color: initial;
+  background-clip: initial;
+}
+
+.login-brand-subtitle {
+  font-size: 1rem;
+  color: var(--gray-600);
+  margin: 0;
+  font-weight: 400;
+}
+
+.login-features {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+.login-feature {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+}
+
+.login-feature-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: var(--brand-primary)10;
+  border-radius: var(--border-radius-lg);
+  flex-shrink: 0;
+  border: 1px solid var(--brand-primary)20;
+}
+
+.feature-icon {
+  width: 24px;
+  height: 24px;
+  color: var(--brand-primary);
+}
+
+.login-feature-content {
+  flex: 1;
+}
+
+.login-feature-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 var(--spacing-xs) 0;
+  color: var(--gray-900);
+}
+
+.login-feature-description {
+  font-size: 0.9rem;
+  color: var(--gray-600);
+  margin: 0;
+  line-height: 1.5;
+}
 .plan-selection {
   margin-bottom: var(--spacing-xl);
 }
@@ -116,27 +225,6 @@
 
 .relative {
   position: relative;
-}
-
-.subdomain-suffix {
-  position: absolute;
-  right: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--gray-600);
-  font-size: 0.875rem;
-  pointer-events: none;
-  background-color: white;
-  padding: 0 0.25rem;
-}
-
-.subdomain-checking {
-  position: absolute;
-  right: 3rem;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  align-items: center;
 }
 
 .availability-message {

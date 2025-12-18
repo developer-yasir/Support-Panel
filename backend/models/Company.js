@@ -6,18 +6,6 @@ const companySchema = new mongoose.Schema({
     required: true,
     trim: true
   },
-  subdomain: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true,
-    lowercase: true
-  },
-  domain: {
-    type: String,
-    trim: true,
-    lowercase: true
-  },
   logo: {
     type: String, // URL to logo image
     default: null
@@ -126,8 +114,7 @@ const companySchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for faster lookups (excluding subdomain since it's already indexed via unique: true)
-companySchema.index({ domain: 1 });
+// Index for faster lookups
 companySchema.index({ billingEmail: 1 });
 companySchema.index({ active: 1 });
 

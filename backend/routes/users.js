@@ -9,7 +9,7 @@ const {
   updateUser
 } = require('../controllers/userController');
 const User = require('../models/User'); // Moved import to top
-const { protect, adminOnly, authorize } = require('../middlewares/authMiddleware');
+const { protect, superadminOnly, authorize } = require('../middlewares/authMiddleware');
 const { tenantMiddleware } = require('../middlewares/tenantMiddleware');
 const { checkPermission, canAccessResource, ownerOnly } = require('../middlewares/permissionMiddleware');
 
@@ -43,7 +43,7 @@ router.route('/agents')
 
       // Allow authenticated users to get a list of agents from their company only
       const agents = await User.find({
-        role: { $in: ['support_agent', 'admin'] },  // Include both agents and admin
+        role: { $in: ['support_agent', 'superadmin'] },  // Include both agents and superadmin
         isActive: true,
         companyId: req.companyId  // Critical: Only agents from the same company
       }).select('name email role _id');

@@ -3,22 +3,21 @@ const Company = require('../models/Company');
 
 const getAllCompanies = async (req, res) => {
   try {
-    // This endpoint should only be accessible to system admins
-    // Verify user is an admin with system-level access
-    if (!req.user || req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Access denied: Admin access required' });
+    // This endpoint should only be accessible to system superadmins
+    // Verify user is a superadmin with system-level access
+    if (!req.user || req.user.role !== 'superadmin') {
+      return res.status(403).json({ message: 'Access denied: Superadmin access required' });
     }
     
-    // For admin users, return all companies in the system
+    // For superadmin users, return all companies in the system
     const allCompanies = await Company.find({})
-      .select('name subdomain billingEmail contactEmail plan features createdAt active suspended')
+      .select('name billingEmail contactEmail plan features createdAt active suspended')
       .sort({ createdAt: -1 });
-    
+
     // Format companies for frontend consumption
     const formattedCompanies = allCompanies.map(company => ({
       id: company._id.toString(),
       name: company.name,
-      domain: `${company.subdomain}.${process.env.MAIN_DOMAIN || 'yourapp.com'}`,
       contacts: 0, // This would be populated via a different query in a real system
       tickets: 0, // This would be populated via a different query in a real system
       plan: company.plan,

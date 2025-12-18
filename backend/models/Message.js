@@ -18,7 +18,7 @@ const messageSchema = new mongoose.Schema({
     },
     type: {
       type: String,
-      enum: ['customer', 'agent', 'user'],
+      enum: ['agent', 'user'],
       required: true
     }
   },

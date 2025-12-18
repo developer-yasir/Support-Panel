@@ -1,32 +1,28 @@
 const express = require('express');
 const router = express.Router();
-const { 
-  createCompany, 
-  getCompanyById, 
-  getCompanyBySubdomain, 
-  getCurrentCompany, 
-  updateCompany, 
-  getCompanyStats, 
-  getCompanyAgents, 
-  suspendCompany, 
-  activateCompany, 
+const {
+  createCompany,
+  getCompanyById,
+  getCurrentCompany,
+  updateCompany,
+  getCompanyStats,
+  getCompanyAgents,
+  suspendCompany,
+  activateCompany,
   changePlan,
-  checkSubdomainAvailability,
+  checkCompanyNameAvailability,
   getCompanySetupInfo
 } = require('../controllers/companyController');
 
 const { getAllCompanies } = require('../controllers/companiesController');
-const { protect, adminOnly, authorize } = require('../middlewares/authMiddleware');
+const { protect, superadminOnly, authorize } = require('../middlewares/authMiddleware');
 const { tenantMiddleware, tenantAuthMiddleware } = require('../middlewares/tenantMiddleware');
 const { checkPermission, ownerOnly } = require('../middlewares/permissionMiddleware');
 
 // Public routes for company signup
 router.post('/', createCompany);
 router.get('/setup-info', getCompanySetupInfo);
-router.get('/check-subdomain/:subdomain', checkSubdomainAvailability);
-
-// Get company by subdomain (for subdomain routing - public)
-router.get('/subdomain/:subdomain', getCompanyBySubdomain);
+router.get('/check-name/:name', checkCompanyNameAvailability);
 
 // All other routes require authentication
 router.use(protect);
@@ -49,14 +45,14 @@ router.get('/current/stats', checkPermission('read:company'), getCompanyStats);
 // Get company agents (accessible to users with user read permissions)
 router.get('/current/agents', checkPermission('read:users'), getCompanyAgents);
 
-// Routes for admin management of companies (require admin access)
-router.use('/admin', [adminOnly, authorize('admin')]);
+// Routes for superadmin management of companies (require superadmin access)
+router.use('/superadmin', [superadminOnly, authorize('superadmin')]);
 
 // Admin routes for managing all companies
-router.get('/admin', [adminOnly, authorize('admin')], getAllCompanies); // Admin endpoint to get all companies
-router.get('/admin/:id', [adminOnly, authorize('admin')], getCompanyById);
-router.put('/admin/:id/suspend', [adminOnly, authorize('admin')], suspendCompany);
-router.put('/admin/:id/activate', [adminOnly, authorize('admin')], activateCompany);
-router.put('/admin/:id/plan', [adminOnly, authorize('admin')], changePlan);
+router.get('/superadmin', [superadminOnly, authorize('superadmin')], getAllCompanies); // Superadmin endpoint to get all companies
+router.get('/superadmin/:id', [superadminOnly, authorize('superadmin')], getCompanyById);
+router.put('/superadmin/:id/suspend', [superadminOnly, authorize('superadmin')], suspendCompany);
+router.put('/superadmin/:id/activate', [superadminOnly, authorize('superadmin')], activateCompany);
+router.put('/superadmin/:id/plan', [superadminOnly, authorize('superadmin')], changePlan);
 
 module.exports = router;

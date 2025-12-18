@@ -2110,24 +2110,25 @@ body {
 
 .login-left {
   flex: 1;
-  background: #000000;
-  color: white;
+  background: #ffffff;
+  color: var(--gray-900);
   padding: var(--spacing-3xl);
   display: flex;
   flex-direction: column;
   justify-content: center;
   position: relative;
   overflow: hidden;
+  border-right: 1px solid var(--gray-200);
 }
 
 .login-left::before {
   content: '';
   position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--gray-50) 0%, var(--white) 100%);
   z-index: 0;
 }
 
@@ -2144,10 +2145,10 @@ body {
   justify-content: center;
   width: 80px;
   height: 80px;
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--brand-primary);
   border-radius: 50%;
   margin: 0 auto var(--spacing-lg);
-  backdrop-filter: blur(10px);
+  color: white;
 }
 
 .login-logo-icon {
@@ -2160,15 +2161,16 @@ body {
   font-size: 1.75rem;
   font-weight: 700;
   margin: 0 0 var(--spacing-sm) 0;
-  background: linear-gradient(135deg, var(--white) 0%, var(--gray-100) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--gray-900);
+  background: none;
+  -webkit-background-clip: initial;
+  -webkit-text-fill-color: initial;
+  background-clip: initial;
 }
 
 .login-brand-subtitle {
   font-size: 1rem;
-  opacity: 0.9;
+  color: var(--gray-600);
   margin: 0;
   font-weight: 400;
 }
@@ -2193,16 +2195,16 @@ body {
   justify-content: center;
   width: 48px;
   height: 48px;
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--brand-primary)10;
   border-radius: var(--border-radius-lg);
   flex-shrink: 0;
-  backdrop-filter: blur(10px);
+  border: 1px solid var(--brand-primary)20;
 }
 
 .feature-icon {
   width: 24px;
   height: 24px;
-  color: white;
+  color: var(--brand-primary);
 }
 
 .login-feature-content {
@@ -2213,11 +2215,12 @@ body {
   font-size: 1.1rem;
   font-weight: 600;
   margin: 0 0 var(--spacing-xs) 0;
+  color: var(--gray-900);
 }
 
 .login-feature-description {
   font-size: 0.9rem;
-  opacity: 0.9;
+  color: var(--gray-600);
   margin: 0;
   line-height: 1.5;
 }
@@ -4554,7 +4557,7 @@ body {
 /* Login page */
 [data-theme="dark"] .login-page,
 .dark-theme .login-page {
-  background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%);
+  ackground: linear-gradient(135deg, #ffffff 0%, #ffffff 100%);
 }
 
 [data-theme="dark"] .login-container,

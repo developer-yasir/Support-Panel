@@ -8,9 +8,7 @@ exports.getUsers = async (req, res) => {
       return res.status(400).json({ message: 'Company context required to get users' });
     }
 
-    // Admin can view all users; others can only view users from their company
-    let filter = {};
-    if (req.user.role !== 'admin') {
+    if (req.user.role !== 'superadmin') {
       filter.companyId = req.companyId; // Non-admins can only see users from their company
     }
 
@@ -37,7 +35,7 @@ exports.getUserById = async (req, res) => {
 
     // Admin can access any user; others can only access users from their company
     const query = { _id: req.params.id };
-    if (req.user.role !== 'admin') {
+    if (req.user.role !== 'superadmin') {
       query.companyId = req.companyId;
     }
 
@@ -70,7 +68,7 @@ exports.createUser = async (req, res) => {
 
     // Determine which company to associate the user with
     let targetCompanyId = req.companyId;
-    if (req.user.role === 'admin' && req.body.companyId) {
+    if (req.user.role === 'superadmin' && req.body.companyId) {
       // Admins can create users for a specific company
       targetCompanyId = req.body.companyId;
     }
@@ -135,9 +133,9 @@ exports.updateUser = async (req, res) => {
     if (isActive !== undefined) updateData.isActive = isActive;
     if (role !== undefined) updateData.role = role;
 
-    // Admin can update any user; others can only update users from their company
+    // Superadmin can update any user; others can only update users from their company
     const query = { _id: req.params.id };
-    if (req.user.role !== 'admin') {
+    if (req.user.role !== 'superadmin') {
       query.companyId = req.companyId;
     }
 
@@ -170,9 +168,9 @@ exports.updateUserStatus = async (req, res) => {
     // Only update isActive field, not role
     const updateData = { isActive };
 
-    // Admin can update any user status; others can only update users from their company
+    // Superadmin can update any user status; others can only update users from their company
     const query = { _id: req.params.id };
-    if (req.user.role !== 'admin') {
+    if (req.user.role !== 'superadmin') {
       query.companyId = req.companyId;
     }
 
@@ -200,9 +198,9 @@ exports.deleteUser = async (req, res) => {
       return res.status(400).json({ message: 'Company context required to delete user' });
     }
 
-    // Admin can delete any user; others can only delete users from their company
+    // Superadmin can delete any user; others can only delete users from their company
     const query = { _id: req.params.id };
-    if (req.user.role !== 'admin') {
+    if (req.user.role !== 'superadmin') {
       query.companyId = req.companyId;
     }
 

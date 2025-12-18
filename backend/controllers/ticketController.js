@@ -1,5 +1,6 @@
 const Ticket = require('../models/Ticket');
 const User = require('../models/User');
+const Partnership = require('../models/Partnership');
 const { sendTicketNotification, sendTicketUpdateNotification } = require('../config/email');
 
 // Create a new ticket
@@ -7,12 +8,48 @@ const { sendTicketNotification, sendTicketUpdateNotification } = require('../con
 exports.createTicket = async (req, res) => {
   try {
     const { title, description, priority, dueDate, assignedTo } = req.body;
-    
+
     // Verify company context exists
     if (!req.companyId) {
       return res.status(400).json({ message: 'Company context required to create ticket' });
     }
-    
+
+    // If assignedTo is being set, check if it's a partner company agent
+    if (assignedTo) {
+      const assignedUser = await User.findById(assignedTo);
+
+      if (!assignedUser) {
+        return res.status(404).json({ message: 'Assigned user not found' });
+      }
+
+      // Allow assignment if user is from the same company
+      if (assignedUser.companyId.toString() !== req.companyId.toString()) {
+        // Check if it's a partner company with permission
+        const partnership = await Partnership.findOne({
+          $or: [
+            {
+              requestingCompanyId: req.companyId,
+              requestedCompanyId: assignedUser.companyId,
+              status: 'approved',
+              'permissions.canAssignTickets': true
+            },
+            {
+              requestingCompanyId: assignedUser.companyId,
+              requestedCompanyId: req.companyId,
+              status: 'approved',
+              'permissions.canAssignTickets': true
+            }
+          ]
+        });
+
+        if (!partnership) {
+          return res.status(403).json({
+            message: 'Cannot assign to user from another company without proper partnership permissions'
+          });
+        }
+      }
+    }
+
     const ticket = new Ticket({
       title,
       description,
@@ -22,7 +59,7 @@ exports.createTicket = async (req, res) => {
       createdBy: req.user.id,
       companyId: req.companyId
     });
-    
+
     await ticket.save();
     
     // Populate references
@@ -141,28 +178,28 @@ exports.updateTicket = async (req, res) => {
     }
     
     const { title, description, priority, status, assignedTo, dueDate, escalationLevel } = req.body;
-    
+
     let ticket;
-    
+
     // Find ticket by custom ticketId with company filter
-    ticket = await Ticket.findOne({ 
+    ticket = await Ticket.findOne({
       ticketId: req.params.id,
-      companyId: req.companyId 
+      companyId: req.companyId
     });
-    
+
     // If not found by ticketId and the param looks like an ObjectId, try to find by _id with company filter
     if (!ticket && /^[0-9a-fA-F]{24}$/.test(req.params.id)) {
       ticket = await Ticket.findOne({
         _id: req.params.id,
-        companyId: req.companyId 
+        companyId: req.companyId
       });
     }
-    
+
     if (!ticket) {
       console.log('Ticket not found:', req.params.id);
       return res.status(404).json({ message: 'Ticket not found' });
     }
-    
+
     // Check if user is authorized to update ticket
     // Admins can update any ticket
     // Support agents can update any ticket if they're only changing assignment, status, or priority
@@ -170,16 +207,55 @@ exports.updateTicket = async (req, res) => {
     const fieldsBeingUpdated = Object.keys(req.body);
     const assignmentFields = ['assignedTo', 'status', 'priority']; // Fields that support agents can update
     const isOnlyAssignmentUpdate = fieldsBeingUpdated.every(field => assignmentFields.includes(field));
-    
+
     const isTicketCreator = ticket.createdBy.toString() === req.user.id;
-    const isAdmin = req.user.role === 'admin';
+    const isSuperAdmin = req.user.role === 'superadmin';
     const isSupportAgent = req.user.role === 'support_agent';
-    
+
     if (!(isAdmin || (isSupportAgent && isOnlyAssignmentUpdate) || isTicketCreator)) {
       console.log('Unauthorized update attempt:', req.user.id, ticket.createdBy.toString(), fieldsBeingUpdated);
       return res.status(403).json({ message: 'Not authorized to update this ticket' });
     }
-    
+
+    // If assignedTo is being updated, check if it's a partner company agent
+    if (assignedTo !== undefined) {
+      // Check if the assigned user is from the same company or a partner company with appropriate permissions
+      const assignedUser = await User.findById(assignedTo);
+
+      if (!assignedUser) {
+        return res.status(404).json({ message: 'Assigned user not found' });
+      }
+
+      // Allow assignment if user is from the same company
+      if (assignedUser.companyId.toString() === req.companyId.toString()) {
+        // Same company - allow assignment
+      } else {
+        // Check if it's a partner company with permission
+        const partnership = await Partnership.findOne({
+          $or: [
+            {
+              requestingCompanyId: req.companyId,
+              requestedCompanyId: assignedUser.companyId,
+              status: 'approved',
+              'permissions.canAssignTickets': true
+            },
+            {
+              requestingCompanyId: assignedUser.companyId,
+              requestedCompanyId: req.companyId,
+              status: 'approved',
+              'permissions.canAssignTickets': true
+            }
+          ]
+        });
+
+        if (!partnership) {
+          return res.status(403).json({
+            message: 'Cannot assign to user from another company without proper partnership permissions'
+          });
+        }
+      }
+    }
+
     // Only update fields that are provided
     if (title !== undefined) ticket.title = title;
     if (description !== undefined) ticket.description = description;
@@ -188,7 +264,7 @@ exports.updateTicket = async (req, res) => {
     if (assignedTo !== undefined) ticket.assignedTo = assignedTo;
     if (dueDate !== undefined) ticket.dueDate = dueDate;
     if (escalationLevel !== undefined) ticket.escalationLevel = escalationLevel;
-    
+
     console.log('Updating ticket with data:', {
       title: ticket.title,
       description: ticket.description,
@@ -272,7 +348,7 @@ exports.deleteTicket = async (req, res) => {
     }
 
     // Check if user is authorized to delete ticket
-    if (ticket.createdBy && ticket.createdBy.toString() !== req.user.id && req.user.role !== 'admin') {
+    if (ticket.createdBy && ticket.createdBy.toString() !== req.user.id && req.user.role !== 'superadmin') {
       return res.status(403).json({ message: 'Not authorized to delete this ticket' });
     }
 
@@ -324,7 +400,7 @@ exports.escalateTicket = async (req, res) => {
     }
     
     // Check if user is authorized to escalate ticket
-    if (ticket.createdBy.toString() !== req.user.id && req.user.role !== 'admin') {
+    if (ticket.createdBy.toString() !== req.user.id && req.user.role !== 'superadmin') {
       return res.status(403).json({ message: 'Not authorized to escalate this ticket' });
     }
     

@@ -26,13 +26,6 @@ The Support Panel now implements a comprehensive role-based access control syste
   - View contacts
   - Access to agent dashboard
 
-### 3. Customer (`customer`)
-- **Access Level**: Limited customer access
-- **Permissions**:
-  - Create and update their own tickets
-  - Use chat functionality
-  - View their own tickets and related information
-  - Update their own profile
 
 ## Permission System
 
@@ -55,10 +48,6 @@ support_agent: [
   'read:settings', 'write:settings', 'read:chats', 'write:chats', 'read:contacts'
 ],
 
-// Customer permissions
-customer: [
-  'read:tickets', 'write:tickets', 'read:chats', 'write:chats'
-]
 ```
 
 ### Frontend Role Hook
@@ -127,10 +116,10 @@ Use the `PermissionProtectedRoute` component for granular access control:
 The sidebar now conditionally shows menu items based on user roles:
 - Admins see: Overview, Tickets, Agents, Companies, Reports, Chat, Settings, Admin Dashboard
 - Support Agents see: Overview, Tickets, Agents, Reports, Chat, Settings
-- Customers see: Tickets, Chat, Settings
+- Company Managers see: Overview, Tickets, Agents, Reports, Chat, Settings, User Management, Partnerships
 
 ### Navbar Updates
-- Role-appropriate labels are displayed (Administrator, Support Agent, Customer)
+- Role-appropriate labels are displayed (Administrator, Support Agent, Company Manager)
 - Menu options are tailored to each role's permissions
 
 ## Security Features
@@ -144,12 +133,12 @@ The sidebar now conditionally shows menu items based on user roles:
 
 - Existing users will maintain their current roles unless explicitly changed
 - New company owners will automatically receive admin privileges
-- The system now supports the `customer` role in addition to existing roles
+- The system no longer supports the `customer` role - all non-admins are now either Support Agents or Company Managers
 
 ## Testing the System
 
 1. Register a new company to verify the owner gets admin role
 2. Register individual users to verify they receive support_agent role by default
-3. Check that UI elements appear/disappear based on user roles
+3. Check that UI elements appear/disappear based on user roles (admin, support_agent, company_manager)
 4. Verify API responses match user permissions
 5. Confirm tenant isolation is working for different companies

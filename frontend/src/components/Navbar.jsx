@@ -87,9 +87,9 @@ const Navbar = () => {
                     {user?.name}
                   </div>
                   <div className="navbar__user-role">
-                    {user?.role === 'admin' ? 'Administrator' : 
-                     user?.role === 'support_agent' ? 'Support Agent' : 
-                     user?.role === 'customer' ? 'Customer' : 'User'}
+                    {user?.role === 'admin' ? 'Administrator' :
+                     user?.role === 'support_agent' ? 'Support Agent' :
+                     user?.role === 'company_manager' ? 'Company Manager' : 'User'}
                   </div>
                 </div>
               </div>
