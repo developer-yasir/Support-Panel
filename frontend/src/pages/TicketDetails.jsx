@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
+import './FreshdeskStyles.css';
 
 const TicketDetails = () => {
   const { ticketId } = useParams();
@@ -17,30 +18,69 @@ const TicketDetails = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   // Added state for showing delete confirmation modal
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [editingField, setEditingField] = useState(null);
+
+  // New states for attachments and time tracking
+  const [attachments, setAttachments] = useState([]);
+  const [newAttachment, setNewAttachment] = useState(null);
+  const [timeLogs, setTimeLogs] = useState([]);
+  const [showTimeForm, setShowTimeForm] = useState(false);
+  const [timeSpent, setTimeSpent] = useState({ hours: 0, minutes: 0 });
+  const [timeNotes, setTimeNotes] = useState('');
+  const fileInputRef = useRef(null);
+
+  // State for new ticket actions
+  const [noteText, setNoteText] = useState('');
+  const [showForwardModal, setShowForwardModal] = useState(false);
+  const [forwardAgent, setForwardAgent] = useState('');
+  const [noteLoading, setNoteLoading] = useState(false);
+  const [forwardLoading, setForwardLoading] = useState(false);
+  const [isPublicReply, setIsPublicReply] = useState(true);
 
   // Initialize with sample ticket data for now
   useEffect(() => {
     const fetchTicketDetails = async () => {
       try {
         setLoading(true);
-        
+
         // First, try to fetch from the backend API
         try {
           const ticketResponse = await api.get(`/tickets/${ticketId}`);
           const ticketData = ticketResponse.data;
-          
-          // Now fetch comments for this ticket
+
+          // Now fetch comments, attachments, and time logs for this ticket
           const commentsResponse = await api.get(`/comments/ticket/${ticketData._id}`);
-          
-          // Combine ticket data with comments
+
+          let attachmentsData = [];
+          let timeLogsData = [];
+
+          try {
+            const attachmentsResponse = await api.get(`/tickets/${ticketData._id}/attachments`);
+            attachmentsData = attachmentsResponse.data;
+          } catch (err) {
+            console.log('Attachments endpoint not available');
+          }
+
+          try {
+            const timeLogsResponse = await api.get(`/tickets/${ticketData._id}/time-logs`);
+            timeLogsData = timeLogsResponse.data;
+          } catch (err) {
+            console.log('Time logs endpoint not available');
+          }
+
+          // Combine ticket data with comments, attachments and time logs
           setTicket({
             ...ticketData,
-            comments: commentsResponse.data
+            comments: commentsResponse.data,
+            attachments: attachmentsData,
+            timeLogs: timeLogsData
           });
           setTicketProperties(ticketData);
+          setAttachments(attachmentsData);
+          setTimeLogs(timeLogsData);
         } catch (apiError) {
           console.error('API fetch failed, using sample data:', apiError);
-          
+
           // Fallback to sample data
           const sampleTicket = {
             _id: ticketId,
@@ -94,7 +134,9 @@ const TicketDetails = () => {
                 createdAt: new Date(Date.now() - 600000).toISOString(), // 10 minutes ago
                 isInternal: true
               }
-            ]
+            ],
+            attachments: [],
+            timeLogs: []
           };
           setTicket(sampleTicket);
           setTicketProperties(sampleTicket);
@@ -114,7 +156,7 @@ const TicketDetails = () => {
         setAgents(response.data);
       } catch (error) {
         console.error('Error fetching agents:', error);
-        
+
         // If user doesn't have permission to get agents, use fallback
         if (error.response?.status === 403) {
           console.warn('User does not have permission to fetch agents list');
@@ -133,6 +175,87 @@ const TicketDetails = () => {
     fetchAgents();
   }, [ticketId]);
 
+  // New handler functions
+  const handleAttachmentChange = (e) => {
+    const files = Array.from(e.target.files);
+    setNewAttachment(files[0]);
+  };
+
+  const handleUploadAttachment = async () => {
+    if (!newAttachment || !ticket?._id) return;
+
+    const formData = new FormData();
+    formData.append('attachment', newAttachment);
+    formData.append('ticketId', ticket._id);
+
+    try {
+      const response = await api.post(`/tickets/${ticket._id}/attachments`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      // Add the new attachment to the state
+      setAttachments(prev => [...prev, response.data]);
+      setNewAttachment(null);
+
+      // Update ticket with new attachment count
+      setTicket(prev => ({
+        ...prev,
+        attachments: [...(prev.attachments || []), response.data]
+      }));
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } catch (err) {
+      console.error('Error uploading attachment:', err);
+      alert('Failed to upload attachment: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleLogTime = async () => {
+    if (!ticket?._id || timeSpent.hours === 0 && timeSpent.minutes === 0) return;
+
+    const timeLog = {
+      ticketId: ticket._id,
+      hours: parseInt(timeSpent.hours) || 0,
+      minutes: parseInt(timeSpent.minutes) || 0,
+      notes: timeNotes,
+      loggedAt: new Date().toISOString(),
+      loggedBy: 'current_user' // This should be the actual logged-in user
+    };
+
+    try {
+      const response = await api.post('/time-logs', timeLog);
+
+      // Add the new time log to the state
+      setTimeLogs(prev => [...prev, response.data]);
+      setTimeSpent({ hours: 0, minutes: 0 });
+      setTimeNotes('');
+      setShowTimeForm(false);
+
+      // Update ticket with new time log
+      setTicket(prev => ({
+        ...prev,
+        timeLogs: [...(prev.timeLogs || []), response.data]
+      }));
+    } catch (err) {
+      console.error('Error logging time:', err);
+      alert('Failed to log time: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  // Calculate total time spent
+  const totalTime = timeLogs.reduce((total, log) => {
+    const hours = parseInt(log.hours) || 0;
+    const minutes = parseInt(log.minutes) || 0;
+    return total + hours * 60 + minutes;
+  }, 0);
+
+  const totalHours = Math.floor(totalTime / 60);
+  const totalMinutes = totalTime % 60;
+
   const handleReplySubmit = async (e) => {
     e.preventDefault();
     if (!replyText.trim()) return;
@@ -143,7 +266,7 @@ const TicketDetails = () => {
       const response = await api.post(`/comments`, {
         ticketId: ticket._id,
         content: replyText,
-        isInternal: false
+        isInternal: !isPublicReply  // if not public, then it's internal
       });
 
       // Add the new comment to the ticket's comments in state
@@ -163,23 +286,97 @@ const TicketDetails = () => {
     }
   };
 
+  const handleAddNote = async () => {
+    if (!noteText.trim()) return;
+
+    setNoteLoading(true);
+    try {
+      const response = await api.post(`/comments`, {
+        ticketId: ticket._id,
+        content: noteText,
+        isInternal: true  // Internal note, not sent to requester
+      });
+
+      // Add the new note to the ticket's comments in state
+      setTicket(prev => ({
+        ...prev,
+        comments: [...(prev.comments || []), response.data]
+      }));
+
+      // Clear the note text
+      setNoteText('');
+      // Close the note section (we'll implement this UI below)
+    } catch (err) {
+      console.error('Error adding note:', err);
+      alert('Failed to add note: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setNoteLoading(false);
+    }
+  };
+
+  const handleForward = async () => {
+    if (!forwardAgent) return;
+
+    setForwardLoading(true);
+    try {
+      // Update ticket assignee
+      const response = await api.patch(`/tickets/${ticket._id}`, {
+        assigneeId: forwardAgent
+      });
+
+      // Update ticket in state
+      setTicket(prev => ({
+        ...prev,
+        assigneeId: forwardAgent,
+        assignee: agents.find(agent => agent._id === forwardAgent) || null
+      }));
+
+      // Add a note about forwarding
+      const noteResponse = await api.post(`/comments`, {
+        ticketId: ticket._id,
+        content: `Ticket forwarded to ${agents.find(agent => agent._id === forwardAgent)?.name || 'agent'}`,
+        isInternal: true
+      });
+
+      // Add the forwarding note to comments
+      setTicket(prev => ({
+        ...prev,
+        comments: [...(prev.comments || []), noteResponse.data]
+      }));
+
+      // Reset and close modal
+      setForwardAgent('');
+      setShowForwardModal(false);
+
+      alert('Ticket forwarded successfully!');
+    } catch (err) {
+      console.error('Error forwarding ticket:', err);
+      alert('Failed to forward ticket: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setForwardLoading(false);
+    }
+  };
+
   const handlePropertyChange = async (field, value) => {
     try {
       // In a real implementation, update the backend
       const response = await api.put(`/tickets/${ticket._id}`, {
         [field]: value
       });
-      
+
       setTicketProperties(prev => ({
         ...prev,
         [field]: value
       }));
-      
+
       // Update the main ticket object too
       setTicket(prev => ({
         ...prev,
         [field]: value
       }));
+
+      // Reset the editing field after successful update
+      setEditingField(null);
     } catch (err) {
       console.error(`Error updating ${field}:`, err);
     }
@@ -286,7 +483,7 @@ const TicketDetails = () => {
               <div className={`freshdesk-ticket-status-badge freshdesk-ticket-status-${ticketProperties.status || ticket.status}`}>
                 {ticketProperties.status || ticket.status}
               </div>
-              <button 
+              <button
                 onClick={() => navigate('/tickets')}
                 className="freshdesk-btn freshdesk-btn--outline"
               >
@@ -327,8 +524,8 @@ const TicketDetails = () => {
 
               {/* Comments/Replies */}
               {ticket.comments?.map((comment) => (
-                <div 
-                  key={comment._id} 
+                <div
+                  key={comment._id}
                   className={`freshdesk-conversation-message ${comment.isInternal ? 'freshdesk-conversation-message--internal' : ''}`}
                 >
                   <div className="freshdesk-message-header">
@@ -365,7 +562,11 @@ const TicketDetails = () => {
                 <div className="freshdesk-reply-actions">
                   <div className="freshdesk-reply-options">
                     <label className="freshdesk-checkbox-label">
-                      <input type="checkbox" />
+                      <input
+                        type="checkbox"
+                        checked={isPublicReply}
+                        onChange={(e) => setIsPublicReply(e.target.checked)}
+                      />
                       <span className="freshdesk-checkbox-custom"></span>
                       Make public reply
                     </label>
@@ -381,205 +582,548 @@ const TicketDetails = () => {
               </form>
             </div>
 
+            {/* Ticket Action Buttons */}
+            <div className="freshdesk-ticket-actions">
+              <div className="freshdesk-action-buttons-row">
+                <button
+                  className="freshdesk-btn freshdesk-btn--primary freshdesk-action-btn"
+                  onClick={() => {
+                    // Scroll to the existing reply form and focus the textarea
+                    document.querySelector('.freshdesk-reply-textarea')?.focus();
+                    // Ensure it's set to public reply
+                    setIsPublicReply(true);
+                  }}
+                >
+                  <span className="btn-icon">💬</span> Reply
+                </button>
+                <button
+                  className="freshdesk-btn freshdesk-btn--secondary freshdesk-action-btn"
+                  onClick={() => {
+                    // Toggle visibility of the note form
+                    const noteForm = document.getElementById('note-section');
+                    if (noteForm.style.display === 'none' || noteForm.style.display === '') {
+                      noteForm.style.display = 'block';
+                      document.getElementById('note-textarea')?.focus();
+                      // Ensure it's set to internal (not public)
+                      setIsPublicReply(false);
+                    } else {
+                      noteForm.style.display = 'none';
+                      setNoteText('');
+                    }
+                  }}
+                >
+                  <span className="btn-icon">📝</span> Add Note
+                </button>
+                <button
+                  className="freshdesk-btn freshdesk-btn--outline freshdesk-action-btn"
+                  onClick={() => setShowForwardModal(true)}
+                >
+                  <span className="btn-icon">↪️</span> Forward
+                </button>
+              </div>
+
+              {/* Note Form - Hidden by default */}
+              <div id="note-section" className="freshdesk-note-form" style={{display: 'none', marginTop: '15px'}}>
+                <textarea
+                  id="note-textarea"
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                  placeholder="Type your internal note here..."
+                  className="freshdesk-reply-textarea"
+                  rows="3"
+                />
+                <div className="freshdesk-note-actions" style={{marginTop: '10px', display: 'flex', gap: '10px', justifyContent: 'flex-start'}}>
+                  <button
+                    type="button"
+                    onClick={handleAddNote}
+                    disabled={noteLoading || !noteText.trim()}
+                    className="freshdesk-btn freshdesk-btn--secondary freshdesk-note-submit"
+                  >
+                    {noteLoading ? 'Saving...' : 'Add Note'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNoteText('');
+                      document.getElementById('note-section').style.display = 'none';
+                    }}
+                    className="freshdesk-btn freshdesk-btn--outline"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+
             {/* Sidebar */}
             <div className={`freshdesk-ticket-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
-              {!sidebarCollapsed && (
-                <div className="freshdesk-ticket-sidebar-content">
-                  {/* Ticket Status & Resolution */}
-                  <div className="freshdesk-sidebar-section">
-                    <div className="freshdesk-ticket-status-section">
-                      <div className="freshdesk-status-header">
-                        <div className="freshdesk-status-badge-container">
-                          <div className={`freshdesk-ticket-status-badge freshdesk-ticket-status-${ticketProperties.status || ticket.status}`}>
-                            {ticketProperties.status || ticket.status}
-                          </div>
-                        </div>
+              <div className="freshdesk-ticket-sidebar-content-wrapper">
+                {!sidebarCollapsed && (
+                  <div className="freshdesk-ticket-sidebar-content">
+                    {/* Ticket Status & Resolution */}
+                    <div className="freshdesk-sidebar-section freshdesk-ticket-status-section">
+                      <div className="element-flex justify-content--space-between align-items--center">
+                        <p className="text--normal text--xxmedium mb-0" data-test-id="ticket-status">
+                          {ticketProperties.status || ticket.status}
+                        </p>
                       </div>
 
-                      <div className="freshdesk-property-item">
-                        <label className="freshdesk-property-label">Resolution Due</label>
-                        <input
-                          type="datetime-local"
-                          value={ticketProperties.dueDate ? new Date(ticketProperties.dueDate).toISOString().slice(0, 16) : ''}
-                          onChange={(e) => handlePropertyChange('dueDate', new Date(e.target.value))}
-                          className="freshdesk-property-input"
-                        />
+                      <div className="status-card text--default" data-test-id="status-card">
+                        <p className="status-title text--semibold text--xsmall overdue" data-test-id="status-title">
+                          <span>Resolution Due</span>
+                        </p>
+                        <span data-test-id="resolution-due">
+                          by {ticketProperties.dueDate ? new Date(ticketProperties.dueDate).toLocaleString() : 'Not set'}
+                        </span>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Ticket Properties */}
-                  <div className="freshdesk-sidebar-section">
-                    <h3 className="freshdesk-sidebar-title">Properties</h3>
+                    {/* Ticket Properties */}
+                    <div className="freshdesk-sidebar-section">
+                      <h3 className="freshdesk-sidebar-title">Properties</h3>
 
-                    <div className="freshdesk-property-item">
-                      <label className="freshdesk-property-label">Tags</label>
-                      <div className="freshdesk-property-value">
-                        {ticket.tags && ticket.tags.length > 0 ? (
-                          <div className="freshdesk-tags-container">
-                            {ticket.tags.map((tag, index) => (
-                              <span key={index} className="freshdesk-tag-badge">{tag}</span>
-                            ))}
-                          </div>
+                    <div className="property-item">
+                      <div className="property-title text--semibold text--xsmall">
+                        <span>Tags</span>
+                      </div>
+                      <div
+                        className="property-value clickable-field"
+                        onClick={() => setEditingField('tags')}
+                      >
+                        {editingField === 'tags' ? (
+                          <input
+                            type="text"
+                            value={ticket.tags && ticket.tags.length > 0 ? ticket.tags.join(', ') : ''}
+                            onChange={(e) => {
+                              const tags = e.target.value.split(',').map(tag => tag.trim()).filter(tag => tag);
+                              handlePropertyChange('tags', tags);
+                            }}
+                            onBlur={() => setEditingField(null)}
+                            autoFocus
+                            className="freshdesk-property-input"
+                            placeholder="Enter tags separated by commas"
+                          />
                         ) : (
-                          <span className="freshdesk-placeholder">No tags</span>
+                          <div>
+                            {ticket.tags && ticket.tags.length > 0 ? (
+                              <div className="freshdesk-tags-container">
+                                {ticket.tags.map((tag, index) => (
+                                  <span key={index} className="freshdesk-tag-badge">{tag}</span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text--default">No tags</span>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>
 
-                <div className="freshdesk-property-item">
-                  <label className="freshdesk-property-label">Type</label>
-                  <select
-                    value={ticketProperties.type || ticket.type || 'Question'}
-                    onChange={(e) => handlePropertyChange('type', e.target.value)}
-                    className="freshdesk-property-select"
+                    <div className="property-item">
+                      <div className="property-title text--semibold text--xsmall">
+                        <span>Type</span>
+                      </div>
+                      <div
+                        className="property-value text--default clickable-field selectable"
+                        onClick={() => setEditingField('type')}
+                      >
+                        {editingField === 'type' ? (
+                          <select
+                            value={ticketProperties.type || ticket.type || 'Question'}
+                            onChange={(e) => handlePropertyChange('type', e.target.value)}
+                            onBlur={() => setEditingField(null)}
+                            autoFocus
+                            className="freshdesk-property-select"
+                          >
+                            <option value="Question">Question</option>
+                            <option value="Incident">Incident</option>
+                            <option value="Problem">Problem</option>
+                            <option value="Change">Change</option>
+                            <option value="Feature Request">Feature Request</option>
+                          </select>
+                        ) : (
+                          <span>{ticketProperties.type || ticket.type || 'Question'}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="property-item">
+                      <div className="property-title text--semibold text--xsmall">
+                        <span>Status</span>
+                      </div>
+                      <div
+                        className="property-value text--default clickable-field selectable"
+                        onClick={() => setEditingField('status')}
+                      >
+                        {editingField === 'status' ? (
+                          <select
+                            value={ticketProperties.status || ticket.status}
+                            onChange={(e) => handleStatusChange(e.target.value)}
+                            onBlur={() => setEditingField(null)}
+                            autoFocus
+                            className="freshdesk-property-select"
+                          >
+                            <option value="open">Open</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="pending">Pending</option>
+                            <option value="resolved">Resolved</option>
+                            <option value="closed">Closed</option>
+                          </select>
+                        ) : (
+                          <span>{ticketProperties.status || ticket.status}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="property-item">
+                      <div className="property-title text--semibold text--xsmall">
+                        <span>Priority</span>
+                      </div>
+                      <div
+                        className="property-value clickable-field selectable"
+                        onClick={() => setEditingField('priority')}
+                      >
+                        {editingField === 'priority' ? (
+                          <select
+                            value={ticketProperties.priority || ticket.priority}
+                            onChange={(e) => handlePriorityChange(e.target.value)}
+                            onBlur={() => setEditingField(null)}
+                            autoFocus
+                            className="freshdesk-property-select"
+                          >
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                            <option value="urgent">Urgent</option>
+                          </select>
+                        ) : (
+                          <span className={`freshdesk-priority-badge ${ticketProperties.priority || ticket.priority}`}>
+                            {ticketProperties.priority || ticket.priority}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="property-item">
+                      <div className="property-title text--semibold text--xsmall">
+                        <span>Group</span>
+                      </div>
+                      <div
+                        className="property-value text--default clickable-field selectable"
+                        onClick={() => setEditingField('group')}
+                      >
+                        {editingField === 'group' ? (
+                          <select
+                            value={ticketProperties.group || ticket.group || ''}
+                            onChange={(e) => handlePropertyChange('group', e.target.value)}
+                            onBlur={() => setEditingField(null)}
+                            autoFocus
+                            className="freshdesk-property-select"
+                          >
+                            <option value="">Select Group</option>
+                            <option value="Technical Support">Technical Support</option>
+                            <option value="Billing">Billing</option>
+                            <option value="Sales">Sales</option>
+                            <option value="Account Management">Account Management</option>
+                          </select>
+                        ) : (
+                          <span>{ticketProperties.group || ticket.group || 'Unassigned'}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="property-item">
+                      <div className="property-title text--semibold text--xsmall">
+                        <span>Agent</span>
+                      </div>
+                      <div
+                        className="property-value text--default clickable-field selectable"
+                        onClick={() => setEditingField('assigneeId')}
+                      >
+                        {editingField === 'assigneeId' ? (
+                          <select
+                            value={ticketProperties.assigneeId || ticket.assigneeId || ''}
+                            onChange={(e) => handleAssigneeChange(e.target.value)}
+                            onBlur={() => setEditingField(null)}
+                            autoFocus
+                            className="freshdesk-property-select"
+                          >
+                            <option value="">Unassigned</option>
+                            {agents.map(agent => (
+                              <option key={agent._id} value={agent._id}>
+                                {agent.name}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span>{agents.find(agent => agent._id === (ticketProperties.assigneeId || ticket.assigneeId))?.name || 'Unassigned'}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="property-item">
+                      <div className="property-title text--semibold text--xsmall">
+                        <span>Company</span>
+                      </div>
+                      <div
+                        className="property-value text--default clickable-field selectable"
+                        onClick={() => setEditingField('company')}
+                      >
+                        {editingField === 'company' ? (
+                          <select
+                            value={ticket.companyId?._id || ticket.companyId || ''}
+                            onChange={(e) => handlePropertyChange('companyId', e.target.value)}
+                            onBlur={() => setEditingField(null)}
+                            autoFocus
+                            className="freshdesk-property-select"
+                          >
+                            <option value="">Select Company</option>
+                            {/* Add company options here when available */}
+                          </select>
+                        ) : (
+                          <span>{ticket.companyId?.name || ticket.companyName || 'Unknown Company'}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="property-item">
+                      <div className="property-title text--semibold text--xsmall">
+                        <span>Category</span>
+                      </div>
+                      <div
+                        className="property-value text--default clickable-field selectable"
+                        onClick={() => setEditingField('category')}
+                      >
+                        {editingField === 'category' ? (
+                          <select
+                            value={ticketProperties.category || ticket.category || ''}
+                            onChange={(e) => handlePropertyChange('category', e.target.value)}
+                            onBlur={() => setEditingField(null)}
+                            autoFocus
+                            className="freshdesk-property-select"
+                          >
+                            <option value="">Select Category</option>
+                            <option value="Technical">Technical</option>
+                            <option value="Sales">Sales</option>
+                            <option value="Billing">Billing</option>
+                            <option value="Account">Account</option>
+                            <option value="Feature Request">Feature Request</option>
+                            <option value="Bug Report">Bug Report</option>
+                          </select>
+                        ) : (
+                          <span>{ticketProperties.category || ticket.category || 'Uncategorized'}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="property-item">
+                      <div className="property-title text--semibold text--xsmall">
+                        <span>Store/Location/Site Code</span>
+                      </div>
+                      <div
+                        className="property-value text--default clickable-field"
+                        onClick={() => setEditingField('storeLocationCode')}
+                      >
+                        {editingField === 'storeLocationCode' ? (
+                          <input
+                            type="text"
+                            value={ticketProperties.storeLocationCode || ticket.storeLocationCode || ''}
+                            onChange={(e) => handlePropertyChange('storeLocationCode', e.target.value)}
+                            onBlur={() => setEditingField(null)}
+                            autoFocus
+                            className="freshdesk-property-input"
+                          />
+                        ) : (
+                          <span>{ticketProperties.storeLocationCode || ticket.storeLocationCode || 'None'}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="property-item">
+                      <div className="property-title text--semifold text--xsmall">
+                        <span>City</span>
+                      </div>
+                      <div
+                        className="property-value text--default clickable-field"
+                        onClick={() => setEditingField('city')}
+                      >
+                        {editingField === 'city' ? (
+                          <input
+                            type="text"
+                            value={ticketProperties.city || ticket.city || ''}
+                            onChange={(e) => handlePropertyChange('city', e.target.value)}
+                            onBlur={() => setEditingField(null)}
+                            autoFocus
+                            className="freshdesk-property-input"
+                          />
+                        ) : (
+                          <span>{ticketProperties.city || ticket.city || 'None'}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="property-item">
+                      <div className="property-title text--semifold text--xsmall">
+                        <span>Country</span>
+                      </div>
+                      <div
+                        className="property-value text--default clickable-field"
+                        onClick={() => setEditingField('country')}
+                      >
+                        {editingField === 'country' ? (
+                          <input
+                            type="text"
+                            value={ticketProperties.country || ticket.country || ''}
+                            onChange={(e) => handlePropertyChange('country', e.target.value)}
+                            onBlur={() => setEditingField(null)}
+                            autoFocus
+                            className="freshdesk-property-input"
+                          />
+                        ) : (
+                          <span>{ticketProperties.country || ticket.country || 'None'}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="property-item">
+                      <div className="property-title text--semifold text--xsmall">
+                        <span>Requester</span>
+                      </div>
+                      <div className="property-value text--default">
+                        <div>{ticket.createdBy?.name || ticket.requester?.name || 'Unknown'}</div>
+                        <div className="freshdesk-requester-email">{ticket.createdBy?.email || ticket.requester?.email || 'No email provided'}</div>
+                      </div>
+                    </div>
+
+                    <div className="property-item">
+                      <div className="property-title text--semifold text--xsmall">
+                        <span>Created</span>
+                      </div>
+                      <div className="property-value text--default">
+                        {new Date(ticket.createdAt).toLocaleString()}
+                      </div>
+                    </div>
+
+                    <div className="property-item">
+                      <div className="property-title text--semifold text--xsmall">
+                        <span>Last Updated</span>
+                      </div>
+                      <div className="property-value text--default">
+                        {new Date(ticket.lastActivity || ticket.createdAt).toLocaleString()}
+                      </div>
+                    </div>
+              </div>
+
+              {/* Time Tracking Section */}
+              <div className="freshdesk-sidebar-section">
+                <div className="element-flex justify-content--space-between align-items--center">
+                  <h3 className="freshdesk-sidebar-title">Time Tracking</h3>
+                  <button
+                    className="freshdesk-btn freshdesk-btn--outline"
+                    onClick={() => setShowTimeForm(!showTimeForm)}
                   >
-                    <option value="Question">Question</option>
-                    <option value="Incident">Incident</option>
-                    <option value="Problem">Problem</option>
-                    <option value="Change">Change</option>
-                    <option value="Feature Request">Feature Request</option>
-                  </select>
+                    {showTimeForm ? 'Cancel' : 'Log Time'}
+                  </button>
                 </div>
 
-                <div className="freshdesk-property-item">
-                  <label className="freshdesk-property-label">Status</label>
-                  <select
-                    value={ticketProperties.status || ticket.status}
-                    onChange={(e) => handleStatusChange(e.target.value)}
-                    className="freshdesk-property-select"
-                  >
-                    <option value="open">Open</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="pending">Pending</option>
-                    <option value="resolved">Resolved</option>
-                    <option value="closed">Closed</option>
-                  </select>
+                <div className="status-card text--default">
+                  <p className="status-title text--semibold text--xsmall overdue">
+                    <span>Total Time Spent</span>
+                  </p>
+                  <span className="freshdesk-total-time">{totalHours}h {totalMinutes}m</span>
                 </div>
 
-                <div className="freshdesk-property-item">
-                  <label className="freshdesk-property-label">Priority</label>
-                  <select
-                    value={ticketProperties.priority || ticket.priority}
-                    onChange={(e) => handlePriorityChange(e.target.value)}
-                    className="freshdesk-property-select"
-                  >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                    <option value="urgent">Urgent</option>
-                  </select>
-                </div>
+                {showTimeForm && (
+                  <div className="freshdesk-time-form">
+                    <div className="freshdesk-time-inputs">
+                      <input
+                        type="number"
+                        min="0"
+                        placeholder="Hours"
+                        value={timeSpent.hours}
+                        onChange={(e) => setTimeSpent({...timeSpent, hours: e.target.value})}
+                        className="freshdesk-time-input"
+                      />
+                      <input
+                        type="number"
+                        min="0"
+                        max="59"
+                        placeholder="Minutes"
+                        value={timeSpent.minutes}
+                        onChange={(e) => setTimeSpent({...timeSpent, minutes: e.target.value})}
+                        className="freshdesk-time-input"
+                      />
+                    </div>
+                    <textarea
+                      value={timeNotes}
+                      onChange={(e) => setTimeNotes(e.target.value)}
+                      placeholder="Add notes about time spent..."
+                      className="freshdesk-time-notes"
+                    />
+                    <button
+                      className="freshdesk-btn freshdesk-btn--primary"
+                      onClick={handleLogTime}
+                    >
+                      Save Time
+                    </button>
+                  </div>
+                )}
 
-                <div className="freshdesk-property-item">
-                  <label className="freshdesk-property-label">Group</label>
-                  <select
-                    value={ticketProperties.group || ticket.group || ''}
-                    onChange={(e) => handlePropertyChange('group', e.target.value)}
-                    className="freshdesk-property-select"
-                  >
-                    <option value="">Select Group</option>
-                    <option value="Technical Support">Technical Support</option>
-                    <option value="Billing">Billing</option>
-                    <option value="Sales">Sales</option>
-                    <option value="Account Management">Account Management</option>
-                  </select>
-                </div>
-
-                <div className="freshdesk-property-item">
-                  <label className="freshdesk-property-label">Agent</label>
-                  <select
-                    value={ticketProperties.assigneeId || ticket.assigneeId || ''}
-                    onChange={(e) => handleAssigneeChange(e.target.value)}
-                    className="freshdesk-property-select"
-                  >
-                    <option value="">Unassigned</option>
-                    {agents.map(agent => (
-                      <option key={agent._id} value={agent._id}>
-                        {agent.name}
-                      </option>
+                {timeLogs && timeLogs.length > 0 && (
+                  <div className="freshdesk-time-logs">
+                    <h4 className="text--semifold text--xsmall">Time Entries</h4>
+                    {timeLogs.map((log, index) => (
+                      <div key={index} className="freshdesk-time-log-item">
+                        <span>{log.hours}h {log.minutes}m</span>
+                        <span>{new Date(log.loggedAt).toLocaleDateString()}</span>
+                      </div>
                     ))}
-                  </select>
-                </div>
-
-                <div className="freshdesk-property-item">
-                  <label className="freshdesk-property-label">Company</label>
-                  <div className="freshdesk-property-value">
-                    {ticket.companyId?.name || ticket.companyName || 'Unknown Company'}
                   </div>
-                </div>
+                )}
+              </div>
 
-                <div className="freshdesk-property-item">
-                  <label className="freshdesk-property-label">Category</label>
-                  <select
-                    value={ticketProperties.category || ticket.category || ''}
-                    onChange={(e) => handlePropertyChange('category', e.target.value)}
-                    className="freshdesk-property-select"
+              {/* Attachments Section */}
+              <div className="freshdesk-sidebar-section">
+                <h3 className="freshdesk-sidebar-title">Attachments</h3>
+
+                <div className="freshdesk-attachments-upload">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleAttachmentChange}
+                    className="freshdesk-hidden-input"
+                  />
+                  <button
+                    className="freshdesk-btn freshdesk-btn--outline"
+                    onClick={() => fileInputRef.current?.click()}
                   >
-                    <option value="">Select Category</option>
-                    <option value="Technical">Technical</option>
-                    <option value="Sales">Sales</option>
-                    <option value="Billing">Billing</option>
-                    <option value="Account">Account</option>
-                    <option value="Feature Request">Feature Request</option>
-                    <option value="Bug Report">Bug Report</option>
-                  </select>
+                    Upload File
+                  </button>
+
+                  {newAttachment && (
+                    <div className="freshdesk-attachment-preview">
+                      <span className="freshdesk-attachment-name">{newAttachment.name}</span>
+                      <span className="freshdesk-attachment-size">({(newAttachment.size / 1024 / 1024).toFixed(2)} MB)</span>
+                      <button
+                        className="freshdesk-btn freshdesk-btn--primary"
+                        onClick={handleUploadAttachment}
+                      >
+                        Upload
+                      </button>
+                    </div>
+                  )}
                 </div>
 
-                <div className="freshdesk-property-item">
-                  <label className="freshdesk-property-label">Store/Location/Site Code</label>
-                  <input
-                    type="text"
-                    value={ticketProperties.storeLocationCode || ticket.storeLocationCode || ''}
-                    onChange={(e) => handlePropertyChange('storeLocationCode', e.target.value)}
-                    placeholder="Enter code"
-                    className="freshdesk-property-input"
-                  />
-                </div>
-
-                <div className="freshdesk-property-item">
-                  <label className="freshdesk-property-label">City</label>
-                  <input
-                    type="text"
-                    value={ticketProperties.city || ticket.city || ''}
-                    onChange={(e) => handlePropertyChange('city', e.target.value)}
-                    placeholder="Enter city"
-                    className="freshdesk-property-input"
-                  />
-                </div>
-
-                <div className="freshdesk-property-item">
-                  <label className="freshdesk-property-label">Country</label>
-                  <input
-                    type="text"
-                    value={ticketProperties.country || ticket.country || ''}
-                    onChange={(e) => handlePropertyChange('country', e.target.value)}
-                    placeholder="Enter country"
-                    className="freshdesk-property-input"
-                  />
-                </div>
-
-                <div className="freshdesk-property-item">
-                  <label className="freshdesk-property-label">Requester</label>
-                  <div className="freshdesk-property-value">
-                    {ticket.createdBy?.name || ticket.requester?.name || 'Unknown'}<br />
-                    <small>{ticket.createdBy?.email || ticket.requester?.email || 'No email provided'}</small>
+                {attachments && attachments.length > 0 && (
+                  <div className="freshdesk-attachments-list">
+                    {attachments.map((attachment, index) => (
+                      <div key={index} className="freshdesk-attachment-item">
+                        <span className="freshdesk-attachment-name">{attachment.filename || `File ${index + 1}`}</span>
+                        <button className="freshdesk-btn freshdesk-btn--secondary">Download</button>
+                      </div>
+                    ))}
                   </div>
-                </div>
-
-                <div className="freshdesk-property-item">
-                  <label className="freshdesk-property-label">Created</label>
-                  <div className="freshdesk-property-value">
-                    {new Date(ticket.createdAt).toLocaleString()}
-                  </div>
-                </div>
-
-                <div className="freshdesk-property-item">
-                  <label className="freshdesk-property-label">Last Updated</label>
-                  <div className="freshdesk-property-value">
-                    {new Date(ticket.lastActivity || ticket.createdAt).toLocaleString()}
-                  </div>
-                </div>
+                )}
               </div>
 
               {/* Action Buttons */}
@@ -613,7 +1157,6 @@ const TicketDetails = () => {
                   </div>
                 </div>
               </div>
-
             </div>
           )} {/* Close the conditional rendering */}
 
@@ -626,9 +1169,10 @@ const TicketDetails = () => {
               {sidebarCollapsed ? '→' : '←'}
             </button>
           </div>
-        </div> {/* Close the main freshdesk-ticket-sidebar div */}
+        </div> {/* Close the freshdesk-ticket-sidebar-content-wrapper */}
+      </div> {/* Close the main freshdesk-ticket-sidebar div */}
 
-      {/* Delete Confirmation Modal */}
+
       {showDeleteModal && (
         <div className="freshdesk-modal-overlay">
           <div className="freshdesk-modal">
@@ -651,6 +1195,51 @@ const TicketDetails = () => {
                 onClick={handleDeleteTicket}
               >
                 Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Forward Ticket Modal */}
+      {showForwardModal && (
+        <div className="freshdesk-modal-overlay">
+          <div className="freshdesk-modal">
+            <div className="freshdesk-modal-header">
+              <h3>Forward Ticket</h3>
+            </div>
+            <div className="freshdesk-modal-body">
+              <p>Select an agent to forward this ticket to:</p>
+              <select
+                value={forwardAgent}
+                onChange={(e) => setForwardAgent(e.target.value)}
+                className="freshdesk-property-select"
+                style={{width: '100%', marginTop: '10px'}}
+              >
+                <option value="">Select an agent</option>
+                {agents.map(agent => (
+                  <option key={agent._id} value={agent._id}>
+                    {agent.name} ({agent.email})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="freshdesk-modal-footer">
+              <button
+                className="freshdesk-btn freshdesk-btn--secondary"
+                onClick={() => {
+                  setShowForwardModal(false);
+                  setForwardAgent('');
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="freshdesk-btn freshdesk-btn--primary"
+                onClick={handleForward}
+                disabled={forwardLoading || !forwardAgent}
+              >
+                {forwardLoading ? 'Forwarding...' : 'Forward Ticket'}
               </button>
             </div>
           </div>

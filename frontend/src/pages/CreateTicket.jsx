@@ -27,12 +27,13 @@ const CreateTicket = () => {
   const [contacts, setContacts] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [agents, setAgents] = useState([]);
+  const [partnerAgents, setPartnerAgents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Fetch contacts, companies, and agents
+    // Fetch contacts, companies, agents, and partner agents
     const fetchData = async () => {
       try {
         const contactsResponse = await api.get('/contacts');
@@ -75,6 +76,16 @@ const CreateTicket = () => {
           { _id: 'a2', name: 'Bob Marley', email: 'bob@support.com' },
           { _id: 'a3', name: 'Carol King', email: 'carol@support.com' }
         ]);
+      }
+
+      try {
+        // Fetch partner agents from partnerships
+        const partnerAgentsResponse = await api.get('/partnerships/agents');
+        setPartnerAgents(partnerAgentsResponse.data);
+      } catch (error) {
+        console.error('Error fetching partner agents:', error);
+        // Don't throw an error here since partnerships may not be set up yet
+        setPartnerAgents([]);
       }
     };
 
@@ -427,11 +438,28 @@ const CreateTicket = () => {
                       className="freshdesk-form-select"
                     >
                       <option value="">Select Agent</option>
-                      {agents.map(agent => (
-                        <option key={agent._id} value={agent._id}>
-                          {agent.name}
-                        </option>
-                      ))}
+
+                      {/* Regular agents from the current company */}
+                      {agents.length > 0 && (
+                        <optgroup label="Your Company Agents">
+                          {agents.map(agent => (
+                            <option key={agent._id} value={agent._id}>
+                              {agent.name} {agent.companyId?.name ? `(${agent.companyId.name})` : '(Your Company)'}
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
+
+                      {/* Partner company agents */}
+                      {partnerAgents.length > 0 && (
+                        <optgroup label="Partner Company Agents">
+                          {partnerAgents.map(agent => (
+                            <option key={agent._id} value={agent._id}>
+                              {agent.name} {agent.companyId?.name ? `(${agent.companyId.name})` : '(Partner)'}
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
                     </select>
                   </div>
 

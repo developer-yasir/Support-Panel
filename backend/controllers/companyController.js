@@ -4,13 +4,17 @@ const { generate } = require('generate-password');
 const jwt = require('jsonwebtoken');
 const config = require('../config/config');
 
+// Helper function to generate a unique ID
+function generateUniqueId() {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+}
+
 // Create a new company (for signup process or existing user creating company)
 exports.createCompany = async (req, res) => {
   try {
-    const { 
-      name, 
-      subdomain, 
-      billingEmail, 
+    const {
+      name,
+      billingEmail,
       contactEmail,
       ownerName: providedOwnerName,
       ownerEmail: providedOwnerEmail,
@@ -32,9 +36,9 @@ exports.createCompany = async (req, res) => {
     }
 
     // Validate required fields
-    if (!name || !subdomain || !billingEmail || !contactEmail || !ownerName || !ownerEmail) {
-      return res.status(400).json({ 
-        message: 'All fields are required: name, subdomain, billingEmail, contactEmail, ownerName, ownerEmail' 
+    if (!name || !billingEmail || !contactEmail || !ownerName || !ownerEmail) {
+      return res.status(400).json({
+        message: 'All fields are required: name, billingEmail, contactEmail, ownerName, ownerEmail'
       });
     }
     
@@ -53,21 +57,16 @@ exports.createCompany = async (req, res) => {
       });
     }
 
-    // Check if subdomain is already taken
-    const existingCompany = await Company.findOne({ subdomain: subdomain.toLowerCase() });
-    if (existingCompany) {
-      return res.status(400).json({ 
-        message: 'Subdomain is already taken. Please choose another one.' 
-      });
-    }
-
     // Check if billing email is already associated with another company
     const existingBillingEmail = await Company.findOne({ billingEmail: billingEmail.toLowerCase() });
     if (existingBillingEmail) {
-      return res.status(400).json({ 
-        message: 'A company is already registered with this billing email.' 
+      return res.status(400).json({
+        message: 'A company is already registered with this billing email.'
       });
     }
+
+    // Generate a unique ID for the company
+    const uniqueId = generateUniqueId();
 
     // Check if this is a new signup (unauthenticated) vs existing user creating company
     if (!req.user) {
@@ -83,7 +82,6 @@ exports.createCompany = async (req, res) => {
     // Create the company
     const company = new Company({
       name,
-      subdomain: subdomain.toLowerCase(),
       billingEmail: billingEmail.toLowerCase(),
       contactEmail: contactEmail.toLowerCase(),
       // Set up free plan by default
@@ -97,17 +95,17 @@ exports.createCompany = async (req, res) => {
     
     if (req.user) {
       // For existing authenticated users, update their company assignment
-      // The authenticated user becomes the admin of the new company
+      // The authenticated user becomes the manager of the new company
       await User.findByIdAndUpdate(
         req.user.id,
-        { 
-          role: 'admin',
+        {
+          role: 'company_manager',
           companyId: company._id
         }
       );
-      
+
       // Update the req.user object to reflect the new company assignment
-      req.user.role = 'admin';
+      req.user.role = 'company_manager';
       req.user.companyId = company._id;
       ownerUser = req.user; // Use the existing user
     } else {
@@ -116,7 +114,7 @@ exports.createCompany = async (req, res) => {
         name: ownerName,
         email: ownerEmail.toLowerCase(),
         password: providedOwnerPassword, // Use the password that was provided
-        role: 'admin',
+        role: 'company_manager',
         isActive: true,
         isEmailVerified: true, // Auto-verify for signup
         companyId: company._id
@@ -137,7 +135,6 @@ exports.createCompany = async (req, res) => {
         company: {
           id: company._id,
           name: company.name,
-          subdomain: company.subdomain,
           billingEmail: company.billingEmail,
           plan: company.plan,
           features: company.features
@@ -146,7 +143,7 @@ exports.createCompany = async (req, res) => {
           id: req.user.id,
           name: req.user.name,
           email: req.user.email,
-          role: 'admin' // Updated to admin since they're now an admin of this new company
+          role: 'company_manager' // Updated to company_manager as they're now a manager of this new company
         }
       });
     } else {
@@ -164,7 +161,6 @@ exports.createCompany = async (req, res) => {
         company: {
           id: company._id,
           name: company.name,
-          subdomain: company.subdomain,
           billingEmail: company.billingEmail,
           plan: company.plan,
           features: company.features
@@ -183,25 +179,25 @@ exports.createCompany = async (req, res) => {
   }
 };
 
-// Check if subdomain is available
-exports.checkSubdomainAvailability = async (req, res) => {
+// Check if company name is available
+exports.checkCompanyNameAvailability = async (req, res) => {
   try {
-    const { subdomain } = req.params;
-    
-    if (!subdomain) {
-      return res.status(400).json({ message: 'Subdomain parameter is required' });
+    const { name } = req.params;
+
+    if (!name) {
+      return res.status(400).json({ message: 'Company name parameter is required' });
     }
 
-    const existingCompany = await Company.findOne({ 
-      subdomain: subdomain.toLowerCase() 
+    const existingCompany = await Company.findOne({
+      name: name.toLowerCase()
     });
-    
+
     res.json({
       available: !existingCompany,
-      subdomain: subdomain.toLowerCase()
+      name: name.toLowerCase()
     });
   } catch (error) {
-    console.error('Error checking subdomain availability:', error);
+    console.error('Error checking company name availability:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
@@ -291,17 +287,17 @@ exports.getCompanyById = async (req, res) => {
   }
 };
 
-// Get company by subdomain (for subdomain routing)
-exports.getCompanyBySubdomain = async (req, res) => {
+// Get company by ID (for internal use)
+exports.getCompanyById = async (req, res) => {
   try {
-    const { subdomain } = req.params;
-    
-    const company = await Company.findOne({ 
-      subdomain: subdomain.toLowerCase(),
+    const { id } = req.params;
+
+    const company = await Company.findOne({
+      _id: id,
       active: true,
       suspended: false
     });
-    
+
     if (!company) {
       return res.status(404).json({ message: 'Company not found' });
     }
@@ -334,8 +330,7 @@ exports.updateCompany = async (req, res) => {
 
     const allowedUpdates = [
       'name', 'logo', 'brandingColor', 'timezone', 'currency',
-      'billingEmail', 'contactEmail', 'phone', 'address',
-      'domain'
+      'billingEmail', 'contactEmail', 'phone', 'address'
     ];
 
     const updates = {};
@@ -400,7 +395,7 @@ exports.getCompanyAgents = async (req, res) => {
 
     const query = { 
       companyId: req.company._id,
-      role: { $in: ['admin', 'support_agent'] }
+      role: { $in: ['superadmin', 'support_agent'] }
     };
 
     if (search) {
@@ -429,7 +424,7 @@ exports.getCompanyAgents = async (req, res) => {
   }
 };
 
-// Suspend company (admin only)
+// Suspend company (superadmin only)
 exports.suspendCompany = async (req, res) => {
   try {
     const company = await Company.findByIdAndUpdate(
@@ -448,7 +443,7 @@ exports.suspendCompany = async (req, res) => {
   }
 };
 
-// Activate company (admin only)
+// Activate company (superadmin only)
 exports.activateCompany = async (req, res) => {
   try {
     const company = await Company.findByIdAndUpdate(

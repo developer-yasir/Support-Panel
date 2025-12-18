@@ -42,7 +42,6 @@ exports.register = async (req, res) => {
       // Create a default company for individual users
       defaultCompany = new Company({
         name: 'Default Individual Users',
-        subdomain: 'defaultusers',
         billingEmail: 'billing@default.com',
         contactEmail: 'contact@default.com',
         plan: 'free',
@@ -137,7 +136,7 @@ exports.verifyEmail = async (req, res) => {
 
     // Populate company information
     const populatedUser = await User.findById(user._id)
-      .populate('companyId', 'name subdomain plan features')
+      .populate('companyId', 'name plan features')
       .select('-password');
 
     // Generate token (default to no remember me for registration)
@@ -207,7 +206,7 @@ exports.login = async (req, res) => {
 
     // Populate company information
     const populatedUser = await User.findById(user._id)
-      .populate('companyId', 'name subdomain plan features')
+      .populate('companyId', 'name plan features')
       .select('-password');
 
     res.json({
@@ -315,7 +314,7 @@ exports.getProfile = async (req, res) => {
   try {
     // req.user is set by the protect middleware
     const user = await User.findById(req.user.id)
-      .populate('companyId', 'name subdomain plan features') // Populate company information
+      .populate('companyId', 'name plan features') // Populate company information
       .select('-password');
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -363,7 +362,7 @@ exports.updateProfile = async (req, res) => {
 
     // Return updated user profile without password
     const updatedUser = await User.findById(user._id)
-      .populate('companyId', 'name subdomain plan features')
+      .populate('companyId', 'name plan features')
       .select('-password');
 
     res.json(updatedUser);

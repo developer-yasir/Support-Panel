@@ -7,14 +7,12 @@ const CompanyCreation = () => {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
-    subdomain: '',
     billingEmail: '',
     contactEmail: ''
     // plan is now set in settings, default is free
   });
-  
+
   const [availabilityCheck, setAvailabilityCheck] = useState({
-    subdomain: null,
     checking: false
   });
   
@@ -38,29 +36,29 @@ const CompanyCreation = () => {
     fetchSetupInfo();
   }, []);
 
-  // Handle subdomain availability check with debounce
+  // Handle company name availability check with debounce
   useEffect(() => {
-    const handler = setTimeout(() => {
-      if (formData.subdomain.length >= 3) {
-        checkSubdomainAvailability(formData.subdomain);
-      } else {
-        setAvailabilityCheck({ subdomain: null, checking: false });
-      }
-    }, 500);
+    if (formData.name && formData.name.length >= 3) {
+      const handler = setTimeout(() => {
+        checkNameAvailability(formData.name);
+      }, 500);
 
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [formData.subdomain]);
+      return () => {
+        clearTimeout(handler);
+      };
+    } else {
+      setAvailabilityCheck({ ...availabilityCheck, name: null, checking: false });
+    }
+  }, [formData.name]);
 
-  const checkSubdomainAvailability = async (subdomain) => {
+  const checkNameAvailability = async (name) => {
     setAvailabilityCheck({ ...availabilityCheck, checking: true });
     try {
-      const response = await api.get(`/companies/check-subdomain/${subdomain}`);
-      setAvailabilityCheck({ subdomain: response.data.available, checking: false });
+      const response = await api.get(`/companies/check-name/${name}`);
+      setAvailabilityCheck({ name: response.data.available, checking: false });
     } catch (error) {
-      console.error('Error checking subdomain availability:', error);
-      setAvailabilityCheck({ subdomain: false, checking: false });
+      console.error('Error checking company name availability:', error);
+      setAvailabilityCheck({ name: false, checking: false });
     }
   };
 
@@ -79,14 +77,7 @@ const CompanyCreation = () => {
       }));
     }
 
-    // Auto-update subdomain based on company name if user hasn't manually changed it
-    if (name === 'name' && !formData.subdomain) {
-      const autoSubdomain = value.toLowerCase().replace(/[^a-z0-9]/g, '');
-      setFormData(prev => ({
-        ...prev,
-        subdomain: autoSubdomain
-      }));
-    }
+
   };
 
   const validateForm = () => {
@@ -94,7 +85,6 @@ const CompanyCreation = () => {
 
     // Required fields
     if (!formData.name.trim()) newErrors.name = 'Company name is required';
-    if (!formData.subdomain.trim()) newErrors.subdomain = 'Subdomain is required';
     if (!formData.billingEmail.trim()) newErrors.billingEmail = 'Billing email is required';
     if (!formData.contactEmail.trim()) newErrors.contactEmail = 'Contact email is required';
 
@@ -107,15 +97,6 @@ const CompanyCreation = () => {
       newErrors.contactEmail = 'Please enter a valid contact email';
     }
 
-    // Subdomain validation
-    if (formData.subdomain) {
-      const subdomainRegex = /^[a-z0-9][a-z0-9-]*[a-z0-9]$/;
-      if (!subdomainRegex.test(formData.subdomain) || formData.subdomain.length < 3) {
-        newErrors.subdomain = 'Subdomain must be 3+ characters and contain only lowercase letters, numbers, and hyphens';
-      } else if (!availabilityCheck.subdomain) {
-        newErrors.subdomain = 'Subdomain is not available';
-      }
-    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -143,15 +124,8 @@ const CompanyCreation = () => {
       
       // Redirect to company dashboard after showing success message
       setTimeout(() => {
-        // Since the user is already authenticated, we need to redirect to the external subdomain
-        // For development, we'll show a message and provide a link to visit the new company
-        if (window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1')) {
-          // In development, show a message since subdomains might not work properly
-          alert(`Company created successfully! Your subdomain is: ${response.data.company.subdomain}.${window.location.hostname}\n\nIn a production environment, you would be redirected to your company's dedicated subdomain.`);
-        } else {
-          // In production, redirect to the subdomain
-          window.location.href = `https://${response.data.company.subdomain}.${window.location.hostname}`;
-        }
+        // Company created successfully - redirect to tickets page
+        navigate('/tickets');
       }, 2000);
     } catch (error) {
       console.error('Company creation error:', error);
@@ -227,7 +201,7 @@ const CompanyCreation = () => {
                 <svg xmlns="http://www.w3.org/2000/svg" className="alert-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                Your company has been created successfully! Redirecting to your dedicated subdomain: <strong>{formData.subdomain}.{window.location.hostname.replace('www.', '')}</strong>
+                Your company has been created successfully! Redirecting to your dashboard...
               </div>
               
               <div className="form-group">
@@ -337,47 +311,6 @@ const CompanyCreation = () => {
                 </div>
 
                 <div className="form-group mb-3">
-                  <label htmlFor="company-subdomain" className="form-label">Subdomain *</label>
-                  <div className="relative">
-                    <input
-                      id="company-subdomain"
-                      name="subdomain"
-                      type="text"
-                      value={formData.subdomain}
-                      onChange={handleChange}
-                      className={`form-control ${errors.subdomain ? 'is-invalid' : ''}`}
-                      placeholder="your-company"
-                    />
-                    <div className="subdomain-suffix">
-                      .{window.location.hostname.replace('www.', '')}
-                    </div>
-                    {availabilityCheck.checking && (
-                      <div className="subdomain-checking">
-                        <div className="spinner"></div>
-                      </div>
-                    )}
-                  </div>
-                  <p className="help-text">This will be your unique support portal URL</p>
-                  {errors.subdomain && <div className="invalid-feedback">{errors.subdomain}</div>}
-                  {availabilityCheck.subdomain === true && (
-                    <p className="availability-message available">
-                      <svg className="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      This subdomain is available
-                    </p>
-                  )}
-                  {availabilityCheck.subdomain === false && formData.subdomain && availabilityCheck.subdomain !== null && !errors.subdomain && (
-                    <p className="availability-message not-available">
-                      <svg className="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                      </svg>
-                      This subdomain is not available
-                    </p>
-                  )}
-                </div>
-
-                <div className="form-group mb-3">
                   <label htmlFor="company-billing-email" className="form-label">Billing Email *</label>
                   <input
                     id="company-billing-email"
@@ -426,7 +359,6 @@ const CompanyCreation = () => {
             
             <div className="login-footer">
               <p>Already have an account? <a href="/login" className="login-link">Sign in</a></p>
-              <p>Are you an agent? <a href="/agent-login" className="login-link">Sign in as agent</a></p>
             </div>
           </div>
         </div>

@@ -7,58 +7,40 @@ const User = require('../models/User');
  */
 const tenantMiddleware = async (req, res, next) => {
   try {
-    let companyId = null;
     let company = null;
 
-    // Method 1: Try to get company from Express subdomain (when using vhost or express subdomain feature)
-    if (req.subdomain && req.subdomain !== 'www' && req.subdomain !== 'api') {
-      company = await Company.findOne({
-        subdomain: req.subdomain.toLowerCase(),
-        active: true,
-        suspended: false
-      });
+    // Check if company context is already set by auth middleware (this should be preserved)
+    if (req.user && req.user.companyId) {
+      // Company context already established by auth middleware, use it
+      company = await Company.findById(req.user.companyId);
     }
 
-    // Method 2: Try to get company from host header (fallback if subdomain property isn't set)
-    if (!company && req.headers.host) {
-      const host = req.headers.host;
-      const subdomain = extractSubdomain(host);
-      
-      if (subdomain && subdomain !== 'www' && subdomain !== req.subdomain) {
-        company = await Company.findOne({
-          subdomain: subdomain,
-          active: true,
-          suspended: false
-        });
-      }
-    }
+    // If no company context from auth, try other methods
+    if (!company) {
+      // Method 3: Try to get company from Authorization header (for API calls)
+      if (!company && req.headers.authorization) {
+        const decoded = req.user; // Assuming user info is already decoded by auth middleware
 
-    // Method 3: Try to get company from Authorization header (for API calls)
-    if (!company && req.headers.authorization) {
-      const token = req.headers.authorization.replace('Bearer ', '');
-      // Here you would normally decode JWT and get company info
-      // For now, extracting from token payload or user lookup
-      const decoded = req.user; // Assuming user info is already decoded by auth middleware
-      
-      if (decoded && decoded.companyId) {
-        company = await Company.findById(decoded.companyId);
-      } else if (decoded && decoded.id) {
-        // Look up user and get their company
-        const user = await User.findById(decoded.id).populate('companyId');
-        if (user && user.companyId) {
-          company = user.companyId;
+        if (decoded && decoded.companyId) {
+          company = await Company.findById(decoded.companyId);
+        } else if (decoded && decoded.id) {
+          // Look up user and get their company
+          const user = await User.findById(decoded.id).populate('companyId');
+          if (user && user.companyId) {
+            company = user.companyId;
+          }
         }
       }
-    }
 
-    // Method 4: Try to get from company header
-    if (!company && req.headers['x-company-id']) {
-      company = await Company.findById(req.headers['x-company-id']);
-    }
+      // Method 4: Try to get from company header
+      if (!company && req.headers['x-company-id']) {
+        company = await Company.findById(req.headers['x-company-id']);
+      }
 
-    // Method 5: Try to get from cookie (for frontend requests)
-    if (!company && req.cookies && req.cookies.companyId) {
-      company = await Company.findById(req.cookies.companyId);
+      // Method 5: Try to get from cookie (for frontend requests)
+      if (!company && req.cookies && req.cookies.companyId) {
+        company = await Company.findById(req.cookies.companyId);
+      }
     }
 
     // Validate company exists and is active
@@ -68,17 +50,27 @@ const tenantMiddleware = async (req, res, next) => {
           message: 'Company account is inactive or suspended'
         });
       }
-      
+
       req.companyId = company._id;
       req.company = company;
       req.tenant = company; // alias
-      req.subdomain = req.subdomain || company.subdomain; // Ensure subdomain is set
     } else {
       // For now, allow requests without company for signup/login
       // In production, you might want to be more restrictive
       req.companyId = null;
       req.company = null;
       req.tenant = null;
+    }
+
+    // Check if user belongs to the company they're trying to access
+    if (req.user && req.companyId) {
+      // This is a protection check to ensure user doesn't access data from different company
+      // than what they belong to
+      if (req.user.companyId.toString() !== req.companyId.toString()) {
+        return res.status(403).json({
+          message: 'Access denied: You do not belong to this company'
+        });
+      }
     }
 
     next();
@@ -89,34 +81,6 @@ const tenantMiddleware = async (req, res, next) => {
     });
   }
 };
-
-/**
- * Extract subdomain from host header
- * @param {string} host - Host header value
- * @returns {string|null} - Subdomain if found, null otherwise
- */
-function extractSubdomain(host) {
-  try {
-    // Remove port if present (e.g., localhost:3000)
-    const cleanHost = host.split(':')[0];
-    
-    // Split host into parts
-    const parts = cleanHost.split('.');
-    
-    // For example.com: parts = ['example', 'com'] - no subdomain
-    // For app.example.com: parts = ['app', 'example', 'com'] - subdomain is 'app'
-    // For mycompany.yourapp.com: parts = ['mycompany', 'yourapp', 'com'] - subdomain is 'mycompany'
-    
-    if (parts.length >= 3) {
-      return parts[0]; // First part is usually the subdomain
-    }
-    
-    return null;
-  } catch (error) {
-    console.error('Error extracting subdomain:', error);
-    return null;
-  }
-}
 
 /**
  * Tenant authorization middleware
@@ -201,6 +165,5 @@ module.exports = {
   tenantMiddleware,
   tenantAuthMiddleware,
   checkCompanyFeatures,
-  checkCompanyLimits,
-  extractSubdomain
+  checkCompanyLimits
 };

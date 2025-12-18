@@ -32,7 +32,7 @@ const Sidebar = () => {
         </svg>
       ),
       path: '/overview',
-      allowedRoles: ['admin', 'support_agent', 'customer']
+      allowedRoles: ['admin', 'support_agent']
     },
     {
       id: 'tickets',
@@ -43,7 +43,7 @@ const Sidebar = () => {
         </svg>
       ),
       path: '/tickets',
-      allowedRoles: ['admin', 'support_agent', 'customer']
+      allowedRoles: ['admin', 'support_agent']
     },
     ...(currentUser?.role === 'admin' || currentUser?.role === 'support_agent' ? [{
       id: 'agents',
@@ -66,6 +66,16 @@ const Sidebar = () => {
       ),
       path: '/companies',
       allowedRoles: ['admin']
+    }, {
+      id: 'partnerships',
+      title: 'Partnerships',
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="icon sidebar__menu-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+      ),
+      path: '/partnerships',
+      allowedRoles: ['admin', 'company_manager']
     }] : []),
     ...(currentUser?.role === 'admin' || currentUser?.role === 'support_agent' ? [{
       id: 'reports',
@@ -87,7 +97,7 @@ const Sidebar = () => {
         </svg>
       ),
       path: '/chat',
-      allowedRoles: ['admin', 'support_agent', 'customer']
+      allowedRoles: ['admin', 'support_agent']
     },
     ...(currentUser?.role === 'admin' || currentUser?.role === 'company_manager' ? [{
       id: 'users',
@@ -100,6 +110,18 @@ const Sidebar = () => {
       path: '/users',
       allowedRoles: ['admin', 'company_manager']
     }] : []),
+    // Partnerships link for company managers
+    ...(currentUser?.role === 'admin' || currentUser?.role === 'company_manager' ? [{
+      id: 'partnerships',
+      title: 'Partnerships',
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="icon sidebar__menu-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+      ),
+      path: '/partnerships',
+      allowedRoles: ['admin', 'company_manager']
+    }] : []),
     {
       id: 'settings',
       title: 'Settings',
@@ -110,7 +132,7 @@ const Sidebar = () => {
         </svg>
       ),
       path: '/settings',
-      allowedRoles: ['admin', 'support_agent', 'customer']
+      allowedRoles: ['admin', 'support_agent']
     },
     ...(currentUser?.role === 'admin' ? [{
       id: 'admin',

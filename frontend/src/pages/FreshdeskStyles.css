@@ -1167,15 +1167,105 @@
 }
 
 [data-theme="dark"] .filter-sidebar,
-.dark-theme .filter-sidebar {
+.dark-theme .filter-sidebar,
+[data-theme="dark"] .freshdesk-filter-sidebar,
+.dark-theme .freshdesk-filter-sidebar {
   background: var(--gray-100);
   border-color: var(--gray-300);
   color: var(--text-primary);
 }
 
+[data-theme="dark"] .freshdesk-filter-container,
+.dark-theme .freshdesk-filter-container {
+  background: var(--gray-100);
+  border-color: var(--gray-300);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .freshdesk-filter-container .freshdesk-filter-sidebar,
+.dark-theme .freshdesk-filter-container .freshdesk-filter-sidebar {
+  background: var(--gray-100);
+}
+
 [data-theme="dark"] .freshdesk-applied-filters,
 .dark-theme .freshdesk-applied-filters {
   border-color: var(--gray-300);
+}
+
+[data-theme="dark"] .freshdesk-filter-header,
+.dark-theme .freshdesk-filter-header {
+   border-color: var(--gray-300);
+   color: #fff;
+   background: #000;
+}
+
+[data-theme="dark"] .freshdesk-filter-title,
+.dark-theme .freshdesk-filter-title {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .freshdesk-filter-clear-btn,
+.dark-theme .freshdesk-filter-clear-btn {
+  background: var(--gray-200);
+  border-color: var(--gray-400);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .freshdesk-filter-clear-btn:hover,
+.dark-theme .freshdesk-filter-clear-btn:hover {
+  background: var(--danger-900);
+  border-color: var(--danger-700);
+  color: var(--danger-200);
+}
+
+[data-theme="dark"] .freshdesk-filter-group,
+.dark-theme .freshdesk-filter-group {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .freshdesk-filter-label,
+.dark-theme .freshdesk-filter-label {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .freshdesk-filter-input,
+.dark-theme .freshdesk-filter-input {
+  background: var(--gray-200);
+  border-color: var(--gray-400);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .freshdesk-filter-input::placeholder,
+.dark-theme .freshdesk-filter-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+[data-theme="dark"] .freshdesk-filter-select,
+.dark-theme .freshdesk-filter-select {
+  background: var(--gray-200);
+  border-color: var(--gray-400);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .freshdesk-filter-select option,
+.dark-theme .freshdesk-filter-select option {
+  background: var(--gray-100);
+  color: var(--text-primary);
+}
+
+/* Dark mode support for filter toggle button */
+[data-theme="dark"] .freshdesk-header-actions button.freshdesk-filter-toggle-btn,
+.dark-theme .freshdesk-header-actions button.freshdesk-filter-toggle-btn {
+    background: var(--gray-700) !important;
+    border: 1px solid var(--gray-600) !important;
+    color: var(--white) !important;
+}
+
+[data-theme="dark"] .freshdesk-header-actions button.freshdesk-filter-toggle-btn:hover,
+.dark-theme .freshdesk-header-actions button.freshdesk-filter-toggle-btn:hover {
+    background: var(--gray-600) !important;
+    border-color: var(--gray-500) !important;
+    color: var(--white) !important;
 }
 
 /* Ticket Details Page Styles */
@@ -1273,6 +1363,7 @@
   letter-spacing: 0.5px;
   display: inline-block;
   border: 1px solid;
+  margin-bottom: var(--spacing-sm);
 }
 
 .freshdesk-ticket-status-open {
@@ -1509,10 +1600,136 @@
   box-shadow: var(--shadow-sm);
   align-self: flex-start;
   max-height: calc(100vh - 200px);
+  transition: all var(--transition-normal);
+  position: relative;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+.freshdesk-ticket-sidebar.collapsed {
+  width: 48px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.freshdesk-ticket-sidebar-content {
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  opacity: 1;
+  visibility: visible;
+}
+
+.freshdesk-ticket-sidebar.collapsed .freshdesk-ticket-sidebar-content {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.freshdesk-sidebar-toggle {
+  position: absolute;
+  right: -24px;
+  top: 0;
+  height: 40px;
+  width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: 0 var(--border-radius-md) var(--border-radius-md) 0;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  z-index: 10;
+  transition: all var(--transition-fast);
+}
+
+.freshdesk-ticket-sidebar.collapsed .freshdesk-sidebar-toggle {
+  right: 0;
+}
+
+.freshdesk-sidebar-toggle:hover {
+  background: var(--gray-50);
+  transform: translateX(2px);
+}
+
+.freshdesk-sidebar-toggle-btn {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  color: var(--gray-600);
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.freshdesk-ticket-sidebar-content-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: all 0.3s ease;
+}
+
+.freshdesk-sidebar-toggle {
+  position: absolute;
+  right: -24px;
+  top: 0;
+  height: 40px;
+  width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: 0 var(--border-radius-md) var(--border-radius-md) 0;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  z-index: 10;
+  transition: all var(--transition-fast);
+}
+
+.freshdesk-ticket-sidebar.collapsed .freshdesk-sidebar-toggle {
+  right: 0;
+}
+
+.freshdesk-sidebar-toggle:hover {
+  background: var(--gray-50);
+  transform: translateX(2px);
+}
+
+.freshdesk-sidebar-toggle-btn {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  color: var(--gray-600);
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.freshdesk-sidebar-content {
+  transition: opacity var(--transition-normal);
+}
+
+.freshdesk-ticket-sidebar.collapsed .freshdesk-sidebar-content {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .freshdesk-sidebar-section {
   margin-bottom: var(--spacing-xl);
+  padding-bottom: var(--spacing-xl);
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.freshdesk-sidebar-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
 }
 
 .freshdesk-sidebar-title {
@@ -1525,26 +1742,51 @@
 }
 
 .freshdesk-property-item {
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
 }
 
 .freshdesk-property-label {
-  display: block;
-  font-weight: 500;
-  color: var(--gray-700);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  color: var(--gray-600);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   margin-bottom: var(--spacing-xs);
+  padding-bottom: var(--spacing-xs);
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.freshdesk-property-label .freshdesk-edit-btn {
+  margin: 0;
+  font-size: 0.75rem;
+  padding: 0.125rem 0.375rem;
+  font-weight: 500;
+}
+
+.freshdesk-property-value {
+  color: var(--gray-900);
   font-size: 0.9rem;
+  line-height: 1.5;
+  min-height: 20px;
+  padding: var(--spacing-xs) 0;
 }
 
 .freshdesk-property-select {
   width: 100%;
-  padding: 0.5rem;
+  padding: 0.375rem 0.75rem;
   border: 1px solid var(--gray-300);
   border-radius: var(--border-radius-md);
   font-size: 0.9rem;
   background-color: white;
   cursor: pointer;
   transition: all var(--transition-fast);
+  margin-top: var(--spacing-xs);
 }
 
 .freshdesk-property-select:focus {
@@ -1553,9 +1795,446 @@
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
 }
 
-.freshdesk-property-value {
+.freshdesk-property-input {
+  width: 100%;
+  padding: 0.375rem 0.75rem;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--border-radius-md);
+  font-size: 0.9rem;
+  background-color: white;
+  transition: all var(--transition-fast);
+  margin-top: var(--spacing-xs);
+}
+
+.freshdesk-property-input:focus {
+  outline: none;
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.freshdesk-hidden-select {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.freshdesk-hidden-input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Time Tracking and Attachments Styles */
+.freshdesk-time-tracking-section {
+  padding: var(--spacing-md) 0;
+  border-top: 1px solid var(--gray-200);
+  margin-top: var(--spacing-md);
+}
+
+.freshdesk-attachments-section {
+  padding: var(--spacing-md) 0;
+  border-top: 1px solid var(--gray-200);
+  margin-top: var(--spacing-md);
+}
+
+.freshdesk-time-form {
+  padding: var(--spacing-md) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.freshdesk-time-inputs {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.freshdesk-time-input {
+  flex: 1;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--border-radius-md);
+  font-size: 0.9rem;
+}
+
+.freshdesk-time-input:focus {
+  outline: none;
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.freshdesk-time-notes {
+  width: 100%;
+  padding: var(--spacing-sm);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--border-radius-md);
+  font-size: 0.9rem;
+  resize: vertical;
+  min-height: 60px;
+}
+
+.freshdesk-time-notes:focus {
+  outline: none;
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.freshdesk-time-logs {
+  margin-top: var(--spacing-md);
+}
+
+.freshdesk-time-log-item {
+  padding: var(--spacing-xs) 0;
+  border-bottom: 1px solid var(--gray-100);
+  display: flex;
+  justify-content: space-between;
+}
+
+.freshdesk-time-log-item:last-child {
+  border-bottom: none;
+}
+
+.freshdesk-attachments-upload {
+  margin-top: var(--spacing-md);
+}
+
+.freshdesk-attachment-input {
+  margin-bottom: var(--spacing-sm);
+}
+
+.freshdesk-attachment-preview {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-xs);
+  background: var(--gray-50);
+  border-radius: var(--border-radius-md);
+  margin-bottom: var(--spacing-sm);
+}
+
+.freshdesk-attachment-name {
+  font-size: 0.85rem;
+  color: var(--gray-700);
+  flex: 1;
+}
+
+.freshdesk-attachment-size {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  margin-left: var(--spacing-sm);
+}
+
+.freshdesk-attachments-list {
+  margin-top: var(--spacing-md);
+}
+
+.freshdesk-attachment-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-xs);
+  background: var(--gray-50);
+  border-radius: var(--border-radius-md);
+  margin-bottom: var(--spacing-xs);
+}
+
+.freshdesk-total-time {
+  font-weight: 600;
+  color: var(--gray-800);
+  margin-top: var(--spacing-xs);
+}
+
+.freshdesk-property-value-with-edit {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) 0;
+  border-radius: var(--border-radius-md);
+  transition: background-color 0.2s ease;
+}
+
+.freshdesk-property-value-with-edit:hover {
+  background-color: var(--gray-50);
+}
+
+.freshdesk-property-value-display {
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.freshdesk-edit-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--border-radius-md);
+  color: var(--brand-primary);
+  padding: 0.125rem 0.375rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-weight: 500;
+  flex-shrink: 0;
+  align-self: center;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.freshdesk-property-value-with-edit:hover .freshdesk-edit-btn {
+  opacity: 1;
+  visibility: visible;
+  border-color: var(--brand-primary)30;
+}
+
+.freshdesk-edit-btn:hover {
+  background: var(--brand-primary)10;
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+}
+
+.freshdesk-resolution-due-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-xs);
+}
+
+.freshdesk-resolution-due-time {
+  font-size: 0.85rem;
+  color: var(--gray-600);
+  margin-top: var(--spacing-xs);
+  padding: 0.25rem 0;
+}
+
+.freshdesk-status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xl);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.freshdesk-status-badge-container {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.freshdesk-priority-badge {
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--border-radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: inline-block;
+  margin-top: var(--spacing-xs);
+}
+
+.freshdesk-priority-badge.low {
+  background: var(--success-100);
+  color: var(--success-700);
+  border: 1px solid var(--success-200);
+}
+
+.freshdesk-priority-badge.medium {
+  background: var(--warning-100);
+  color: var(--warning-700);
+  border: 1px solid var(--warning-200);
+}
+
+.freshdesk-priority-badge.high {
+  background: var(--warning-500);
+  color: white;
+  border: 1px solid var(--warning-600);
+}
+
+.freshdesk-priority-badge.urgent {
+  background: var(--danger-100);
+  color: var(--danger-700);
+  border: 1px solid var(--danger-200);
+}
+
+/* Freshdesk-style elements to match Freshdesk's UI */
+.element-flex {
+  display: flex;
+}
+
+.justify-content--space-between {
+  justify-content: space-between;
+}
+
+.align-items--center {
+  align-items: center;
+}
+
+.mb-0 {
+  margin-bottom: 0;
+}
+
+.text--normal {
+  font-weight: normal;
+}
+
+.text--semibold {
+  font-weight: 600;
+}
+
+.text--xxmedium {
+  font-size: 1.125rem;
+}
+
+.text--xsmall {
+  font-size: 0.75rem;
+}
+
+.text--default {
+  color: var(--gray-700);
+}
+
+.status-cards-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) 0;
+  border-bottom: 1px solid var(--gray-200);
+  margin-bottom: var(--spacing-xl);
+}
+
+.status-card {
+  background: var(--gray-50);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  border-left: 3px solid var(--brand-primary);
+}
+
+.status-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 0 var(--spacing-xs) 0;
+  color: var(--gray-600);
+}
+
+.status-title span:last-child {
+  color: var(--brand-primary);
+  cursor: pointer;
+}
+
+.status-title span:last-child:hover {
+  text-decoration: underline;
+}
+
+.overdue {
+  color: var(--danger-600);
+}
+
+.date-edit {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--brand-primary);
+  text-decoration: underline;
+}
+
+.btn--text-transparent {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.freshdesk-requester-email {
+  font-size: 0.85rem;
+  color: var(--gray-600);
+  margin-top: var(--spacing-xs);
+}
+
+.freshdesk-tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-xs);
+}
+
+.property-item {
+  margin-bottom: var(--spacing-lg);
+}
+
+.property-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xs);
+  color: var(--gray-600);
+}
+
+.property-value {
   color: var(--gray-900);
+  padding: var(--spacing-xs) 0;
   line-height: 1.5;
+}
+
+.clickable-field {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid transparent;
+}
+
+.clickable-field:hover {
+  background-color: var(--gray-50);
+  border-color: var(--gray-300);
+}
+
+.clickable-field.selectable {
+  position: relative;
+  padding-right: 2rem;
+}
+
+.clickable-field.selectable::after {
+  content: '▼';
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.6rem;
+  color: var(--gray-500);
+}
+
+.clickable-field select,
+.clickable-field input {
+  width: 100%;
+  padding: 0.375rem 0.75rem;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--border-radius-md);
+  font-size: 0.9rem;
+  background-color: white;
+  outline: none;
+}
+
+.clickable-field select:focus,
+.clickable-field input:focus {
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.property-value {
+  color: var(--gray-900);
+  padding: var(--spacing-xs) 0;
+  line-height: 1.5;
+  min-height: 24px;
+}
+
+.freshdesk-tag-badge {
+  background: var(--gray-100);
+  color: var(--gray-800);
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--border-radius-full);
+  font-size: 0.75rem;
 }
 
 .freshdesk-action-buttons {
@@ -1577,6 +2256,115 @@
 
 .freshdesk-contact-item:last-child {
   border-bottom: none;
+}
+
+/* Time Tracking Styles */
+.freshdesk-time-form {
+  padding: var(--spacing-md) 0;
+  border-top: 1px solid var(--gray-100);
+}
+
+.freshdesk-time-inputs {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.freshdesk-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  flex: 1;
+}
+
+.freshdesk-input-group label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--gray-600);
+}
+
+.freshdesk-time-logs {
+  padding: var(--spacing-md) 0;
+  border-top: 1px solid var(--gray-100);
+}
+
+.freshdesk-time-logs h4 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin-bottom: var(--spacing-sm);
+}
+
+.freshdesk-time-log-item {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.freshdesk-time-log-item:last-child {
+  border-bottom: none;
+}
+
+.freshdesk-time-log-duration {
+  font-weight: 600;
+  color: var(--gray-900);
+}
+
+.freshdesk-time-log-date {
+  font-size: 0.8rem;
+  color: var(--gray-600);
+  margin: 0.25rem 0;
+}
+
+.freshdesk-time-log-notes {
+  font-size: 0.8rem;
+  color: var(--gray-700);
+  margin-top: 0.25rem;
+}
+
+/* Attachments Styles */
+.freshdesk-attachments-upload {
+  padding: var(--spacing-md) 0;
+  border-top: 1px solid var(--gray-100);
+}
+
+.freshdesk-attachment-preview {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--border-radius-md);
+}
+
+.freshdesk-attachments-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-md);
+}
+
+.freshdesk-attachment-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-xs);
+  background: var(--gray-50);
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--gray-200);
+}
+
+.freshdesk-attachment-name {
+  font-size: 0.875rem;
+  color: var(--gray-700);
+  flex: 1;
+}
+
+.freshdesk-hidden-input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .freshdesk-reply-form {

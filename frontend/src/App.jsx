@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import Login from './pages/Login';
 import AgentLogin from './pages/AgentLogin';
@@ -22,6 +22,7 @@ import Agents from './pages/Agents';
 import AdminDashboard from './pages/AdminDashboard';
 import CompanySignup from './pages/CompanySignup';
 import CompanyCreation from './pages/CompanyCreation';
+import Partnerships from './pages/Partnerships';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
 import Design1 from './pages/ticketDetailDesigns/Design1';
@@ -39,13 +40,15 @@ function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/agent-login" element={<AgentLogin />} />
-            <Route path="/register" element={<Register />} />
+            <Route path="/register" element={<Navigate to="/register-company" replace />} />
+            <Route path="/register-company" element={<CompanySignup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/2fa-setup" element={<TwoFactorSetup />} />
             <Route path="/2fa-verification" element={<TwoFactorVerification />} />
             <Route path="/verify-email" element={<EmailVerification />} />
-            <Route path="/signup" element={<CompanySignup />} />
+            <Route path="/signup" element={<Navigate to="/register-company" replace />} />
+            <Route path="/create-company" element={<Navigate to="/register-company" replace />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <ErrorBoundary>
@@ -138,6 +141,11 @@ function App() {
             <Route path="/create-company" element={
               <ProtectedRoute>
                 <CompanyCreation />
+              </ProtectedRoute>
+            } />
+            <Route path="/partnerships" element={
+              <ProtectedRoute>
+                <Partnerships />
               </ProtectedRoute>
             } />
             <Route path="/app" element={

@@ -255,7 +255,7 @@ const Profile = () => {
                     <p className="profile-role-large">
                       {profile.role === 'admin' ? 'Administrator' :
                        profile.role === 'support_agent' ? 'Support Agent' :
-                       profile.role === 'customer' ? 'Customer' : 'User'}
+                       profile.role === 'company_manager' ? 'Company Manager' : 'User'}
                     </p>
                     <p className="profile-email-large">{profile.email}</p>
 

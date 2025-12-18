@@ -2,7 +2,7 @@ const User = require('../models/User');
 
 // Define permissions based on roles
 const permissions = {
-  admin: [
+  superadmin: [
     'read:dashboard',
     'read:tickets',
     'write:tickets',
@@ -36,12 +36,6 @@ const permissions = {
     'read:chats',
     'write:chats',
     'read:contacts'
-  ],
-  customer: [
-    'read:tickets',
-    'write:tickets',
-    'read:chats',
-    'write:chats'
   ],
   company_manager: [
     'read:dashboard',
@@ -111,8 +105,7 @@ exports.canModifyResource = (resourceType) => {
       return res.status(401).json({ message: 'Authentication required' });
     }
 
-    // Admins can always modify
-    if (req.user.role === 'admin') {
+    if (req.user.role === 'superadmin') {
       next();
       return;
     }
@@ -150,8 +143,8 @@ exports.ownerOnly = async (req, res, next) => {
     const companyId = req.user.companyId._id;
     
     // In a real implementation, we'd check if the current user is the owner of the company
-    // For now, we'll assume that admin users are considered owners for their company
-    if (req.user.role === 'admin') {
+    // For now, we'll assume that superadmin users are considered owners for their company
+    if (req.user.role === 'superadmin') {
       next();
     } else {
       return res.status(403).json({ 

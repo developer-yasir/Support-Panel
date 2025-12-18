@@ -10,10 +10,6 @@ const conversationSchema = new mongoose.Schema({
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User' // Support agent
     },
-    customerId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User' // Customer is also a user in the system
-    }
   },
   subject: {
     type: String,

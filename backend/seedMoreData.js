@@ -20,7 +20,7 @@ const additionalCompanies = [
   'E-commerce Experts'
 ];
 
-const roles = ['admin', 'company_manager', 'support_agent', 'customer'];
+const roles = ['superadmin', 'company_manager', 'support_agent'];
 
 const seedMoreData = async () => {
   try {

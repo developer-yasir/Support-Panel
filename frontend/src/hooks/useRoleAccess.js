@@ -35,17 +35,11 @@ const rolePermissions = {
     'write:chats',
     'read:contacts'
   ],
-  customer: [
-    'read:tickets',
-    'write:tickets',
-    'read:chats',
-    'write:chats'
-  ]
 };
 
 export const useRoleAccess = () => {
   const { user } = useAuth();
-  const userRole = user?.role || 'customer'; // Default to customer if no role
+  const userRole = user?.role || 'support_agent'; // Default to support_agent if no role
 
   const hasPermission = (permission) => {
     const permissions = rolePermissions[userRole] || [];
