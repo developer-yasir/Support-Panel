@@ -70,8 +70,10 @@ exports.checkPermission = (permission) => {
     }
 
     if (!hasPermission(req.user.role, permission)) {
-      return res.status(403).json({ 
-        message: `Access denied: You don't have permission to perform this action (${permission})` 
+      console.log(`[Permission Denied] Role: ${req.user.role}, Permission: ${permission}, UserID: ${req.user._id}`);
+      console.log('Available Permissions for role:', permissions[req.user.role]);
+      return res.status(403).json({
+        message: `Access denied: You don't have permission to perform this action (${permission})`
       });
     }
 
@@ -91,8 +93,8 @@ exports.canAccessResource = (resourceType) => {
     if (req.user.companyId.toString() === req.companyId.toString()) {
       next();
     } else {
-      return res.status(403).json({ 
-        message: `Access denied: You don't have permission to access this ${resourceType}` 
+      return res.status(403).json({
+        message: `Access denied: You don't have permission to access this ${resourceType}`
       });
     }
   };
@@ -119,8 +121,8 @@ exports.canModifyResource = (resourceType) => {
     }
 
     // Other roles may have limited modification rights
-    return res.status(403).json({ 
-      message: `Access denied: You don't have permission to modify this ${resourceType}` 
+    return res.status(403).json({
+      message: `Access denied: You don't have permission to modify this ${resourceType}`
     });
   };
 };
@@ -141,14 +143,14 @@ exports.ownerOnly = async (req, res, next) => {
     // Populate the company with its owner
     const company = await req.user.populate('companyId');
     const companyId = req.user.companyId._id;
-    
+
     // In a real implementation, we'd check if the current user is the owner of the company
     // For now, we'll assume that superadmin users are considered owners for their company
     if (req.user.role === 'superadmin') {
       next();
     } else {
-      return res.status(403).json({ 
-        message: 'Access denied: Only company owner can perform this action' 
+      return res.status(403).json({
+        message: 'Access denied: Only company owner can perform this action'
       });
     }
   } catch (error) {

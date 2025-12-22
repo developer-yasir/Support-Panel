@@ -15,6 +15,16 @@ const ticketSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  type: {
+    type: String,
+    enum: ['Question', 'Incident', 'Problem', 'Feature Request'],
+    default: 'Question'
+  },
+  source: {
+    type: String,
+    enum: ['Email', 'Portal', 'Phone', 'Chat', 'Feedback Widget'],
+    default: 'Portal'
+  },
   priority: {
     type: String,
     enum: ['low', 'medium', 'high', 'urgent'],
@@ -47,6 +57,10 @@ const ticketSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Company',
     required: true
+  },
+  projectId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Project'
   }
 }, {
   timestamps: true
@@ -60,7 +74,7 @@ ticketSchema.index({ assignedTo: 1, companyId: 1 });
 ticketSchema.index({ createdBy: 1, companyId: 1 });
 
 // Pre-validate middleware to generate sequential ticket ID
-ticketSchema.pre('validate', async function(next) {
+ticketSchema.pre('validate', async function (next) {
   if (this.isNew && !this.ticketId) {
     try {
       // Try to increment the counter
@@ -69,7 +83,7 @@ ticketSchema.pre('validate', async function(next) {
         { $inc: { seq: 1 } },
         { upsert: true, returnDocument: 'after' }
       );
-      
+
       // If the operation succeeded, use the new sequence number
       if (result && result.value) {
         this.ticketId = `TK-${result.value.seq.toString().padStart(4, '0')}`;
@@ -93,7 +107,7 @@ ticketSchema.pre('validate', async function(next) {
 });
 
 // Add a post-save validation to ensure ticketId exists
-ticketSchema.post('save', function(doc) {
+ticketSchema.post('save', function (doc) {
   if (!doc.ticketId) {
     console.error('ERROR: Ticket saved without ticketId. This should not happen!');
   }

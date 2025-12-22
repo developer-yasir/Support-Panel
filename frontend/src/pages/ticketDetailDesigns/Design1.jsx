@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
 import Navbar from '../../components/Navbar';
 import Sidebar from '../../components/Sidebar';
-import '../FreshdeskStyles.css';
 
 const Design1 = () => {
   const { ticketId } = useParams(); // Changed from id to ticketId to match route
@@ -22,7 +21,7 @@ const Design1 = () => {
       } catch (error) {
         console.error('Error fetching ticket:', error);
         setError('Ticket not found');
-        
+
         // Don't set sample data in production - let user know ticket wasn't found
         setTicket(null);
       } finally {
@@ -132,7 +131,7 @@ const Design1 = () => {
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <button 
+                    <button
                       onClick={() => navigate('/tickets')}
                       className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
                     >
