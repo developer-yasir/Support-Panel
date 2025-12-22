@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { SidebarProvider } from './contexts/SidebarContext';
 import Login from './pages/Login';
 import AgentLogin from './pages/AgentLogin';
 import Register from './pages/Register';
@@ -22,7 +23,7 @@ import Agents from './pages/Agents';
 import AdminDashboard from './pages/AdminDashboard';
 import CompanySignup from './pages/CompanySignup';
 import CompanyCreation from './pages/CompanyCreation';
-import Partnerships from './pages/Partnerships';
+import Projects from './pages/Projects';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
 import Design1 from './pages/ticketDetailDesigns/Design1';
@@ -35,129 +36,131 @@ import ErrorBoundary from './components/ErrorBoundary';
 function App() {
   return (
     <ThemeProvider>
-      <Router>
-        <div className="app">
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/agent-login" element={<AgentLogin />} />
-            <Route path="/register" element={<Navigate to="/register-company" replace />} />
-            <Route path="/register-company" element={<CompanySignup />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/2fa-setup" element={<TwoFactorSetup />} />
-            <Route path="/2fa-verification" element={<TwoFactorVerification />} />
-            <Route path="/verify-email" element={<EmailVerification />} />
-            <Route path="/signup" element={<Navigate to="/register-company" replace />} />
-            <Route path="/create-company" element={<Navigate to="/register-company" replace />} />
-            <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <ErrorBoundary>
-                  <Tickets />
-                </ErrorBoundary>
-              </ProtectedRoute>
-            } />
-            <Route path="/overview" element={
-              <ProtectedRoute>
-                <Overview />
-              </ProtectedRoute>
-            } />
-            <Route path="/tickets" element={
-              <ProtectedRoute>
-                <ErrorBoundary>
-                  <Tickets />
-                </ErrorBoundary>
-              </ProtectedRoute>
-            } />
-            <Route path="/contacts" element={
-              <ProtectedRoute>
-                <Contacts />
-              </ProtectedRoute>
-            } />
-            <Route path="/companies" element={
-              <ProtectedRoute>
-                <Companies />
-              </ProtectedRoute>
-            } />
-            <Route path="/agents" element={
-              <ProtectedRoute>
-                <Agents />
-              </ProtectedRoute>
-            } />
-            {/* Removed Knowledge Base and Community routes */}
-            <Route path="/reports" element={
-              <ProtectedRoute>
-                <Reports />
-              </ProtectedRoute>
-            } />
-            <Route path="/chat" element={
-              <ProtectedRoute>
-                <Chat />
-              </ProtectedRoute>
-            } />
-            <Route path="/settings" element={
-              <ProtectedRoute>
-                <Settings />
-              </ProtectedRoute>
-            } />
-            <Route path="/profile" element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            } />
-            <Route path="/ticket/new" element={
-              <ProtectedRoute>
-                <CreateTicket />
-              </ProtectedRoute>
-            } />
-            <Route path="/ticket/:ticketId" element={
-              <ProtectedRoute>
-                <TicketDetails />
-              </ProtectedRoute>
-            } />
-            <Route path="/testing-new-tickets" element={
-              <ProtectedRoute>
-                <ErrorBoundary>
-                  <Tickets />
-                </ErrorBoundary>
-              </ProtectedRoute>
-            } />
-            <Route path="/users" element={
-              <ProtectedRoute>
-                <UserManagement />
-              </ProtectedRoute>
-            } />
+      <SidebarProvider>
+        <Router>
+          <div className="app">
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/agent-login" element={<AgentLogin />} />
+              <Route path="/register" element={<Navigate to="/register-company" replace />} />
+              <Route path="/register-company" element={<CompanySignup />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/2fa-setup" element={<TwoFactorSetup />} />
+              <Route path="/2fa-verification" element={<TwoFactorVerification />} />
+              <Route path="/verify-email" element={<EmailVerification />} />
+              <Route path="/signup" element={<Navigate to="/register-company" replace />} />
+              <Route path="/create-company" element={<Navigate to="/register-company" replace />} />
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <ErrorBoundary>
+                    <Tickets />
+                  </ErrorBoundary>
+                </ProtectedRoute>
+              } />
+              <Route path="/overview" element={
+                <ProtectedRoute>
+                  <Overview />
+                </ProtectedRoute>
+              } />
+              <Route path="/tickets" element={
+                <ProtectedRoute>
+                  <ErrorBoundary>
+                    <Tickets />
+                  </ErrorBoundary>
+                </ProtectedRoute>
+              } />
+              <Route path="/contacts" element={
+                <ProtectedRoute>
+                  <Contacts />
+                </ProtectedRoute>
+              } />
+              <Route path="/companies" element={
+                <ProtectedRoute>
+                  <Companies />
+                </ProtectedRoute>
+              } />
+              <Route path="/agents" element={
+                <ProtectedRoute>
+                  <Agents />
+                </ProtectedRoute>
+              } />
+              {/* Removed Knowledge Base and Community routes */}
+              <Route path="/reports" element={
+                <ProtectedRoute>
+                  <Reports />
+                </ProtectedRoute>
+              } />
+              <Route path="/chat" element={
+                <ProtectedRoute>
+                  <Chat />
+                </ProtectedRoute>
+              } />
+              <Route path="/settings" element={
+                <ProtectedRoute>
+                  <Settings />
+                </ProtectedRoute>
+              } />
+              <Route path="/profile" element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              } />
+              <Route path="/ticket/new" element={
+                <ProtectedRoute>
+                  <CreateTicket />
+                </ProtectedRoute>
+              } />
+              <Route path="/ticket/:ticketId" element={
+                <ProtectedRoute>
+                  <TicketDetails />
+                </ProtectedRoute>
+              } />
+              <Route path="/testing-new-tickets" element={
+                <ProtectedRoute>
+                  <ErrorBoundary>
+                    <Tickets />
+                  </ErrorBoundary>
+                </ProtectedRoute>
+              } />
+              <Route path="/users" element={
+                <ProtectedRoute>
+                  <UserManagement />
+                </ProtectedRoute>
+              } />
 
-            <Route path="/admin" element={
-              <AdminProtectedRoute>
-                <ErrorBoundary>
-                  <AdminDashboard />
-                </ErrorBoundary>
-              </AdminProtectedRoute>
-            } />
+              <Route path="/admin" element={
+                <AdminProtectedRoute>
+                  <ErrorBoundary>
+                    <AdminDashboard />
+                  </ErrorBoundary>
+                </AdminProtectedRoute>
+              } />
 
-            <Route path="/" element={
-              <Login />
-            } />
-            <Route path="/create-company" element={
-              <ProtectedRoute>
-                <CompanyCreation />
-              </ProtectedRoute>
-            } />
-            <Route path="/partnerships" element={
-              <ProtectedRoute>
-                <Partnerships />
-              </ProtectedRoute>
-            } />
-            <Route path="/app" element={
-              <ProtectedRoute>
-                <ErrorBoundary>
-                  <Tickets />
-                </ErrorBoundary>
-              </ProtectedRoute>
-            } />
-          </Routes>
-        </div>
-      </Router>
+              <Route path="/" element={
+                <Login />
+              } />
+              <Route path="/create-company" element={
+                <ProtectedRoute>
+                  <CompanyCreation />
+                </ProtectedRoute>
+              } />
+              <Route path="/projects" element={
+                <ProtectedRoute>
+                  <Projects />
+                </ProtectedRoute>
+              } />
+              <Route path="/app" element={
+                <ProtectedRoute>
+                  <ErrorBoundary>
+                    <Tickets />
+                  </ErrorBoundary>
+                </ProtectedRoute>
+              } />
+            </Routes>
+          </div>
+        </Router>
+      </SidebarProvider>
     </ThemeProvider>
   );
 }

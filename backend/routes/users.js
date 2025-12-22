@@ -22,15 +22,6 @@ router.route('/')
   .get([checkPermission('read:users')], getUsers)  // Permission middleware handles role checking
   .post([checkPermission('write:users')], createUser);  // Permission middleware handles role checking
 
-router.route('/:id')
-  .get(canAccessResource('user'), getUserById)
-  .put([checkPermission('write:users')], updateUser)  // Permission middleware handles role checking
-  .delete([checkPermission('delete:users')], deleteUser);  // Permission middleware handles role checking
-
-// Additional route for toggling user status
-router.route('/:id/toggle-status')
-  .put([checkPermission('write:users')], updateUserStatus);  // Permission middleware handles role checking
-
 // Route specifically for getting agents (support agents only)
 // tenantMiddleware is already applied at the router level
 router.route('/agents')
@@ -53,5 +44,10 @@ router.route('/agents')
       res.status(500).json({ message: 'Server error', error: err.message });
     }
   });
+
+router.route('/:id')
+  .get(canAccessResource('user'), getUserById)
+  .put([checkPermission('write:users')], updateUser)  // Permission middleware handles role checking
+  .delete([checkPermission('delete:users')], deleteUser);  // Permission middleware handles role checking
 
 module.exports = router;

@@ -35,6 +35,23 @@ const rolePermissions = {
     'write:chats',
     'read:contacts'
   ],
+  company_manager: [
+    'read:dashboard',
+    'read:tickets',
+    'write:tickets',
+    'read:agents',
+    'write:agents',
+    'read:settings',
+    'write:settings',
+    'read:reports',
+    'read:users',
+    'write:users',
+    'delete:users',
+    'read:contacts',
+    'write:contacts',
+    'read:chats',
+    'write:chats'
+  ],
 };
 
 export const useRoleAccess = () => {

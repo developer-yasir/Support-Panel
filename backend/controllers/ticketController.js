@@ -1,13 +1,13 @@
 const Ticket = require('../models/Ticket');
 const User = require('../models/User');
-const Partnership = require('../models/Partnership');
+
 const { sendTicketNotification, sendTicketUpdateNotification } = require('../config/email');
 
 // Create a new ticket
 // Updated to fix missing import for sendTicketUpdateNotification
 exports.createTicket = async (req, res) => {
   try {
-    const { title, description, priority, dueDate, assignedTo } = req.body;
+    const { title, description, priority, dueDate, assignedTo, type, source, contactEmail, projectId } = req.body;
 
     // Verify company context exists
     if (!req.companyId) {
@@ -24,29 +24,62 @@ exports.createTicket = async (req, res) => {
 
       // Allow assignment if user is from the same company
       if (assignedUser.companyId.toString() !== req.companyId.toString()) {
-        // Check if it's a partner company with permission
-        const partnership = await Partnership.findOne({
-          $or: [
-            {
-              requestingCompanyId: req.companyId,
-              requestedCompanyId: assignedUser.companyId,
-              status: 'approved',
-              'permissions.canAssignTickets': true
-            },
-            {
-              requestingCompanyId: assignedUser.companyId,
-              requestedCompanyId: req.companyId,
-              status: 'approved',
-              'permissions.canAssignTickets': true
-            }
-          ]
+        return res.status(403).json({
+          message: 'Cannot assign to user from another company'
         });
+      }
+    }
 
-        if (!partnership) {
-          return res.status(403).json({
-            message: 'Cannot assign to user from another company without proper partnership permissions'
+
+    // Check if createdBy is being set (On Behalf Of functionality)
+    let creatorId = req.user.id;
+
+    // If contactEmail is provided, find or create the user
+    if (contactEmail) {
+      // Only allow agents/managers/admins to set createdBy
+      const hasPermission = ['support_agent', 'company_manager', 'superadmin'].includes(req.user.role);
+
+      if (hasPermission) {
+        let contactUser = await User.findOne({ email: contactEmail });
+
+        if (!contactUser) {
+          // Create new contact user securely
+          const generatedPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+          contactUser = new User({
+            name: contactEmail.split('@')[0], // Default name from email
+            email: contactEmail,
+            password: generatedPassword,
+            role: 'support_agent', // Or a specific 'contact' role if you have one. preventing 'company_manager' by default
+            companyId: req.companyId
           });
+          await contactUser.save();
+        } else {
+          // Ensure contact belongs to same company
+          if (contactUser.companyId && contactUser.companyId.toString() !== req.companyId.toString()) {
+            // Optional: decide if you want to allow cross-company tickets or error out
+            // For strict tenant isolation:
+            return res.status(403).json({ message: 'User with this email belongs to another company' });
+          }
         }
+        creatorId = contactUser._id;
+      }
+    } else if (req.body.createdBy) {
+      // Logic for explicit ID selection (backwards compatibility or if select is used)
+      const hasPermission = ['support_agent', 'company_manager', 'superadmin'].includes(req.user.role);
+
+      if (hasPermission) {
+        // Verify the user exists and belongs to the same company
+        const creator = await User.findById(req.body.createdBy);
+
+        if (!creator) {
+          return res.status(404).json({ message: 'Creator (Contact) not found' });
+        }
+
+        if (creator.companyId.toString() !== req.companyId.toString()) {
+          return res.status(403).json({ message: 'Cannot create ticket for user from another company' });
+        }
+
+        creatorId = req.body.createdBy;
       }
     }
 
@@ -56,16 +89,19 @@ exports.createTicket = async (req, res) => {
       priority,
       dueDate,
       assignedTo,
-      createdBy: req.user.id,
-      companyId: req.companyId
+      projectId: projectId || undefined,
+      createdBy: creatorId,
+      companyId: req.companyId,
+      type: type || 'Question',
+      source: source || 'Portal'
     });
 
     await ticket.save();
-    
+
     // Populate references
     await ticket.populate('createdBy', 'name email');
     await ticket.populate('assignedTo', 'name email');
-    
+
     // Send email notification for new ticket
     try {
       if (ticket.createdBy && ticket.createdBy.email) {
@@ -78,7 +114,7 @@ exports.createTicket = async (req, res) => {
 
       // Also notify the assigned user if different from creator
       if (ticket.assignedTo && ticket.assignedTo.email && ticket.createdBy && ticket.assignedTo._id && ticket.createdBy._id &&
-          ticket.assignedTo._id.toString() !== ticket.createdBy._id.toString()) {
+        ticket.assignedTo._id.toString() !== ticket.createdBy._id.toString()) {
         await sendTicketNotification(
           ticket.assignedTo.email,
           ticket.assignedTo.name || 'User',
@@ -89,12 +125,12 @@ exports.createTicket = async (req, res) => {
       // If email fails, log the error but still return success
       console.error('Error sending ticket notification email:', emailError);
     }
-    
+
     // Broadcast new ticket to WebSocket clients
     if (global.broadcastNewTicket) {
       global.broadcastNewTicket(ticket);
     }
-    
+
     res.status(201).json(ticket);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -108,21 +144,21 @@ exports.getTickets = async (req, res) => {
     if (!req.companyId) {
       return res.status(400).json({ message: 'Company context required to get tickets' });
     }
-    
+
     const { status, priority, assignedTo, dueDate, escalationLevel } = req.query;
     let filter = { companyId: req.companyId }; // Add company filter
-    
+
     if (status) filter.status = status;
     if (priority) filter.priority = priority;
     if (assignedTo) filter.assignedTo = assignedTo;
     if (dueDate) filter.dueDate = dueDate;
     if (escalationLevel) filter.escalationLevel = escalationLevel;
-    
+
     const tickets = await Ticket.find(filter)
       .populate('createdBy', 'name email company')
       .populate('assignedTo', 'name email')
       .sort({ createdAt: -1 });
-    
+
     res.json(tickets);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -136,17 +172,17 @@ exports.getTicketById = async (req, res) => {
     if (!req.companyId) {
       return res.status(400).json({ message: 'Company context required to get ticket' });
     }
-    
+
     let ticket;
-    
+
     // First try to find by custom ticketId with company filter
-    ticket = await Ticket.findOne({ 
+    ticket = await Ticket.findOne({
       ticketId: req.params.id,
-      companyId: req.companyId 
+      companyId: req.companyId
     })
       .populate('createdBy', 'name email phone company')
       .populate('assignedTo', 'name email');
-    
+
     // If not found by ticketId and the param looks like an ObjectId, try to find by _id with company filter
     if (!ticket && /^[0-9a-fA-F]{24}$/.test(req.params.id)) {
       ticket = await Ticket.findOne({
@@ -156,11 +192,11 @@ exports.getTicketById = async (req, res) => {
         .populate('createdBy', 'name email phone company')
         .populate('assignedTo', 'name email');
     }
-    
+
     if (!ticket) {
       return res.status(404).json({ message: 'Ticket not found' });
     }
-    
+
     res.json(ticket);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -171,13 +207,13 @@ exports.getTicketById = async (req, res) => {
 exports.updateTicket = async (req, res) => {
   try {
     console.log('Update ticket request:', req.params.id, req.body);
-    
+
     // Verify company context exists
     if (!req.companyId) {
       return res.status(400).json({ message: 'Company context required to update ticket' });
     }
-    
-    const { title, description, priority, status, assignedTo, dueDate, escalationLevel } = req.body;
+
+    const { title, description, priority, status, assignedTo, dueDate, escalationLevel, type, source } = req.body;
 
     let ticket;
 
@@ -205,7 +241,7 @@ exports.updateTicket = async (req, res) => {
     // Support agents can update any ticket if they're only changing assignment, status, or priority
     // Ticket creator can update their own ticket
     const fieldsBeingUpdated = Object.keys(req.body);
-    const assignmentFields = ['assignedTo', 'status', 'priority']; // Fields that support agents can update
+    const assignmentFields = ['assignedTo', 'status', 'priority', 'type', 'source']; // Fields that support agents can update
     const isOnlyAssignmentUpdate = fieldsBeingUpdated.every(field => assignmentFields.includes(field));
 
     const isTicketCreator = ticket.createdBy.toString() === req.user.id;
@@ -227,32 +263,10 @@ exports.updateTicket = async (req, res) => {
       }
 
       // Allow assignment if user is from the same company
-      if (assignedUser.companyId.toString() === req.companyId.toString()) {
-        // Same company - allow assignment
-      } else {
-        // Check if it's a partner company with permission
-        const partnership = await Partnership.findOne({
-          $or: [
-            {
-              requestingCompanyId: req.companyId,
-              requestedCompanyId: assignedUser.companyId,
-              status: 'approved',
-              'permissions.canAssignTickets': true
-            },
-            {
-              requestingCompanyId: assignedUser.companyId,
-              requestedCompanyId: req.companyId,
-              status: 'approved',
-              'permissions.canAssignTickets': true
-            }
-          ]
+      if (assignedUser.companyId.toString() !== req.companyId.toString()) {
+        return res.status(403).json({
+          message: 'Cannot assign to user from another company'
         });
-
-        if (!partnership) {
-          return res.status(403).json({
-            message: 'Cannot assign to user from another company without proper partnership permissions'
-          });
-        }
       }
     }
 
@@ -263,7 +277,10 @@ exports.updateTicket = async (req, res) => {
     if (status !== undefined) ticket.status = status;
     if (assignedTo !== undefined) ticket.assignedTo = assignedTo;
     if (dueDate !== undefined) ticket.dueDate = dueDate;
+    if (dueDate !== undefined) ticket.dueDate = dueDate;
     if (escalationLevel !== undefined) ticket.escalationLevel = escalationLevel;
+    if (type !== undefined) ticket.type = type;
+    if (source !== undefined) ticket.source = source;
 
     console.log('Updating ticket with data:', {
       title: ticket.title,
@@ -274,15 +291,15 @@ exports.updateTicket = async (req, res) => {
       dueDate: ticket.dueDate,
       escalationLevel: ticket.escalationLevel
     });
-    
+
     await ticket.save();
-    
+
     // Populate references
     await ticket.populate('createdBy', 'name email');
     await ticket.populate('assignedTo', 'name email');
-    
+
     console.log('Ticket updated successfully:', ticket._id);
-    
+
     // Send email notification for ticket update
     try {
       if (ticket.createdBy && ticket.createdBy.email) {
@@ -295,7 +312,7 @@ exports.updateTicket = async (req, res) => {
 
       // Also notify the assigned user if different from creator
       if (ticket.assignedTo && ticket.assignedTo.email && ticket.createdBy && ticket.assignedTo._id && ticket.createdBy._id &&
-          ticket.assignedTo._id.toString() !== ticket.createdBy._id.toString()) {
+        ticket.assignedTo._id.toString() !== ticket.createdBy._id.toString()) {
         await sendTicketUpdateNotification(
           ticket.assignedTo.email,
           ticket.assignedTo.name || 'User',
@@ -306,12 +323,12 @@ exports.updateTicket = async (req, res) => {
       // If email fails, log the error but still return success
       console.error('Error sending ticket update notification email:', emailError);
     }
-    
+
     // Broadcast ticket update to WebSocket clients
     if (global.broadcastTicketUpdate) {
       global.broadcastTicketUpdate(ticket);
     }
-    
+
     res.json(ticket);
   } catch (error) {
     console.error('Error updating ticket:', error);
@@ -378,41 +395,41 @@ exports.escalateTicket = async (req, res) => {
     if (!req.companyId) {
       return res.status(400).json({ message: 'Company context required to escalate ticket' });
     }
-    
+
     let ticket;
-    
+
     // Find ticket by custom ticketId with company filter
-    ticket = await Ticket.findOne({ 
+    ticket = await Ticket.findOne({
       ticketId: req.params.id,
-      companyId: req.companyId 
+      companyId: req.companyId
     });
-    
+
     // If not found by ticketId and the param looks like an ObjectId, try to find by _id with company filter
     if (!ticket && /^[0-9a-fA-F]{24}$/.test(req.params.id)) {
       ticket = await Ticket.findOne({
         _id: req.params.id,
-        companyId: req.companyId 
+        companyId: req.companyId
       });
     }
-    
+
     if (!ticket) {
       return res.status(404).json({ message: 'Ticket not found' });
     }
-    
+
     // Check if user is authorized to escalate ticket
     if (ticket.createdBy.toString() !== req.user.id && req.user.role !== 'superadmin') {
       return res.status(403).json({ message: 'Not authorized to escalate this ticket' });
     }
-    
+
     // Increase escalation level (max level is 3)
     if (ticket.escalationLevel < 3) {
       ticket.escalationLevel += 1;
       await ticket.save();
-      
+
       // Populate references
       await ticket.populate('createdBy', 'name email');
       await ticket.populate('assignedTo', 'name email');
-      
+
       res.json(ticket);
     } else {
       res.status(400).json({ message: 'Ticket is already at the highest escalation level' });
@@ -429,7 +446,7 @@ exports.getTicketStats = async (req, res) => {
     if (!req.companyId) {
       return res.status(400).json({ message: 'Company context required for statistics' });
     }
-    
+
     const { startDate, endDate } = req.query;
     let filter = { companyId: req.companyId }; // Add company filter
 
@@ -445,23 +462,23 @@ exports.getTicketStats = async (req, res) => {
     }
 
     const totalTickets = await Ticket.countDocuments(filter);
-    
+
     // Add the date filter to all other queries
-    const openTickets = await Ticket.countDocuments({ 
+    const openTickets = await Ticket.countDocuments({
       ...filter,
-      status: 'open' 
+      status: 'open'
     });
-    
-    const inProgressTickets = await Ticket.countDocuments({ 
+
+    const inProgressTickets = await Ticket.countDocuments({
       ...filter,
-      status: 'in_progress' 
+      status: 'in_progress'
     });
-    
-    const highPriorityTickets = await Ticket.countDocuments({ 
+
+    const highPriorityTickets = await Ticket.countDocuments({
       ...filter,
-      priority: { $in: ['high', 'urgent'] } 
+      priority: { $in: ['high', 'urgent'] }
     });
-    
+
     res.json({
       totalTickets,
       openTickets,
@@ -480,7 +497,7 @@ exports.getTicketTrends = async (req, res) => {
     if (!req.companyId) {
       return res.status(400).json({ message: 'Company context required for statistics' });
     }
-    
+
     const { days = 30 } = req.query;
     const endDate = new Date();
     const startDate = new Date();
@@ -541,7 +558,7 @@ exports.getTicketDistribution = async (req, res) => {
     if (!req.companyId) {
       return res.status(400).json({ message: 'Company context required for statistics' });
     }
-    
+
     const { startDate, endDate } = req.query;
     let dateFilter = { companyId: req.companyId }; // Add company filter
 
@@ -585,7 +602,7 @@ exports.getResolutionRates = async (req, res) => {
     if (!req.companyId) {
       return res.status(400).json({ message: 'Company context required for statistics' });
     }
-    
+
     const { days = 30 } = req.query;
     const endDate = new Date();
     const startDate = new Date();
@@ -647,7 +664,7 @@ exports.getAgentPerformance = async (req, res) => {
     if (!req.companyId) {
       return res.status(400).json({ message: 'Company context required for statistics' });
     }
-    
+
     const { startDate, endDate } = req.query;
     let dateFilter = { companyId: req.companyId }; // Add company filter
 
@@ -749,7 +766,7 @@ exports.getRecentActivity = async (req, res) => {
     if (!req.companyId) {
       return res.status(400).json({ message: 'Company context required for statistics' });
     }
-    
+
     // Get the 10 most recently created tickets for this company
     const recentTickets = await Ticket.find({ companyId: req.companyId })
       .populate('createdBy', 'name email')
@@ -770,7 +787,7 @@ exports.getCompanyTicketStats = async (req, res) => {
     if (!req.companyId) {
       return res.status(400).json({ message: 'Company context required for statistics' });
     }
-    
+
     const { startDate, endDate } = req.query;
     let dateFilter = { companyId: req.companyId }; // Add company filter
 
@@ -787,17 +804,17 @@ exports.getCompanyTicketStats = async (req, res) => {
 
     // Get overall company statistics
     const totalTickets = await Ticket.countDocuments(dateFilter);
-    const openTickets = await Ticket.countDocuments({ 
+    const openTickets = await Ticket.countDocuments({
       ...dateFilter,
-      status: 'open' 
+      status: 'open'
     });
-    const resolvedTickets = await Ticket.countDocuments({ 
+    const resolvedTickets = await Ticket.countDocuments({
       ...dateFilter,
-      status: 'resolved' 
+      status: 'resolved'
     });
-    const closedTickets = await Ticket.countDocuments({ 
+    const closedTickets = await Ticket.countDocuments({
       ...dateFilter,
-      status: 'closed' 
+      status: 'closed'
     });
 
     // Calculate average resolution time for resolved tickets
@@ -817,7 +834,7 @@ exports.getCompanyTicketStats = async (req, res) => {
       }
     ]);
 
-    const avgResolutionTime = resolvedTicketsWithTime[0] ? 
+    const avgResolutionTime = resolvedTicketsWithTime[0] ?
       Math.round(resolvedTicketsWithTime[0].avgResolutionTime / (1000 * 60 * 60 * 24)) : 0; // Days
 
     res.json({
@@ -840,7 +857,7 @@ exports.getDepartmentStats = async (req, res) => {
     if (!req.companyId) {
       return res.status(400).json({ message: 'Company context required for statistics' });
     }
-    
+
     const { startDate, endDate } = req.query;
     let dateFilter = { companyId: req.companyId }; // Add company filter
 
@@ -878,7 +895,7 @@ exports.getResponseTimeMetrics = async (req, res) => {
     if (!req.companyId) {
       return res.status(400).json({ message: 'Company context required for statistics' });
     }
-    
+
     const { startDate, endDate } = req.query;
     let dateFilter = { companyId: req.companyId }; // Add company filter
 
@@ -925,7 +942,7 @@ exports.getResponseTimeMetrics = async (req, res) => {
       }
     ]);
 
-    const avgFirstResponseTime = ticketsWithResponse[0] ? 
+    const avgFirstResponseTime = ticketsWithResponse[0] ?
       Math.round(ticketsWithResponse[0].avgFirstResponseTime / (1000 * 60 * 60)) : 0; // Hours
 
     res.json({
@@ -947,7 +964,7 @@ exports.getTicketAgeAnalysis = async (req, res) => {
     if (!req.companyId) {
       return res.status(400).json({ message: 'Company context required for statistics' });
     }
-    
+
     const { startDate, endDate } = req.query;
     let dateFilter = { companyId: req.companyId }; // Add company filter
 
@@ -963,9 +980,9 @@ exports.getTicketAgeAnalysis = async (req, res) => {
     }
 
     // Calculate ticket age for open tickets
-    const openTickets = await Ticket.find({ 
-      ...dateFilter, 
-      status: { $in: ['open', 'in_progress'] } 
+    const openTickets = await Ticket.find({
+      ...dateFilter,
+      status: { $in: ['open', 'in_progress'] }
     });
 
     // Create age buckets
@@ -1030,7 +1047,7 @@ exports.getUpcomingBreaches = async (req, res) => {
     if (!req.companyId) {
       return res.status(400).json({ message: 'Company context required for statistics' });
     }
-    
+
     // Find tickets that are approaching their due date (within 24 hours)
     const now = new Date();
     const tomorrow = new Date(now);
@@ -1039,7 +1056,7 @@ exports.getUpcomingBreaches = async (req, res) => {
     const ticketsAtRisk = await Ticket.find({
       companyId: req.companyId, // Add company filter
       status: { $in: ['open', 'in_progress'] },
-      dueDate: { 
+      dueDate: {
         $gte: now,
         $lte: tomorrow
       }

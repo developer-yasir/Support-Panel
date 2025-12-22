@@ -66,7 +66,8 @@ const tenantMiddleware = async (req, res, next) => {
     if (req.user && req.companyId) {
       // This is a protection check to ensure user doesn't access data from different company
       // than what they belong to
-      if (req.user.companyId.toString() !== req.companyId.toString()) {
+      const userCompanyId = req.user.companyId._id || req.user.companyId;
+      if (userCompanyId.toString() !== req.companyId.toString()) {
         return res.status(403).json({
           message: 'Access denied: You do not belong to this company'
         });

@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
-import '../pages/FreshdeskStyles.css';
 
 const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
@@ -51,7 +50,7 @@ const AdminDashboard = () => {
       });
       setSuccessMessage('User created successfully! Login details have been generated.');
       setShowCreateForm(false);
-      
+
       // Clear success message after 3 seconds
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error) {
@@ -65,11 +64,11 @@ const AdminDashboard = () => {
       const response = await api.put(`/users/${userId}/toggle-status`, {
         isActive: !currentStatus
       });
-      
-      setUsers(users.map(user => 
+
+      setUsers(users.map(user =>
         user._id === userId ? { ...user, isActive: response.data.isActive } : user
       ));
-      
+
       setSuccessMessage(`User status updated successfully`);
       // Clear success message after 3 seconds
       setTimeout(() => setSuccessMessage(''), 3000);
@@ -107,7 +106,7 @@ const AdminDashboard = () => {
         <div className="freshdesk-header-content">
           <h1 className="freshdesk-filter-title">Admin Dashboard</h1>
           <div className="freshdesk-header-actions">
-            <button 
+            <button
               className="freshdesk-new-ticket-btn"
               onClick={() => setShowCreateForm(!showCreateForm)}
             >
@@ -121,7 +120,7 @@ const AdminDashboard = () => {
       </div>
       <div className="freshdesk-layout">
         <Sidebar />
-        
+
         <div className="freshdesk-content">
           <div className="freshdesk-main-content">
             <div className="freshdesk-ticket-list-header">
@@ -138,7 +137,7 @@ const AdminDashboard = () => {
                 {successMessage}
               </div>
             )}
-            
+
             {errorMessage && (
               <div className="freshdesk-loading" style={{ color: '#b91c1c', backgroundColor: '#fee2e2', border: '1px solid #fecaca', padding: '10px', borderRadius: '5px', marginBottom: '10px' }}>
                 {errorMessage}
@@ -156,11 +155,11 @@ const AdminDashboard = () => {
                       id="name"
                       className="freshdesk-filter-input"
                       value={newUser.name}
-                      onChange={(e) => setNewUser({...newUser, name: e.target.value})}
+                      onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
                       required
                     />
                   </div>
-                  
+
                   <div className="filter-group">
                     <label htmlFor="email">Email</label>
                     <input
@@ -168,11 +167,11 @@ const AdminDashboard = () => {
                       id="email"
                       className="freshdesk-filter-input"
                       value={newUser.email}
-                      onChange={(e) => setNewUser({...newUser, email: e.target.value})}
+                      onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
                       required
                     />
                   </div>
-                  
+
                   <div className="filter-group">
                     <label htmlFor="password">Password</label>
                     <input
@@ -180,12 +179,12 @@ const AdminDashboard = () => {
                       id="password"
                       className="freshdesk-filter-input"
                       value={newUser.password}
-                      onChange={(e) => setNewUser({...newUser, password: e.target.value})}
+                      onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
                       required
                       minLength="6"
                     />
                   </div>
-                  
+
                   <div className="filter-group">
                     <label htmlFor="company">Company</label>
                     <input
@@ -193,34 +192,34 @@ const AdminDashboard = () => {
                       id="company"
                       className="freshdesk-filter-input"
                       value={newUser.company}
-                      onChange={(e) => setNewUser({...newUser, company: e.target.value})}
+                      onChange={(e) => setNewUser({ ...newUser, company: e.target.value })}
                     />
                   </div>
-                  
+
                   <div className="filter-group">
                     <label htmlFor="role">Role</label>
                     <select
                       id="role"
                       className="freshdesk-filter-select"
                       value={newUser.role}
-                      onChange={(e) => setNewUser({...newUser, role: e.target.value})}
+                      onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
                     >
                       <option value="support_agent">Support Agent</option>
                       <option value="admin">Admin</option>
                     </select>
                   </div>
-                  
+
                   <div className="filter-group">
                     <label>
                       <input
                         type="checkbox"
                         checked={newUser.isActive}
-                        onChange={(e) => setNewUser({...newUser, isActive: e.target.checked})}
+                        onChange={(e) => setNewUser({ ...newUser, isActive: e.target.checked })}
                       />
                       {' '}Active User (can login)
                     </label>
                   </div>
-                  
+
                   <button type="submit" className="freshdesk-new-ticket-btn" style={{ width: '100%' }}>
                     Create User
                   </button>
@@ -273,7 +272,7 @@ const AdminDashboard = () => {
                         </span>
                       </td>
                       <td>
-                        <span 
+                        <span
                           className={`freshdesk-status-badge ${user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
                           style={{ cursor: 'pointer' }}
                           onClick={() => handleToggleUserStatus(user._id, user.isActive)}
@@ -283,14 +282,14 @@ const AdminDashboard = () => {
                       </td>
                       <td>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                          <button 
+                          <button
                             className="freshdesk-bulk-action-btn"
                             onClick={() => copyToClipboard(`${user.email}\nPassword: [Provided During Creation]`)}
                             title="Copy login credentials"
                           >
                             Copy Login
                           </button>
-                          <button 
+                          <button
                             className="freshdesk-bulk-action-btn"
                             style={{ backgroundColor: '#f87171', color: '#7f1d1d' }}
                             onClick={() => handleDeleteUser(user._id)}

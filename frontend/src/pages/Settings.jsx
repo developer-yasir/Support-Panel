@@ -9,6 +9,127 @@ import './CompanySignup.css'; // Import plan card styles
 import './Settings.css'; // Import specific settings styles
 
 
+// Profile Settings Section Component
+const ProfileSettingsSection = ({ profile, onInputChange, onSave, saving, loading }) => {
+  if (loading) return <div className="loading">Loading profile...</div>;
+
+  return (
+    <div>
+      <div className="section-header">
+        <h1 className="section-title">
+          <svg xmlns="http://www.w3.org/2000/svg" className="section-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+          Profile Settings
+        </h1>
+        <p className="section-subtitle">Manage your personal information and account details</p>
+      </div>
+
+      <div className="card settings__card">
+        <div className="card__body">
+          <div className="settings__section">
+            <h4 className="settings__subsection-title">Personal Information</h4>
+            <div className="form-group">
+              <label htmlFor="name" className="form-label settings__label">Full Name</label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                value={profile.name}
+                onChange={onInputChange}
+                className="form-control"
+                placeholder="Enter your full name"
+              />
+            </div>
+
+            <div className="form-group cursor-not-allowed opacity-70">
+              <label htmlFor="email" className="form-label settings__label">Email Address</label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={profile.email}
+                readOnly
+                className="form-control"
+                disabled
+              />
+              <p className="settings__help-text">Email address cannot be changed. Contact support for assistance.</p>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="phone" className="form-label settings__label">Phone Number</label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                value={profile.phone}
+                onChange={onInputChange}
+                className="form-control"
+                placeholder="Enter your phone number"
+              />
+            </div>
+
+            <div className="divider mt-4 mb-4"></div>
+
+            <h4 className="settings__subsection-title">Profile Visibility</h4>
+            <div className="form-group">
+              <div className="settings__toggle-group">
+                <label htmlFor="showEmail" className="form-label settings__label">
+                  Show Email to Team
+                </label>
+                <div className="settings__toggle">
+                  <input
+                    type="checkbox"
+                    id="showEmail"
+                    name="showEmail"
+                    checked={profile.showEmail}
+                    onChange={onInputChange}
+                    className="settings__toggle-input"
+                  />
+                  <label htmlFor="showEmail" className="settings__toggle-label">
+                    <span className="settings__toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <div className="settings__toggle-group">
+                <label htmlFor="showPhone" className="form-label settings__label">
+                  Show Phone to Team
+                </label>
+                <div className="settings__toggle">
+                  <input
+                    type="checkbox"
+                    id="showPhone"
+                    name="showPhone"
+                    checked={profile.showPhone}
+                    onChange={onInputChange}
+                    className="settings__toggle-input"
+                  />
+                  <label htmlFor="showPhone" className="settings__toggle-label">
+                    <span className="settings__toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div className="settings__actions">
+              <button
+                className="btn btn--primary"
+                onClick={onSave}
+                disabled={saving}
+              >
+                {saving ? 'Saving...' : 'Save Profile'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Notification Settings Section Component
 const NotificationSettingsSection = ({ settings, onInputChange, onSubmit, saving, loading }) => {
   if (loading) return <div className="loading">Loading notification settings...</div>;
@@ -324,7 +445,7 @@ const TicketSettingsSection = ({ settings, onSave, saving, loading }) => {
                       id="autoAssign"
                       name="autoAssign"
                       checked={settings.autoAssign}
-                      onChange={(e) => {}} // Will be updated with proper handler
+                      onChange={(e) => { }} // Will be updated with proper handler
                       className="settings__toggle-input"
                     />
                     <label htmlFor="autoAssign" className="settings__toggle-label">
@@ -343,7 +464,7 @@ const TicketSettingsSection = ({ settings, onSave, saving, loading }) => {
                   id="defaultPriority"
                   name="defaultPriority"
                   value={settings.defaultPriority}
-                  onChange={(e) => {}} // Will be updated with proper handler
+                  onChange={(e) => { }} // Will be updated with proper handler
                   className="form-control form-control--select"
                 >
                   <option value="low">Low</option>
@@ -1102,12 +1223,12 @@ const AdvancedPreferencesSection = ({ loading, saving, onAdvancedSettingsSubmit 
                     placeholder="New field name"
                     className="form-control"
                     value={newCustomField.name}
-                    onChange={(e) => setNewCustomField({...newCustomField, name: e.target.value})}
+                    onChange={(e) => setNewCustomField({ ...newCustomField, name: e.target.value })}
                   />
                   <select
                     className="form-control form-control--select"
                     value={newCustomField.type}
-                    onChange={(e) => setNewCustomField({...newCustomField, type: e.target.value})}
+                    onChange={(e) => setNewCustomField({ ...newCustomField, type: e.target.value })}
                   >
                     <option value="text">Text</option>
                     <option value="number">Number</option>
@@ -1272,7 +1393,7 @@ const SupportHelpSection = ({ loading }) => {
                       id="receiveUpdates"
                       name="receiveUpdates"
                       checked={true}
-                      onChange={() => {}}
+                      onChange={() => { }}
                       className="settings__toggle-input"
                     />
                     <label htmlFor="receiveUpdates" className="settings__toggle-label">
@@ -1353,11 +1474,11 @@ const Settings = () => {
         // Get company information
         const companyResponse = await api.get('/companies/current');
         setCompanyInfo(companyResponse.data);
-        
+
         // Get available plans
         const setupResponse = await api.get('/companies/setup-info');
         setSetupInfo(setupResponse.data);
-        
+
         // Get user security info (if available)
         const userResponse = await api.get('/auth/profile');
         setSecurity(prev => ({
@@ -1572,7 +1693,7 @@ const Settings = () => {
     const { name, value, type, checked } = e.target;
     const newValue = type === 'checkbox' ? checked : value;
 
-    switch(section) {
+    switch (section) {
       case 'profile':
         setProfile(prev => ({ ...prev, [name]: newValue }));
         break;
@@ -1599,7 +1720,7 @@ const Settings = () => {
   };
 
   const renderTabContent = () => {
-    switch(activeTab) {
+    switch (activeTab) {
       case 'profile':
         return <ProfileSettingsSection
           profile={profile}
@@ -1628,7 +1749,7 @@ const Settings = () => {
         return <TicketSettingsSection
           settings={ticketSettings}
           onInputChange={(e) => handleInputChange(e, 'tickets')}
-          onSave={() => {}}
+          onSave={() => { }}
           saving={saving}
           loading={loading}
         />;
@@ -1675,117 +1796,117 @@ const Settings = () => {
               <div className="card__body">
                 <div className="settings__section">
 
-                {loading ? (
-                  <div className="loading-state">
-                    <div className="loading-spinner"></div>
-                    <p>Loading plan information...</p>
-                  </div>
-                ) : (
-                  <div className="plan-management-section">
-                    {planChangeSuccess && (
-                      <div className="alert alert--success">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="alert-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span className="alert-message">Plan updated successfully!</span>
-                      </div>
-                    )}
+                  {loading ? (
+                    <div className="loading-state">
+                      <div className="loading-spinner"></div>
+                      <p>Loading plan information...</p>
+                    </div>
+                  ) : (
+                    <div className="plan-management-section">
+                      {planChangeSuccess && (
+                        <div className="alert alert--success">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="alert-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          <span className="alert-message">Plan updated successfully!</span>
+                        </div>
+                      )}
 
-                    <div className="plan-cards-grid">
-                      {setupInfo?.plans && Object.entries(setupInfo.plans).map(([key, plan]) => (
-                        <div
-                          key={key}
-                          className={`plan-card ${companyInfo?.plan === key ? 'plan-card--selected' : ''}`}
-                          onClick={() => {
-                            if (companyInfo?.plan !== key && !planLoading) {
-                              handlePlanChange(key);
-                            }
-                          }}
-                        >
-                          <div className="plan-header">
-                            <div>
-                              <h4 className="plan-name">{plan.name}</h4>
-                              {plan.price > 0 ? (
-                                <div className="plan-price">
-                                  <span className="plan-amount">${plan.price}</span>
-                                  <span className="plan-period">/month</span>
-                                </div>
-                              ) : (
-                                <div className="plan-price">
-                                  <span className="plan-amount">Free</span>
+                      <div className="plan-cards-grid">
+                        {setupInfo?.plans && Object.entries(setupInfo.plans).map(([key, plan]) => (
+                          <div
+                            key={key}
+                            className={`plan-card ${companyInfo?.plan === key ? 'plan-card--selected' : ''}`}
+                            onClick={() => {
+                              if (companyInfo?.plan !== key && !planLoading) {
+                                handlePlanChange(key);
+                              }
+                            }}
+                          >
+                            <div className="plan-header">
+                              <div>
+                                <h4 className="plan-name">{plan.name}</h4>
+                                {plan.price > 0 ? (
+                                  <div className="plan-price">
+                                    <span className="plan-amount">${plan.price}</span>
+                                    <span className="plan-period">/month</span>
+                                  </div>
+                                ) : (
+                                  <div className="plan-price">
+                                    <span className="plan-amount">Free</span>
+                                  </div>
+                                )}
+                              </div>
+                              {companyInfo?.plan === key && (
+                                <div className="plan-checkmark">
+                                  <svg className="h-5 w-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  </svg>
                                 </div>
                               )}
                             </div>
-                            {companyInfo?.plan === key && (
-                              <div className="plan-checkmark">
-                                <svg className="h-5 w-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+
+                            <ul className="plan-features">
+                              <li className="plan-feature">
+                                <svg className="feature-icon text-green-500" fill="currentColor" viewBox="0 0 20 20">
                                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                 </svg>
-                              </div>
-                            )}
+                                {plan.features.agentSeats} agent{plan.features.agentSeats !== 1 ? 's' : ''} included
+                              </li>
+                              <li className="plan-feature">
+                                <svg className="feature-icon text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                                {plan.features.ticketVolume.toLocaleString()} tickets/month
+                              </li>
+                              {plan.features.customFields && (
+                                <li className="plan-feature">
+                                  <svg className="feature-icon text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  </svg>
+                                  Custom Fields
+                                </li>
+                              )}
+                              {plan.features.reporting && (
+                                <li className="plan-feature">
+                                  <svg className="feature-icon text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  </svg>
+                                  Advanced Reporting
+                                </li>
+                              )}
+                              {plan.features.apiAccess && (
+                                <li className="plan-feature">
+                                  <svg className="feature-icon text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  </svg>
+                                  API Access
+                                </li>
+                              )}
+                            </ul>
+
+                            <button
+                              className={`btn btn--${companyInfo?.plan === key ? 'secondary' : 'primary'} btn--block mt-3`}
+                              disabled={companyInfo?.plan === key || planLoading}
+                            >
+                              {planLoading ? 'Processing...' :
+                                companyInfo?.plan === key ? 'Current Plan' :
+                                  plan.price > 0 ? `Select ${plan.name}` : 'Select Free Plan'}
+                            </button>
                           </div>
+                        ))}
+                      </div>
 
-                          <ul className="plan-features">
-                            <li className="plan-feature">
-                              <svg className="feature-icon text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                              </svg>
-                              {plan.features.agentSeats} agent{plan.features.agentSeats !== 1 ? 's' : ''} included
-                            </li>
-                            <li className="plan-feature">
-                              <svg className="feature-icon text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                              </svg>
-                              {plan.features.ticketVolume.toLocaleString()} tickets/month
-                            </li>
-                            {plan.features.customFields && (
-                              <li className="plan-feature">
-                                <svg className="feature-icon text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                </svg>
-                                Custom Fields
-                              </li>
-                            )}
-                            {plan.features.reporting && (
-                              <li className="plan-feature">
-                                <svg className="feature-icon text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                </svg>
-                                Advanced Reporting
-                              </li>
-                            )}
-                            {plan.features.apiAccess && (
-                              <li className="plan-feature">
-                                <svg className="feature-icon text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                </svg>
-                                API Access
-                              </li>
-                            )}
-                          </ul>
-
-                          <button
-                            className={`btn btn--${companyInfo?.plan === key ? 'secondary' : 'primary'} btn--block mt-3`}
-                            disabled={companyInfo?.plan === key || planLoading}
-                          >
-                            {planLoading ? 'Processing...' :
-                             companyInfo?.plan === key ? 'Current Plan' :
-                             plan.price > 0 ? `Select ${plan.name}` : 'Select Free Plan'}
-                          </button>
-                        </div>
-                      ))}
+                      <div className="settings__help-text mt-3">
+                        <p><strong>Billing Information:</strong></p>
+                        <p>Current billing email: {companyInfo?.billingEmail || 'Loading...'}</p>
+                        <p>Next billing date: {companyInfo?.nextBillingDate || 'N/A for free plan'}</p>
+                      </div>
                     </div>
-
-                    <div className="settings__help-text mt-3">
-                      <p><strong>Billing Information:</strong></p>
-                      <p>Current billing email: {companyInfo?.billingEmail || 'Loading...'}</p>
-                      <p>Next billing date: {companyInfo?.nextBillingDate || 'N/A for free plan'}</p>
-                    </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
-          </div>
           </div>
         );
       default:

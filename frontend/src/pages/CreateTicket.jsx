@@ -1,638 +1,399 @@
-import { useState, useEffect } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
-import './CreateTicketStyles.css';
+import TagInput from '../components/TagInput';
+import Toast from '../components/Toast';
+import ContactSearch from '../components/ContactSearch';
+import CustomSelect from '../components/CustomSelect';
+import RichTextEditor from '../components/RichTextEditor';
+import CustomerProfilePanel from '../components/CustomerProfilePanel';
+import FileUploader from '../components/FileUploader';
 
 const CreateTicket = () => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     priority: 'medium',
-    type: 'Question',
     status: 'open',
-    category: '',
-    city: '',
-    country: '',
-    tags: '',
-    storeLocationCode: '',
-    contact: '',
-    cc: '',
-    company: '',
-    group: '',
+    contactEmail: '',
+    projectId: '',
+    type: 'Question',
+    source: 'Portal',
+    tags: [],
+    cc: [],
     agent: ''
   });
-  
-  const [contacts, setContacts] = useState([]);
-  const [companies, setCompanies] = useState([]);
+
+  const [projects, setProjects] = useState([]);
   const [agents, setAgents] = useState([]);
-  const [partnerAgents, setPartnerAgents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [toast, setToast] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Fetch contacts, companies, agents, and partner agents
     const fetchData = async () => {
       try {
-        const contactsResponse = await api.get('/contacts');
-        setContacts(contactsResponse.data);
+        const pReq = api.get('/projects');
+        const aReq = api.get('/users/agents');
+        const [pRes, aRes] = await Promise.all([pReq, aReq]);
+        setProjects(pRes.data || []);
+        setAgents(aRes.data || []);
       } catch (error) {
-        console.error('Error fetching contacts:', error);
-        // Fallback to sample data if API fails
-        setContacts([
-          { _id: 'c1', name: 'John Doe', email: 'john@example.com' },
-          { _id: 'c2', name: 'Jane Smith', email: 'jane@example.com' },
-          { _id: 'c3', name: 'Bob Johnson', email: 'bob@example.com' }
-        ]);
-      }
-
-      try {
-        const companiesResponse = await api.get('/companies');
-        setCompanies(companiesResponse.data);
-      } catch (error) {
-        console.error('Error fetching companies:', error);
-        setCompanies([
-          { _id: 'comp1', name: 'ABC Corp' },
-          { _id: 'comp2', name: 'XYZ Ltd' },
-          { _id: 'comp3', name: '123 Industries' }
-        ]);
-      }
-
-      try {
-        const agentsResponse = await api.get('/users/agents');
-        setAgents(agentsResponse.data);
-      } catch (error) {
-        console.error('Error fetching agents:', error);
-        // Check if the error is related to authentication
-        if (error.response?.status === 401 || error.response?.status === 403) {
-          // Show a warning to the user about authentication
-          console.warn('Authentication required to fetch agents. Using sample data.');
-        }
-        // Fallback to sample data if API fails
-        setAgents([
-          { _id: 'a1', name: 'Alice Cooper', email: 'alice@support.com' },
-          { _id: 'a2', name: 'Bob Marley', email: 'bob@support.com' },
-          { _id: 'a3', name: 'Carol King', email: 'carol@support.com' }
-        ]);
-      }
-
-      try {
-        // Fetch partner agents from partnerships
-        const partnerAgentsResponse = await api.get('/partnerships/agents');
-        setPartnerAgents(partnerAgentsResponse.data);
-      } catch (error) {
-        console.error('Error fetching partner agents:', error);
-        // Don't throw an error here since partnerships may not be set up yet
-        setPartnerAgents([]);
+        console.error('Error fetching data:', error);
       }
     };
-
     fetchData();
   }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    
-    // Clear error for this field when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
-  const handleAddCCTag = (e) => {
-    if (e.key === 'Enter' && e.target.value) {
-      e.preventDefault();
-      const newTag = e.target.value.trim();
-      if (newTag) {
-        const currentCC = formData.cc ? formData.cc.split(',').map(tag => tag.trim()) : [];
-        if (!currentCC.includes(newTag)) {
-          setFormData(prev => ({
-            ...prev,
-            cc: [...currentCC, newTag].join(',')
-          }));
-        }
-        e.target.value = '';
-      }
-    }
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
   };
 
-  const handleAddTag = (e) => {
-    if (e.key === 'Enter' && e.target.value) {
-      e.preventDefault();
-      const newTag = e.target.value.trim();
-      if (newTag) {
-        const currentTags = formData.tags ? formData.tags.split(',').map(tag => tag.trim()) : [];
-        if (!currentTags.includes(newTag)) {
-          setFormData(prev => ({
-            ...prev,
-            tags: [...currentTags, newTag].join(',')
-          }));
-        }
-        e.target.value = '';
-      }
-    }
-  };
-
-  const handleSubmit = async (e) => {
+  const handleFormSubmit = async (e, createAnother = false) => {
     e.preventDefault();
-    
+
     // Validation
     const newErrors = {};
     if (!formData.title.trim()) newErrors.title = 'Subject is required';
     if (!formData.description.trim()) newErrors.description = 'Description is required';
-    if (!formData.contact) newErrors.contact = 'Contact is required';
+    if (!formData.contactEmail.trim()) newErrors.contactEmail = 'Contact is required';
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      showToast('Please fix the errors below.', 'error');
       return;
     }
 
     setLoading(true);
-    
+
     try {
       const submitData = {
-        title: formData.title,
-        description: formData.description,
-        priority: formData.priority,
-        status: formData.status,
-        createdBy: formData.contact, // This might need to be handled differently depending on your backend
+        ...formData,
+        projectId: formData.projectId || undefined,
         assignedTo: formData.agent || undefined,
-        company: formData.company || undefined
       };
 
-      const response = await api.post('/tickets', submitData);
-      alert('Ticket created successfully!');
-      navigate('/tickets');
+      await api.post('/tickets', submitData);
+
+      showToast(`Ticket '${formData.title}' created successfully!`, 'success');
+
+      if (createAnother) {
+        setFormData(prev => ({
+          ...prev,
+          title: '',
+          description: '',
+          status: 'open',
+          priority: 'medium',
+          type: 'Question',
+          tags: [],
+          cc: []
+        }));
+      } else {
+        setTimeout(() => navigate('/tickets'), 1000);
+      }
     } catch (error) {
       console.error('Error creating ticket:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to create ticket';
-      alert(`Error: ${errorMessage}`);
+      showToast(error.response?.data?.message || 'Failed to create ticket', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCreateAnother = async (e) => {
-    e.preventDefault();
-    
-    // Validation
-    const newErrors = {};
-    if (!formData.title.trim()) newErrors.title = 'Subject is required';
-    if (!formData.description.trim()) newErrors.description = 'Description is required';
-    if (!formData.contact) newErrors.contact = 'Contact is required';
+  // --- Rendering Helpers ---
 
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
+  const renderStatus = (option, isSelected) => (
+    <div className="flex items-center gap-2">
+      <span className={`w-2 h-2 rounded-full ${option.value === 'open' ? 'bg-blue-500' :
+        option.value === 'pending' ? 'bg-orange-500' :
+          option.value === 'resolved' ? 'bg-green-500' : 'bg-gray-500'
+        }`}></span>
+      <span className={isSelected ? 'font-medium' : ''}>{option.label}</span>
+    </div>
+  );
 
-    setLoading(true);
-    
-    try {
-      const submitData = {
-        title: formData.title,
-        description: formData.description,
-        priority: formData.priority,
-        status: formData.status,
-        createdBy: formData.contact, // This might need to be handled differently depending on your backend
-        assignedTo: formData.agent || undefined,
-        company: formData.company || undefined
-      };
+  const renderPriority = (option, isSelected) => (
+    <div className="flex items-center gap-2">
+      <span className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${option.value === 'urgent' ? 'bg-red-100 text-red-700' :
+        option.value === 'high' ? 'bg-orange-100 text-orange-700' :
+          option.value === 'medium' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
+        }`}>
+        {option.label}
+      </span>
+    </div>
+  );
 
-      const response = await api.post('/tickets', submitData);
-      alert('Ticket created successfully!');
-      
-      // Reset form for another ticket
-      setFormData({
-        title: '',
-        description: '',
-        priority: 'medium',
-        type: 'Question',
-        status: 'open',
-        category: '',
-        city: '',
-        country: '',
-        tags: '',
-        storeLocationCode: '',
-        contact: '',
-        cc: '',
-        company: '',
-        group: '',
-        agent: ''
-      });
-    } catch (error) {
-      console.error('Error creating ticket:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to create ticket';
-      alert(`Error: ${errorMessage}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCancel = () => {
-    navigate('/tickets');
-  };
-
-  const getContactById = (id) => {
-    return contacts.find(contact => contact._id === id);
-  };
-
-  const getCompanyById = (id) => {
-    return companies.find(company => company._id === id);
-  };
-
-  const getAgentById = (id) => {
-    return agents.find(agent => agent._id === id);
-  };
+  const renderAgent = (option, isSelected) => (
+    <div className="flex items-center gap-2">
+      {option.value ? (
+        <div className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-[10px] font-bold">
+          {option.label.charAt(0)}
+        </div>
+      ) : (
+        <div className="w-5 h-5 rounded-full border border-dashed border-gray-400 flex items-center justify-center text-[10px] text-gray-400">
+          -
+        </div>
+      )}
+      <span className={isSelected ? 'text-gray-900' : 'text-gray-700'}>{option.label}</span>
+    </div>
+  );
 
   return (
-    <div className="freshdesk-create-ticket-page">
-      <Navbar />
-      <div className="freshdesk-layout">
-        <Sidebar />
-        <div className="freshdesk-create-ticket-content">
-          <div className="freshdesk-page-header">
-            <h1 className="freshdesk-page-title">Create Ticket</h1>
-            <div className="freshdesk-header-actions">
-              <button 
-                onClick={handleCancel} 
-                className="freshdesk-btn freshdesk-btn--secondary"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleCreateAnother}
-                disabled={loading}
-                className="freshdesk-btn freshdesk-btn--secondary"
-              >
-                Create Another
-              </button>
-              <button 
-                onClick={handleSubmit}
-                disabled={loading}
-                className="freshdesk-btn freshdesk-btn--primary"
-              >
-                {loading ? 'Creating...' : 'Create Ticket'}
-              </button>
+    <div className="flex h-screen bg-gray-50 font-sans text-gray-900 overflow-hidden">
+      <Sidebar />
+
+      <div className="flex flex-col w-full min-w-0 pl-[268px] [.sidebar-collapsed_&]:pl-[72px] transition-all duration-300">
+        <Navbar />
+
+        {toast && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast(null)}
+          />
+        )}
+
+        <main className="flex-1 overflow-y-auto bg-gray-50/50 mt-[69px]">
+          {/* Full Width Container */}
+          <div className="h-full flex flex-col pl-16 pr-10 py-6" style={{ marginLeft: '100px' }}>
+
+            {/* Header */}
+            <div className="flex justify-between items-center mb-6 py-2">
+              <div>
+                <h1 className="text-xl font-bold text-gray-900 tracking-tight leading-none">New Ticket</h1>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => navigate('/tickets')}
+                  className="px-4 py-2 text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 shadow-sm text-sm font-medium transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={(e) => handleFormSubmit(e, false)}
+                  disabled={loading}
+                  className="px-6 py-2 text-white bg-indigo-600 border border-transparent rounded-lg hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 shadow-md shadow-indigo-200 text-sm font-semibold transition-all flex items-center gap-2"
+                >
+                  {loading ? 'Creating...' : 'Create Ticket'}
+                </button>
+              </div>
             </div>
-          </div>
 
-          <div className="freshdesk-create-ticket-form">
-            <form onSubmit={handleSubmit}>
-              <div className="freshdesk-form-section">
-                <div className="freshdesk-form-row">
-                  <div className="freshdesk-form-group">
-                    <label className="freshdesk-form-label">Contact *</label>
-                    <div className="freshdesk-flex-row">
-                      <select
-                        name="contact"
-                        value={formData.contact}
-                        onChange={handleInputChange}
-                        className={`freshdesk-form-select ${errors.contact ? 'freshdesk-form-error' : ''}`}
-                      >
-                        <option value="">Select Contact</option>
-                        {contacts.map(contact => (
-                          <option key={contact._id} value={contact._id}>
-                            {contact.name} ({contact.email})
-                          </option>
-                        ))}
-                      </select>
-                      <button type="button" className="freshdesk-add-btn">
-                        Add new contact
-                      </button>
+            {/* 2-Column Layout Grid (Immersive Split) */}
+            <div className="grid grid-cols-12 gap-6 flex-1 min-h-0 pb-8">
+
+              {/* CENTER COLUMN (9/12): Main Composer - IMMERSIVE EDITOR */}
+              <div className="col-span-12 lg:col-span-9 flex flex-col gap-6 h-full" style={{ padding: '10px', background: '#fff' }}>
+
+                {/* Requester Search (Primary Input) */}
+                <div className="bg-white rounded-xl p-6">
+                  <div className="flex flex-col gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2">
+                        Requesting Contact <span className="text-red-500">*</span>
+                      </label>
+                      <ContactSearch
+                        value={formData.contactEmail}
+                        onChange={(val) => setFormData(prev => ({ ...prev, contactEmail: val }))}
+                        error={errors.contactEmail}
+                      />
+                      {errors.contactEmail && <p className="mt-1.5 text-xs text-red-600">{errors.contactEmail}</p>}
                     </div>
-                    {errors.contact && (
-                      <div className="freshdesk-error-message">{errors.contact}</div>
-                    )}
-                  </div>
 
-                  <div className="freshdesk-form-group">
-                    <label className="freshdesk-form-label">Add Cc</label>
-                    <div className="freshdesk-tag-input">
-                      <div className="freshdesk-tags-container">
-                        {formData.cc && formData.cc.split(',').filter(tag => tag.trim()).map((tag, index) => (
-                          <span key={`cc-${index}`} className="freshdesk-tag">
-                            {tag.trim()}
-                          </span>
-                        ))}
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="Type and press Enter to add CC"
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && e.target.value) {
-                            e.preventDefault();
-                            const newTag = e.target.value.trim();
-                            if (newTag) {
-                              const currentCC = formData.cc ? formData.cc.split(',').map(tag => tag.trim()) : [];
-                              if (!currentCC.includes(newTag)) {
-                                setFormData(prev => ({
-                                  ...prev,
-                                  cc: [...currentCC, newTag].join(',')
-                                }));
-                              }
-                            }
-                            e.target.value = '';
-                          }
-                        }}
-                        className="freshdesk-tag-input-field"
+                    <div className="pt-2">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Cc</label>
+                      <TagInput
+                        tags={formData.cc}
+                        onTagsChange={(newCC) => setFormData({ ...formData, cc: newCC })}
+                        placeholder="Add Cc..."
                       />
                     </div>
                   </div>
                 </div>
 
-                <div className="freshdesk-form-group">
-                  <label className="freshdesk-form-label">Subject *</label>
-                  <input
-                    type="text"
-                    name="title"
-                    value={formData.title}
-                    onChange={handleInputChange}
-                    className={`freshdesk-form-input ${errors.title ? 'freshdesk-form-error' : ''}`}
-                    placeholder="Enter subject"
-                  />
-                  {errors.title && (
-                    <div className="freshdesk-error-message">{errors.title}</div>
-                  )}
-                </div>
-
-                <div className="freshdesk-form-row">
-                  <div className="freshdesk-form-group">
-                    <label className="freshdesk-form-label">Type</label>
-                    <select
-                      name="type"
-                      value={formData.type}
-                      onChange={handleInputChange}
-                      className="freshdesk-form-select"
-                    >
-                      <option value="Question">Question</option>
-                      <option value="Incident">Incident</option>
-                      <option value="Problem">Problem</option>
-                      <option value="Change">Change</option>
-                    </select>
-                  </div>
-
-                  <div className="freshdesk-form-group">
-                    <label className="freshdesk-form-label">Status</label>
-                    <select
-                      name="status"
-                      value={formData.status}
-                      onChange={handleInputChange}
-                      className="freshdesk-form-select"
-                    >
-                      <option value="open">Open</option>
-                      <option value="in_progress">In Progress</option>
-                      <option value="pending">Pending</option>
-                      <option value="resolved">Resolved</option>
-                      <option value="closed">Closed</option>
-                    </select>
-                  </div>
-
-                  <div className="freshdesk-form-group">
-                    <label className="freshdesk-form-label">Priority</label>
-                    <select
-                      name="priority"
-                      value={formData.priority}
-                      onChange={handleInputChange}
-                      className="freshdesk-form-select"
-                    >
-                      <option value="low">Low</option>
-                      <option value="medium">Medium</option>
-                      <option value="high">High</option>
-                      <option value="urgent">Urgent</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="freshdesk-form-row">
-                  <div className="freshdesk-form-group">
-                    <label className="freshdesk-form-label">Group</label>
-                    <select
-                      name="group"
-                      value={formData.group}
-                      onChange={handleInputChange}
-                      className="freshdesk-form-select"
-                    >
-                      <option value="">Select Group</option>
-                      <option value="technical">Technical Support</option>
-                      <option value="billing">Billing</option>
-                      <option value="sales">Sales</option>
-                    </select>
-                  </div>
-
-                  <div className="freshdesk-form-group">
-                    <label className="freshdesk-form-label">Agent</label>
-                    <select
-                      name="agent"
-                      value={formData.agent}
-                      onChange={handleInputChange}
-                      className="freshdesk-form-select"
-                    >
-                      <option value="">Select Agent</option>
-
-                      {/* Regular agents from the current company */}
-                      {agents.length > 0 && (
-                        <optgroup label="Your Company Agents">
-                          {agents.map(agent => (
-                            <option key={agent._id} value={agent._id}>
-                              {agent.name} {agent.companyId?.name ? `(${agent.companyId.name})` : '(Your Company)'}
-                            </option>
-                          ))}
-                        </optgroup>
-                      )}
-
-                      {/* Partner company agents */}
-                      {partnerAgents.length > 0 && (
-                        <optgroup label="Partner Company Agents">
-                          {partnerAgents.map(agent => (
-                            <option key={agent._id} value={agent._id}>
-                              {agent.name} {agent.companyId?.name ? `(${agent.companyId.name})` : '(Partner)'}
-                            </option>
-                          ))}
-                        </optgroup>
-                      )}
-                    </select>
-                  </div>
-
-                  <div className="freshdesk-form-group">
-                    <label className="freshdesk-form-label">Company</label>
-                    <select
-                      name="company"
-                      value={formData.company}
-                      onChange={handleInputChange}
-                      className="freshdesk-form-select"
-                    >
-                      <option value="">Select Company</option>
-                      {companies.map(company => (
-                        <option key={company._id} value={company._id}>
-                          {company.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="freshdesk-form-group">
-                  <label className="freshdesk-form-label">Description *</label>
-                  <textarea
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    className={`freshdesk-form-textarea ${errors.description ? 'freshdesk-form-error' : ''}`}
-                    rows="6"
-                    placeholder="Describe the issue here..."
-                  />
-                  {errors.description && (
-                    <div className="freshdesk-error-message">{errors.description}</div>
-                  )}
-                </div>
-              </div>
-
-              {/* Additional Fields Section */}
-              <div className="freshdesk-form-section freshdesk-form-section--border-top">
-                <h3 className="freshdesk-section-title">Additional Fields</h3>
-                
-                <div className="freshdesk-form-row">
-                  <div className="freshdesk-form-group">
-                    <label className="freshdesk-form-label">Category</label>
-                    <select
-                      name="category"
-                      value={formData.category}
-                      onChange={handleInputChange}
-                      className="freshdesk-form-select"
-                    >
-                      <option value="">Select Category</option>
-                      <option value="technical">Technical Issue</option>
-                      <option value="billing">Billing Query</option>
-                      <option value="account">Account Issue</option>
-                      <option value="feature">Feature Request</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </div>
-
-                  <div className="freshdesk-form-group">
-                    <label className="freshdesk-form-label">Store/Location/Site Code</label>
+                {/* Composer */}
+                <div className="bg-white rounded-xl p-6 flex-1 flex flex-col">
+                  <div className="mb-6">
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                      Subject <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="text"
-                      name="storeLocationCode"
-                      value={formData.storeLocationCode}
+                      name="title"
+                      value={formData.title}
                       onChange={handleInputChange}
-                      className="freshdesk-form-input"
-                      placeholder="Enter store/location/site code"
+                      className={`w-full px-4 h-11 bg-gray-50 border rounded-lg outline-none transition-all duration-200 hover:bg-white hover:border-gray-300
+                                      ${errors.title
+                          ? 'border-red-300 bg-red-50/50'
+                          : 'border-gray-200 focus:border-indigo-500 focus:bg-white'
+                        } text-gray-900 font-medium placeholder-gray-400`}
+                      placeholder="Brief summary of the issue"
                     />
+                    {errors.title && <p className="mt-1.5 text-xs text-red-600">{errors.title}</p>}
                   </div>
-                </div>
 
-                <div className="freshdesk-form-row">
-                  <div className="freshdesk-form-group">
-                    <label className="freshdesk-form-label">City</label>
-                    <input
-                      type="text"
-                      name="city"
-                      value={formData.city}
-                      onChange={handleInputChange}
-                      className="freshdesk-form-input"
-                      placeholder="Enter city"
+                  <div className="flex-1 flex flex-col min-h-[400px]">
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                      Description <span className="text-red-500">*</span>
+                    </label>
+                    <RichTextEditor
+                      value={formData.description}
+                      onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                      error={errors.description}
                     />
-                  </div>
+                    {errors.description && <p className="mt-1.5 text-xs text-red-600">{errors.description}</p>}
 
-                  <div className="freshdesk-form-group">
-                    <label className="freshdesk-form-label">Country</label>
-                    <select
-                      name="country"
-                      value={formData.country}
-                      onChange={handleInputChange}
-                      className="freshdesk-form-select"
-                    >
-                      <option value="">Select Country</option>
-                      <option value="US">United States</option>
-                      <option value="UK">United Kingdom</option>
-                      <option value="CA">Canada</option>
-                      <option value="AU">Australia</option>
-                      <option value="DE">Germany</option>
-                      <option value="FR">France</option>
-                      <option value="IN">India</option>
-                      <option value="JP">Japan</option>
-                      <option value="CN">China</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="freshdesk-form-group">
-                  <label className="freshdesk-form-label">Tags</label>
-                  <div className="freshdesk-tag-input">
-                    <div className="freshdesk-tags-container">
-                      {formData.tags && formData.tags.split(',').filter(tag => tag.trim()).map((tag, index) => (
-                        <span key={`tag-${index}`} className="freshdesk-tag">
-                          {tag.trim()}
-                        </span>
-                      ))}
+                    {/* Attachment Section */}
+                    <div className="mt-6">
+                      <label className="block text-sm font-semibold text-gray-900 mb-2">Attachments</label>
+                      <FileUploader
+                        files={formData.attachments || []}
+                        onFilesChange={(files) => setFormData(prev => ({ ...prev, attachments: files }))}
+                      />
                     </div>
-                    <input
-                      type="text"
-                      placeholder="Type and press Enter to add tags"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && e.target.value) {
-                          e.preventDefault();
-                          const newTag = e.target.value.trim();
-                          if (newTag) {
-                            const currentTags = formData.tags ? formData.tags.split(',').map(tag => tag.trim()) : [];
-                            if (!currentTags.includes(newTag)) {
-                              setFormData(prev => ({
-                                ...prev,
-                                tags: [...currentTags, newTag].join(',')
-                              }));
-                            }
-                          }
-                          e.target.value = '';
-                        }
-                      }}
-                      className="freshdesk-tag-input-field"
+
+                    <div className="mt-6 pt-6 border-t border-gray-100">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Tags</label>
+                      <TagInput
+                        tags={formData.tags}
+                        onTagsChange={(newTags) => setFormData({ ...formData, tags: newTags })}
+                        placeholder="Add tags..."
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* RIGHT COLUMN (3/12): Properties & Context Sidebar */}
+              <div className="col-span-12 lg:col-span-3 space-y-6 flex flex-col h-full overflow-hidden">
+
+                {/* Customer Info Panel - Shows when contact selected */}
+                {formData.contactEmail && (
+                  <div className="shrink-0 animate-in fade-in slide-in-from-right-4 duration-500">
+                    <CustomerProfilePanel
+                      contactEmail={formData.contactEmail}
+                      contactName={formData.contactEmail.split('@')[0]}
+                    />
+                  </div>
+                )}
+
+                {/* Properties */}
+                <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 flex-1 overflow-y-auto">
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6 border-b border-gray-100 pb-3 flex items-center justify-between">
+                    Properties
+                    <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                  </h3>
+
+                  <div className="space-y-4">
+                    <CustomSelect
+                      label="Type"
+                      value={formData.type}
+                      options={[
+                        { value: 'Question', label: 'Question' },
+                        { value: 'Incident', label: 'Incident' },
+                        { value: 'Problem', label: 'Problem' },
+                        { value: 'Feature Request', label: 'Feature Request' },
+                      ]}
+                      onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                    />
+
+                    <CustomSelect
+                      label="Source"
+                      value={formData.source}
+                      options={[
+                        { value: 'Portal', label: 'Portal' },
+                        { value: 'Email', label: 'Email' },
+                        { value: 'Phone', label: 'Phone' },
+                        { value: 'Chat', label: 'Chat' },
+                        { value: 'Feedback Widget', label: 'Feedback Widget' },
+                      ]}
+                      onChange={(e) => setFormData({ ...formData, source: e.target.value })}
+                    />
+
+                    <CustomSelect
+                      label="Status"
+                      value={formData.status}
+                      options={[
+                        { value: 'open', label: 'Open' },
+                        { value: 'pending', label: 'Pending' },
+                        { value: 'resolved', label: 'Resolved' },
+                        { value: 'closed', label: 'Closed' },
+                      ]}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                      renderOption={renderStatus}
+                    />
+
+                    <div className="relative">
+                      <CustomSelect
+                        label="Priority"
+                        value={formData.priority}
+                        options={[
+                          { value: 'low', label: 'Low' },
+                          { value: 'medium', label: 'Medium' },
+                          { value: 'high', label: 'High' },
+                          { value: 'urgent', label: 'Urgent' },
+                        ]}
+                        onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                        renderOption={renderPriority}
+                      />
+                      {/* SLA Preview Badge */}
+                      <div className="absolute top-0 right-0 -mt-1">
+                        <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border flex items-center gap-1 ${formData.priority === 'urgent' ? 'bg-red-50 text-red-600 border-red-100' :
+                          formData.priority === 'high' ? 'bg-orange-50 text-orange-600 border-orange-100' :
+                            formData.priority === 'medium' ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                              'bg-gray-50 text-gray-500 border-gray-100'
+                          }`}>
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                          {formData.priority === 'urgent' ? 'Due in 1h' :
+                            formData.priority === 'high' ? 'Due in 4h' :
+                              formData.priority === 'medium' ? 'Due in 24h' : 'Due in 48h'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-8 mb-6 border-b border-gray-100 pb-3">Assignment</h3>
+
+                  <div className="space-y-4">
+                    <CustomSelect
+                      label="Project"
+                      value={formData.projectId}
+                      placeholder="-- No Project --"
+                      options={[
+                        { value: '', label: '-- No Project --' },
+                        ...projects.map(p => ({ value: p._id, label: p.name }))
+                      ]}
+                      onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
+                    />
+
+                    <CustomSelect
+                      label="Agent"
+                      value={formData.agent}
+                      placeholder="-- Unassigned --"
+                      options={[
+                        { value: '', label: '-- Unassigned --' },
+                        ...agents.map(a => ({ value: a._id, label: a.name }))
+                      ]}
+                      onChange={(e) => setFormData({ ...formData, agent: e.target.value })}
+                      renderOption={renderAgent}
                     />
                   </div>
                 </div>
               </div>
-            </form>
-          </div>
-        </div>
-      </div>
 
-      {/* Form Actions at Bottom */}
-      <div className="freshdesk-create-ticket-actions">
-        <div className="freshdesk-actions-container">
-          <button 
-            onClick={handleCancel} 
-            className="freshdesk-btn freshdesk-btn--secondary"
-          >
-            Cancel
-          </button>
-          <div className="freshdesk-actions-right">
-            <button 
-              onClick={handleCreateAnother}
-              disabled={loading}
-              className="freshdesk-btn freshdesk-btn--secondary"
-            >
-              Create Another
-            </button>
-            <button 
-              onClick={handleSubmit}
-              disabled={loading}
-              className="freshdesk-btn freshdesk-btn--primary"
-            >
-              {loading ? 'Creating...' : 'Create Ticket'}
-            </button>
+            </div>
           </div>
-        </div>
+        </main>
       </div>
     </div>
   );
