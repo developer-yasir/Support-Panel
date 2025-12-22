@@ -145,39 +145,54 @@ const TicketListRow = ({ ticket, isSelected, onSelect, onClick }) => {
                 </div>
             </div>
 
-            {/* Priority Indicator - Hidden on mobile */}
-            <div className="hidden md:flex items-center gap-1.5 min-w-[70px] flex-shrink-0">
-                <span className={`w-2 h-2 rounded-full ${priorityColor} flex-shrink-0`}></span>
-                <span className="text-xs text-gray-600 capitalize whitespace-nowrap">{ticket.priority || 'Low'} ▼</span>
-            </div>
+            {/* Priority, Customer, Status - Single Column with refined styling */}
+            <div
+                className="flex flex-col gap-2.5 w-[180px] flex-shrink-0 pl-4 border-l border-gray-200"
+                onClick={(e) => e.stopPropagation()}
+            >
+                {/* Priority */}
+                <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-gray-400 uppercase tracking-wide w-14 flex-shrink-0">Priority</span>
+                    <div className="flex items-center gap-1.5">
+                        <span className={`w-2 h-2 rounded-full ${priorityColor} flex-shrink-0`}></span>
+                        <span className="text-xs text-gray-700 font-medium capitalize">{ticket.priority || 'Low'}</span>
+                    </div>
+                </div>
 
-            {/* Customer/Company - Hidden on mobile and tablet */}
-            <div className="hidden lg:flex items-center gap-1.5 text-xs text-gray-600 min-w-[120px] flex-shrink-0">
-                <svg className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                <span className="truncate">Customer S... / -- / --</span>
-            </div>
+                {/* Assigned To */}
+                <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-gray-400 uppercase tracking-wide w-14 flex-shrink-0">Assigned</span>
+                    <div className="flex items-center gap-1.5 text-xs text-gray-700 flex-1 min-w-0">
+                        <svg className="w-3 h-3 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        <span className="truncate">{ticket.assignedTo?.name || 'Unassigned'}</span>
+                    </div>
+                </div>
 
-            {/* Status Dropdown */}
-            <div className="relative flex-shrink-0">
-                <select
-                    value={ticket.status || 'open'}
-                    onChange={(e) => {
-                        e.stopPropagation();
-                        // Handle status change
-                    }}
-                    className="text-[10px] md:text-xs px-2 md:px-3 py-1 md:py-1.5 pr-5 md:pr-7 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white text-gray-700 cursor-pointer appearance-none min-w-[70px] md:min-w-[80px]"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <option value="open">Open</option>
-                    <option value="pending">Pending</option>
-                    <option value="resolved">Resolved</option>
-                    <option value="closed">Closed</option>
-                </select>
-                <svg className="w-2.5 md:w-3 h-2.5 md:h-3 absolute right-1.5 md:right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
+                {/* Status Dropdown */}
+                <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-gray-400 uppercase tracking-wide w-14 flex-shrink-0">Status</span>
+                    <div className="relative flex-1">
+                        <select
+                            value={ticket.status || 'open'}
+                            onChange={(e) => {
+                                e.stopPropagation();
+                                // Handle status change
+                            }}
+                            className="text-xs px-2.5 py-1 pr-6 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-700 cursor-pointer appearance-none w-full hover:border-gray-400 transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <option value="open">Open</option>
+                            <option value="pending">Pending</option>
+                            <option value="resolved">Resolved</option>
+                            <option value="closed">Closed</option>
+                        </select>
+                        <svg className="w-3 h-3 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+                </div>
             </div>
         </div>
     );

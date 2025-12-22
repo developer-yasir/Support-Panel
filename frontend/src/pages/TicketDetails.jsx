@@ -139,7 +139,10 @@ const TicketDetails = () => {
             <Sidebar />
             <Navbar />
 
-            <div style={{ marginLeft: isCollapsed ? '72px' : '268px', marginTop: '69px' }} className="transition-all duration-300">
+            <div
+                className="transition-all duration-300 mt-16"
+                style={{ marginLeft: isCollapsed ? '69px' : '265px' }}
+            >
                 {/* Top Bar */}
                 <div className="bg-white border-b border-gray-200">
                     <div className="px-6 py-3">
