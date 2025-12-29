@@ -22,6 +22,11 @@ exports.addComment = async (req, res) => {
 
     await comment.save();
 
+    // Update ticket's last responder info
+    ticket.lastRespondedBy = req.user.id;
+    ticket.lastRespondedAt = new Date();
+    await ticket.save();
+
     // Populate the createdBy field
     await comment.populate('createdBy', 'name email');
 

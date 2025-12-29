@@ -61,6 +61,13 @@ const ticketSchema = new mongoose.Schema({
   projectId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Project'
+  },
+  lastRespondedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  lastRespondedAt: {
+    type: Date
   }
 }, {
   timestamps: true
