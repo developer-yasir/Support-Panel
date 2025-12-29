@@ -20,7 +20,7 @@ const TicketDetails = () => {
     const [error, setError] = useState(null);
     const [agents, setAgents] = useState([]);
     const [replyText, setReplyText] = useState('');
-    const [activeTab, setActiveTab] = useState('reply');
+    const [activeTab, setActiveTab] = useState(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
 
     useEffect(() => {
@@ -140,8 +140,11 @@ const TicketDetails = () => {
             <Navbar />
 
             <div
-                className="transition-all duration-300 mt-16"
-                style={{ marginLeft: isCollapsed ? '69px' : '265px' }}
+                className="transition-all duration-300"
+                style={{
+                    marginLeft: isCollapsed ? '75px' : '277px',
+                    marginTop: '66px'
+                }}
             >
                 {/* Top Bar */}
                 <div className="bg-white border-b border-gray-200">
@@ -204,6 +207,20 @@ const TicketDetails = () => {
                             </button>
                         </div>
                     </div>
+
+                    {/* Status Badges */}
+                    <div className="px-6 py-2 flex items-center gap-2">
+                        {ticket.dueDate && new Date(ticket.dueDate) < new Date() && ticket.status !== 'resolved' && ticket.status !== 'closed' && (
+                            <span className="px-2.5 py-1 bg-red-50 text-red-700 text-xs font-medium rounded border border-red-200">
+                                Overdue
+                            </span>
+                        )}
+                        {ticket.comments && ticket.comments.length > 0 && !ticket.comments[ticket.comments.length - 1]?.isInternal && (
+                            <span className="px-2.5 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded border border-blue-200">
+                                Customer responded
+                            </span>
+                        )}
+                    </div>
                 </div>
 
                 {/* Main Content */}
@@ -211,53 +228,53 @@ const TicketDetails = () => {
                     {/* Left - Conversation Thread */}
                     <div className="flex-1 p-6">
                         {/* Initial Ticket Message */}
-                        <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-4 overflow-hidden">
+                        <div className="bg-white border border-gray-200 rounded-lg mb-4 overflow-hidden" style={{ paddingLeft: '15px' }}>
                             {/* Message Header */}
-                            <div className="px-6 py-4 border-b border-gray-100">
-                                <div className="flex items-start justify-between mb-3">
-                                    <div className="flex items-start gap-3 flex-1">
-                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-400 to-pink-500 text-white flex items-center justify-center text-sm font-semibold shadow-sm">
-                                            {ticket.createdBy?.name?.charAt(0)?.toUpperCase() || 'M'}
+                            <div className="px-6 py-4 bg-gray-50">
+                                <div className="flex items-start gap-3 mb-4">
+                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-400 to-pink-500 text-white flex items-center justify-center text-sm font-semibold flex-shrink-0">
+                                        {ticket.createdBy?.name?.charAt(0)?.toUpperCase() || 'U'}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className="font-semibold text-gray-900">{ticket.createdBy?.name || ticket.createdBy?.email || 'Unknown User'}</span>
+                                            <span className="text-gray-400">•</span>
+                                            <span className="text-sm text-gray-500">{formatTime(ticket.createdAt)}</span>
                                         </div>
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <span className="font-semibold text-gray-900">{ticket.createdBy?.name || 'Unknown'}</span>
-                                                <span className="text-gray-400">•</span>
-                                                <span className="text-sm text-gray-500">{formatTime(ticket.createdAt)}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2 text-xs text-gray-500">
-                                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                                </svg>
-                                                <span>via email</span>
-                                            </div>
+                                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                            </svg>
+                                            <span>via email</span>
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Ticket Title */}
-                                <h2 className="text-xl font-semibold text-gray-900 mb-3">{ticket.title}</h2>
+                                <h2 className="text-lg font-semibold text-gray-900 mb-4">{ticket.title}</h2>
 
-                                {/* To/Cc - Compact Inline Display */}
-                                <div className="text-xs space-y-1">
+                                {/* To/Cc - Clean Display */}
+                                <div className="text-xs space-y-1.5 bg-white rounded p-3">
                                     <div className="flex items-start gap-2">
-                                        <span className="text-gray-500 font-medium min-w-[24px]">To:</span>
-                                        <span className="text-gray-700 leading-relaxed">
-                                            "kamran"@innovent.io, "aby.j"@innovent.io, "rohan.singhvi"@rakceramics.com, "irtaza.m"@innovent.io, "anjum"@innovent.io, "Support_Innovent" &lt;support@innovent.io&gt;
+                                        <span className="text-gray-500 font-medium min-w-[20px] flex-shrink-0">To:</span>
+                                        <span className="text-gray-700 break-words">
+                                            {ticket.contactEmail || ticket.createdBy?.email || 'No recipient specified'}
                                         </span>
                                     </div>
-                                    <div className="flex items-start gap-2">
-                                        <span className="text-gray-500 font-medium min-w-[24px]">Cc:</span>
-                                        <span className="text-gray-700 leading-relaxed">
-                                            {ticket.cc?.join(', ') || 'rohan.singhvi@rakceramics.com, irtaza.m@innovent.io, anjum@innovent.io, pravin.patil@rakceramics.com'}
-                                        </span>
-                                    </div>
+                                    {ticket.cc && ((Array.isArray(ticket.cc) && ticket.cc.length > 0) || (typeof ticket.cc === 'string' && ticket.cc.trim())) && (
+                                        <div className="flex items-start gap-2">
+                                            <span className="text-gray-500 font-medium min-w-[20px] flex-shrink-0">Cc:</span>
+                                            <span className="text-gray-700 break-words">
+                                                {Array.isArray(ticket.cc) ? ticket.cc.join(', ') : ticket.cc}
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
                             {/* Message Content with Markdown Rendering */}
-                            <div className="px-6 py-5">
-                                <div className="prose prose-sm max-w-none text-gray-800">
+                            <div className="px-6 py-5 bg-white">
+                                <div className="prose prose-sm max-w-none text-gray-800 leading-relaxed">
                                     <ReactMarkdown
                                         remarkPlugins={[remarkBreaks, remarkGfm]}
                                         components={{
@@ -281,7 +298,7 @@ const TicketDetails = () => {
 
                         {/* Replies/Comments */}
                         {ticket.comments && ticket.comments.length > 0 && ticket.comments.map((comment, index) => (
-                            <div key={comment._id || index} className={`bg-white border border-gray-200 rounded-lg shadow-sm mb-4 overflow-hidden ${comment.isInternal ? 'border-l-4 border-l-yellow-400 bg-yellow-50/30' : ''}`}>
+                            <div key={comment._id || index} className={`bg-white border border-gray-200 rounded-lg shadow-sm mb-4 overflow-hidden ${comment.isInternal ? 'border-l-4 border-l-yellow-400 bg-yellow-50/30' : ''}`} style={{ paddingLeft: '10px' }}>
                                 <div className="px-6 py-4">
                                     <div className="flex items-start gap-3 mb-3">
                                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-500 text-white flex items-center justify-center text-sm font-semibold shadow-sm">
@@ -403,9 +420,9 @@ const TicketDetails = () => {
                                             </button>
                                             <button
                                                 onClick={handleSubmit}
-                                                className={`px-6 py-2 rounded-lg text-sm font-medium text-white transition-colors ${activeTab === 'note'
-                                                    ? 'bg-yellow-500 hover:bg-yellow-600 shadow-sm'
-                                                    : 'bg-indigo-600 hover:bg-indigo-700 shadow-sm'
+                                                className={`px-4 py-2 rounded-md text-sm font-medium text-white transition-colors ${activeTab === 'note'
+                                                    ? 'bg-yellow-500 hover:bg-yellow-600'
+                                                    : 'bg-indigo-600 hover:bg-indigo-700'
                                                     }`}
                                             >
                                                 {activeTab === 'note' ? 'Add Note' : 'Send Reply'}
@@ -418,23 +435,43 @@ const TicketDetails = () => {
                     </div>
 
                     {/* Right - Properties Sidebar */}
-                    <div className="w-80 border-l border-gray-200 bg-white p-4">
-                        <div className="mb-4">
-                            <h3 className="text-xs font-semibold text-gray-700 uppercase mb-3">Properties</h3>
+                    <div className="w-80 border-l border-gray-200 bg-white p-5">
+                        {/* Status Section */}
+                        <div className="mb-5">
+                            <h2 className="text-lg font-normal text-gray-900 mb-4">{ticket.status}</h2>
 
-                            <div className="space-y-4">
+                            {/* Resolution Due */}
+                            <div className="pb-4 border-b border-gray-100">
+                                <div className="flex items-center justify-between mb-1">
+                                    <div className="flex items-center gap-1">
+                                        <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                                        <span className="text-xs font-medium text-gray-500 uppercase">Resolution Due</span>
+                                    </div>
+                                    <button className="text-xs text-blue-600 hover:underline">Edit</button>
+                                </div>
+                                <p className="text-sm text-gray-700 pl-3">
+                                    by {ticket.dueDate ? formatTime(ticket.dueDate) : 'Not set'}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Properties Section */}
+                        <div>
+                            <h3 className="text-xs font-medium text-gray-500 uppercase mb-3">Properties</h3>
+
+                            <div className="space-y-3">
                                 <div>
-                                    <label className="block text-xs text-gray-600 mb-1">Tags</label>
+                                    <label className="block text-sm text-gray-700 mb-1">Tags</label>
                                     <input
                                         type="text"
                                         value={ticket.tags?.join(', ') || ''}
                                         onChange={(e) => handlePropertyChange('tags', e.target.value.split(',').map(t => t.trim()))}
-                                        className="w-full h-11 px-3 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs text-gray-600 mb-1">Type</label>
+                                    <label className="block text-sm text-gray-700 mb-1">Type</label>
                                     <CustomSelect
                                         value={ticket.type}
                                         onChange={(value) => handlePropertyChange('type', value)}
@@ -448,7 +485,7 @@ const TicketDetails = () => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs text-gray-600 mb-1">Status *</label>
+                                    <label className="block text-sm text-gray-700 mb-1">Status <span className="text-red-500">*</span></label>
                                     <CustomSelect
                                         value={ticket.status}
                                         onChange={(value) => handlePropertyChange('status', value)}
@@ -462,7 +499,7 @@ const TicketDetails = () => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs text-gray-600 mb-1">Priority</label>
+                                    <label className="block text-sm text-gray-700 mb-1">Priority</label>
                                     <CustomSelect
                                         value={ticket.priority}
                                         onChange={(value) => handlePropertyChange('priority', value)}
@@ -476,7 +513,7 @@ const TicketDetails = () => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs text-gray-600 mb-1">Group</label>
+                                    <label className="block text-sm text-gray-700 mb-1">Group</label>
                                     <CustomSelect
                                         value={ticket.group}
                                         onChange={(value) => handlePropertyChange('group', value)}
@@ -489,7 +526,7 @@ const TicketDetails = () => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs text-gray-600 mb-1">Agent</label>
+                                    <label className="block text-sm text-gray-700 mb-1">Agent</label>
                                     <CustomSelect
                                         value={ticket.assignedTo?._id}
                                         onChange={(value) => handlePropertyChange('assignedTo', value)}
@@ -501,7 +538,7 @@ const TicketDetails = () => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs text-gray-600 mb-1">Company *</label>
+                                    <label className="block text-sm text-gray-700 mb-1">Company <span className="text-red-500">*</span></label>
                                     <CustomSelect
                                         value={ticket.company}
                                         onChange={(value) => handlePropertyChange('company', value)}
@@ -513,7 +550,7 @@ const TicketDetails = () => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs text-gray-600 mb-1">Category *</label>
+                                    <label className="block text-sm text-gray-700 mb-1">Category <span className="text-red-500">*</span></label>
                                     <CustomSelect
                                         value={ticket.category}
                                         onChange={(value) => handlePropertyChange('category', value)}
@@ -550,27 +587,27 @@ const TicketDetails = () => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs text-gray-600 mb-1">Store/Location/Site Code *</label>
+                                    <label className="block text-sm text-gray-700 mb-1">Store/Location/Site Code <span className="text-red-500">*</span></label>
                                     <input
                                         type="text"
-                                        value={ticket.storeLocation || 'Dubai'}
+                                        value={ticket.storeLocation || ''}
                                         onChange={(e) => handlePropertyChange('storeLocation', e.target.value)}
-                                        className="w-full h-11 px-3 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs text-gray-600 mb-1">City</label>
+                                    <label className="block text-sm text-gray-700 mb-1">City</label>
                                     <input
                                         type="text"
-                                        value={ticket.city || 'Dubai'}
+                                        value={ticket.city || ''}
                                         onChange={(e) => handlePropertyChange('city', e.target.value)}
-                                        className="w-full h-11 px-3 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs text-gray-600 mb-1">Country *</label>
+                                    <label className="block text-sm text-gray-700 mb-1">Country <span className="text-red-500">*</span></label>
                                     <CustomSelect
                                         value={ticket.country}
                                         onChange={(value) => handlePropertyChange('country', value)}
@@ -584,7 +621,7 @@ const TicketDetails = () => {
 
                                 <button
                                     onClick={() => handlePropertyChange('updated', true)}
-                                    className="w-full px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded transition-colors"
+                                    className="w-full mt-2 px-4 py-2.5 bg-slate-400 hover:bg-slate-500 text-white text-sm font-medium rounded transition-colors"
                                 >
                                     Update
                                 </button>
@@ -595,29 +632,31 @@ const TicketDetails = () => {
             </div>
 
             {/* Delete Modal */}
-            {showDeleteModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 max-w-md w-full">
-                        <h3 className="text-lg font-bold mb-2">Delete Ticket?</h3>
-                        <p className="text-gray-600 mb-6">This action cannot be undone.</p>
-                        <div className="flex justify-end gap-3">
-                            <button
-                                onClick={() => setShowDeleteModal(false)}
-                                className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleDelete}
-                                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded"
-                            >
-                                Delete
-                            </button>
+            {
+                showDeleteModal && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-lg p-6 max-w-md w-full">
+                            <h3 className="text-lg font-bold mb-2">Delete Ticket?</h3>
+                            <p className="text-gray-600 mb-6">This action cannot be undone.</p>
+                            <div className="flex justify-end gap-3">
+                                <button
+                                    onClick={() => setShowDeleteModal(false)}
+                                    className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleDelete}
+                                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded"
+                                >
+                                    Delete
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 };
 

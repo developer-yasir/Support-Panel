@@ -68,6 +68,18 @@ const ticketSchema = new mongoose.Schema({
   },
   lastRespondedAt: {
     type: Date
+  },
+  contactEmail: {
+    type: String,
+    trim: true
+  },
+  cc: {
+    type: [String],
+    default: []
+  },
+  tags: {
+    type: [String],
+    default: []
   }
 }, {
   timestamps: true

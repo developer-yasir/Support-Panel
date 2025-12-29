@@ -162,7 +162,7 @@ const CreateTicket = () => {
           />
         )}
 
-        <main className="flex-1 overflow-y-auto bg-gray-50/50 mt-[69px]">
+        <main className="flex-1 overflow-y-auto bg-gray-50/50" style={{ marginTop: '65px', marginRight: '12px' }}>
           {/* Full Width Container */}
           <div className="h-full flex flex-col pl-16 pr-10 py-6" style={{ marginLeft: '100px' }}>
 
@@ -182,7 +182,7 @@ const CreateTicket = () => {
                 <button
                   onClick={(e) => handleFormSubmit(e, false)}
                   disabled={loading}
-                  className="px-6 py-2 text-white bg-indigo-600 border border-transparent rounded-lg hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 shadow-md shadow-indigo-200 text-sm font-semibold transition-all flex items-center gap-2"
+                  className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {loading ? 'Creating...' : 'Create Ticket'}
                 </button>
