@@ -125,7 +125,7 @@ const TicketCard = ({ ticket, onClick }) => {
           </h3>
 
           {/* Requester Info */}
-          <div className="flex items-center gap-1.5 text-xs text-gray-600 mb-2">
+          <div className="flex items-center gap-1.5 text-xs text-gray-600 mb-3">
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
@@ -138,22 +138,34 @@ const TicketCard = ({ ticket, onClick }) => {
             )}
           </div>
 
-          {/* Priority */}
-          <div className="flex items-center gap-1.5 mb-2">
-            <span className={`w-2 h-2 rounded-full ${priorityColors.dot}`}></span>
-            <span className={`text-xs font-medium ${priorityColors.text}`}>
-              {ticket.priority ? ticket.priority.charAt(0).toUpperCase() + ticket.priority.slice(1) : 'Medium'}
-            </span>
-          </div>
+          {/* Status, Assigned, Priority - Vertical Single Column */}
+          <div className="flex flex-col gap-2 mb-3">
+            {/* Status */}
+            <div>
+              <span className="text-xs text-gray-500 block mb-1">Status</span>
+              <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${getStatusColor(ticket.status)}`}>
+                {ticket.status ? ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1) : 'Open'}
+              </span>
+            </div>
 
-          {/* Status */}
-          <div className="flex items-center gap-1.5 mb-3">
-            <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span className={`px-2 py-0.5 text-xs font-medium rounded ${getStatusColor(ticket.status)}`}>
-              {ticket.status ? ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1) : 'Open'}
-            </span>
+            {/* Assigned */}
+            <div>
+              <span className="text-xs text-gray-500 block mb-1">Assigned</span>
+              <span className="text-xs text-gray-700">
+                {ticket.assignedTo?.name || 'Unassigned'}
+              </span>
+            </div>
+
+            {/* Priority */}
+            <div>
+              <span className="text-xs text-gray-500 block mb-1">Priority</span>
+              <div className="flex items-center gap-1.5">
+                <span className={`w-2 h-2 rounded-full ${priorityColors.dot}`}></span>
+                <span className={`text-xs font-medium ${priorityColors.text}`}>
+                  {ticket.priority ? ticket.priority.charAt(0).toUpperCase() + ticket.priority.slice(1) : 'Medium'}
+                </span>
+              </div>
+            </div>
           </div>
 
           {/* Timestamps */}
@@ -164,11 +176,6 @@ const TicketCard = ({ ticket, onClick }) => {
               </svg>
               <span>Created: {getTimeAgo(ticket.createdAt)}</span>
             </div>
-            {ticket.assignedTo && (
-              <div className="flex items-center gap-1">
-                <span>Agent: {ticket.assignedTo.name || 'Unassigned'}</span>
-              </div>
-            )}
           </div>
 
           {/* Agent responded indicator */}

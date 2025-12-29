@@ -157,6 +157,7 @@ exports.getTickets = async (req, res) => {
     const tickets = await Ticket.find(filter)
       .populate('createdBy', 'name email company')
       .populate('assignedTo', 'name email')
+      .populate('lastRespondedBy', 'name email role')
       .sort({ createdAt: -1 });
 
     res.json(tickets);
@@ -248,13 +249,13 @@ exports.updateTicket = async (req, res) => {
     const isSuperAdmin = req.user.role === 'superadmin';
     const isSupportAgent = req.user.role === 'support_agent';
 
-    if (!(isAdmin || (isSupportAgent && isOnlyAssignmentUpdate) || isTicketCreator)) {
+    if (!(isSuperAdmin || (isSupportAgent && isOnlyAssignmentUpdate) || isTicketCreator)) {
       console.log('Unauthorized update attempt:', req.user.id, ticket.createdBy.toString(), fieldsBeingUpdated);
       return res.status(403).json({ message: 'Not authorized to update this ticket' });
     }
 
     // If assignedTo is being updated, check if it's a partner company agent
-    if (assignedTo !== undefined) {
+    if (assignedTo !== undefined && assignedTo !== null) {
       // Check if the assigned user is from the same company or a partner company with appropriate permissions
       const assignedUser = await User.findById(assignedTo);
 
