@@ -7,7 +7,7 @@ const { sendTicketNotification, sendTicketUpdateNotification } = require('../con
 // Updated to fix missing import for sendTicketUpdateNotification
 exports.createTicket = async (req, res) => {
   try {
-    const { title, description, priority, dueDate, assignedTo, type, source, contactEmail, projectId } = req.body;
+    const { title, description, priority, dueDate, assignedTo, type, source, contactEmail, projectId, cc, tags } = req.body;
 
     // Verify company context exists
     if (!req.companyId) {
@@ -93,7 +93,10 @@ exports.createTicket = async (req, res) => {
       createdBy: creatorId,
       companyId: req.companyId,
       type: type || 'Question',
-      source: source || 'Portal'
+      source: source || 'Portal',
+      contactEmail: contactEmail || undefined,
+      cc: cc || [],
+      tags: tags || []
     });
 
     await ticket.save();

@@ -18,13 +18,14 @@ const CustomSelect = ({ label, value, options, onChange, placeholder = "Select..
     }, []);
 
     const handleSelect = (option) => {
-        onChange({ target: { name: label.toLowerCase(), value: option.value } }); // Mock event for compatibility
+        const eventName = label ? label.toLowerCase() : 'select';
+        onChange(option.value); // Pass value directly instead of mock event
         setIsOpen(false);
     };
 
     return (
         <div className="relative" ref={wrapperRef}>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{label}</label>
+            {label && <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{label}</label>}
 
             <button
                 type="button"

@@ -7,10 +7,10 @@ const createTransporter = () => {
     secure: process.env.EMAIL_SECURE === 'true', // true for 465, false for other ports
     user: process.env.EMAIL_USER ? '[REDACTED]' : 'NOT SET'
   });
-  
+
   // Determine if using secure connection
   const isSecure = parseInt(process.env.EMAIL_PORT) === 465;
-  
+
   return nodemailer.createTransport({
     host: process.env.EMAIL_HOST || 'smtp.gmail.com',
     port: parseInt(process.env.EMAIL_PORT) || 587,
@@ -25,7 +25,7 @@ const createTransporter = () => {
 const sendVerificationEmail = async (email, name, verificationCode) => {
   console.log('Sending verification email to:', email);
   const transporter = createTransporter();
-  
+
   const mailOptions = {
     from: process.env.EMAIL_FROM || '"Support Panel" <no-reply@supportpanel.com>',
     to: email,
@@ -54,7 +54,7 @@ const sendVerificationEmail = async (email, name, verificationCode) => {
       to: mailOptions.to,
       subject: mailOptions.subject
     });
-    
+
     const info = await transporter.sendMail(mailOptions);
     console.log('Verification email sent: %s', info.messageId);
     return info;
@@ -68,43 +68,17 @@ const sendVerificationEmail = async (email, name, verificationCode) => {
 
 const sendTicketNotification = async (userEmail, userName, ticket) => {
   const transporter = createTransporter();
-  
+
   const mailOptions = {
     from: process.env.EMAIL_FROM || '"Support Panel" <no-reply@supportpanel.com>',
     to: userEmail,
     subject: `New Support Ticket Created - ${ticket.ticketId}`,
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #3b82f6;">New Support Ticket Created</h2>
-        <p>Hello ${userName},</p>
-        <p>A new support ticket has been created with the following details:</p>
-        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-          <tr style="background-color: #f9fafb;">
-            <td style="padding: 12px; border: 1px solid #e5e7eb; font-weight: bold;">Ticket ID</td>
-            <td style="padding: 12px; border: 1px solid #e5e7eb;">${ticket.ticketId || 'N/A'}</td>
-          </tr>
-          <tr>
-            <td style="padding: 12px; border: 1px solid #e5e7eb; font-weight: bold;">Title</td>
-            <td style="padding: 12px; border: 1px solid #e5e7eb;">${ticket.title || 'N/A'}</td>
-          </tr>
-          <tr style="background-color: #f9fafb;">
-            <td style="padding: 12px; border: 1px solid #e5e7eb; font-weight: bold;">Priority</td>
-            <td style="padding: 12px; border: 1px solid #e5e7eb; color: ${getPriorityColor(ticket.priority || 'medium')}">${(ticket.priority || 'medium').toUpperCase()}</td>
-          </tr>
-          <tr>
-            <td style="padding: 12px; border: 1px solid #e5e7eb; font-weight: bold;">Status</td>
-            <td style="padding: 12px; border: 1px solid #e5e7eb;">${(ticket.status || 'open').toUpperCase()}</td>
-          </tr>
-          <tr style="background-color: #f9fafb;">
-            <td style="padding: 12px; border: 1px solid #e5e7eb; font-weight: bold;">Created Date</td>
-            <td style="padding: 12px; border: 1px solid #e5e7eb;">${new Date(ticket.createdAt || Date.now()).toLocaleString()}</td>
-          </tr>
-        </table>
-        <p><a href="${process.env.FRONTEND_URL}/ticket/${ticket._id}" style="background-color: #3b82f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Ticket</a></p>
-        <p>If you didn't create this ticket, please contact our support team.</p>
-        <hr style="margin: 30px 0;">
-        <p style="font-size: 12px; color: #6b7280;">
-          This email was sent by Support Panel. If you have any questions, please contact our support team.
+      <div style="font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6; color: #000000;">
+        <div style="white-space: pre-wrap;">${ticket.description || 'No description provided'}</div>
+        
+        <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+          Ticket: <a href="${process.env.FRONTEND_URL}/ticket/${ticket._id}" style="color: #0066cc; text-decoration: none;">${process.env.FRONTEND_URL}/ticket/${ticket._id}</a>
         </p>
       </div>
     `
@@ -122,7 +96,7 @@ const sendTicketNotification = async (userEmail, userName, ticket) => {
 
 const sendTicketUpdateNotification = async (userEmail, userName, ticket) => {
   const transporter = createTransporter();
-  
+
   const mailOptions = {
     from: process.env.EMAIL_FROM || '"Support Panel" <no-reply@supportpanel.com>',
     to: userEmail,
@@ -184,13 +158,23 @@ const getPriorityColor = (priority) => {
   }
 };
 
+const getPriorityBgColor = (priority) => {
+  switch (priority.toLowerCase()) {
+    case 'low': return '#d1fae5'; // light green
+    case 'medium': return '#fef3c7'; // light amber
+    case 'high': return '#fed7aa'; // light orange
+    case 'urgent': return '#fee2e2'; // light red
+    default: return '#f3f4f6'; // light gray
+  }
+};
+
 const sendPasswordResetEmail = async (email, name, resetToken) => {
   const transporter = createTransporter();
-  
+
   // Get the frontend URL from environment variable or default to localhost
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
   const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
-  
+
   const mailOptions = {
     from: process.env.EMAIL_FROM || '\"Support Panel\" <no-reply@supportpanel.com>',
     to: email,

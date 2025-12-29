@@ -464,7 +464,10 @@ const Tickets = () => {
                 height: 'calc(100vh - 128px)'
               }}
             >
-              <div className="px-6 py-4 border-b border-gray-100 bg-white z-10 flex-none">
+              <div
+                className="border-b border-gray-100 bg-white z-10 flex-none"
+                style={{ padding: '15px 15px 5px 15px' }}
+              >
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-xs font-bold text-gray-800 uppercase tracking-wide">Filters</h3>
                   <button
