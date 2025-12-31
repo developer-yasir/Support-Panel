@@ -1,7 +1,7 @@
 const Ticket = require('../models/Ticket');
 const User = require('../models/User');
 
-const { sendTicketNotification, sendTicketUpdateNotification } = require('../config/email');
+const { sendTicketNotification, sendTicketUpdateNotification, sendForwardedTicket } = require('../config/email');
 
 // Create a new ticket
 // Updated to fix missing import for sendTicketUpdateNotification
@@ -1069,6 +1069,89 @@ exports.getUpcomingBreaches = async (req, res) => {
 
     res.json(ticketsAtRisk);
   } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Forward ticket via email
+exports.forwardTicket = async (req, res) => {
+  try {
+    // Verify company context exists
+    if (!req.companyId) {
+      return res.status(400).json({ message: 'Company context required to forward ticket' });
+    }
+
+    const { to, cc, message } = req.body;
+
+    // Validate required fields
+    if (!to || !to.trim()) {
+      return res.status(400).json({ message: 'Recipient email (to) is required' });
+    }
+
+    // Find ticket with company filter
+    let ticket = await Ticket.findOne({
+      ticketId: req.params.id,
+      companyId: req.companyId
+    });
+
+    // If not found by ticketId, try by _id
+    if (!ticket && /^[0-9a-fA-F]{24}$/.test(req.params.id)) {
+      ticket = await Ticket.findOne({
+        _id: req.params.id,
+        companyId: req.companyId
+      });
+    }
+
+    if (!ticket) {
+      return res.status(404).json({ message: 'Ticket not found' });
+    }
+
+    // Populate ticket details and comments
+    await ticket.populate('createdBy', 'name email');
+    await ticket.populate('assignedTo', 'name email');
+
+    // Fetch comments for this ticket
+    const Comment = require('../models/Comment');
+    const comments = await Comment.find({
+      ticket: ticket._id,
+      companyId: req.companyId
+    })
+      .populate('createdBy', 'name email')
+      .sort({ createdAt: 1 });
+
+    // Attach comments to ticket object
+    ticket = ticket.toObject();
+    ticket.comments = comments.map(comment => ({
+      ...comment.toObject(),
+      author: comment.createdBy,
+      isInternal: comment.isInternal || false
+    }));
+
+    // Send forwarded ticket email
+    try {
+      await sendForwardedTicket(
+        to.trim(),
+        cc ? cc.trim() : null,
+        ticket,
+        message ? message.trim() : null,
+        req.user.name || req.user.email || 'Support Agent'
+      );
+
+      res.json({
+        success: true,
+        message: 'Ticket forwarded successfully',
+        forwardedTo: to.trim(),
+        forwardedCc: cc ? cc.trim() : null
+      });
+    } catch (emailError) {
+      console.error('Error sending forwarded ticket email:', emailError);
+      return res.status(500).json({
+        message: 'Failed to send forwarded ticket email',
+        error: emailError.message
+      });
+    }
+  } catch (error) {
+    console.error('Error forwarding ticket:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
