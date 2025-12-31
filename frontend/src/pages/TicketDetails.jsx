@@ -278,18 +278,6 @@ const TicketDetails = () => {
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
                                     </svg>
                                 </button>
-                            <button
-                                onClick={() => setPropertiesSidebarCollapsed(!propertiesSidebarCollapsed)}
-                                className={`flex items-center gap-2 px-3 py-2 text-sm border rounded transition-colors ${propertiesSidebarCollapsed
-                                    ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                    : 'border-gray-300 hover:bg-gray-50'
-                                    }`}
-                            >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                                </svg>
-                                Properties
-                            </button>
                             </div>
                             <button className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50">
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -302,6 +290,28 @@ const TicketDetails = () => {
 
                     {/* Status Badges */}
                     <div className="px-6 py-2 flex items-center gap-2">
+                            <div className="flex items-center gap-2">
+                                <button className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    Show activities
+                                </button>
+                                <button
+                                    onClick={() => setPropertiesSidebarCollapsed(!propertiesSidebarCollapsed)}
+                                    className={`flex items-center gap-2 px-3 py-2 text-sm border rounded transition-colors ${
+                                        !propertiesSidebarCollapsed
+                                            ? "border-blue-500 bg-blue-50 text-blue-700"
+                                            : "border-gray-300 hover:bg-gray-50"
+                                    }`}
+                                    title={propertiesSidebarCollapsed ? "Show properties" : "Hide properties"}
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7" />
+                                    </svg>
+                                    Properties
+                                </button>
+                            </div>
                         {ticket.dueDate && new Date(ticket.dueDate) < new Date() && ticket.status !== 'resolved' && ticket.status !== 'closed' && (
                             <span className="px-2.5 py-1 bg-red-50 text-red-700 text-xs font-medium rounded border border-red-200">
                                 Overdue
