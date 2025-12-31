@@ -15,6 +15,11 @@ const projectSchema = new mongoose.Schema({
         ref: 'Company',
         required: true
     },
+    clientCompanyId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'ClientCompany',
+        default: null
+    },
     status: {
         type: String,
         enum: ['active', 'archived', 'on_hold'],

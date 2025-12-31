@@ -15,6 +15,7 @@ const commentRoutes = require('./routes/comments');
 const userRoutes = require('./routes/users');
 const contactsRoutes = require('./routes/contacts');
 const companiesRoutes = require('./routes/companies');
+const clientCompaniesRoutes = require('./routes/clientCompanies');
 const chatRoutes = require('./routes/chat');
 const twoFactorRoutes = require('./routes/twoFactor');
 const projectsRoutes = require('./routes/projects');
@@ -40,6 +41,7 @@ app.use('/api/comments', commentRoutes);  // Apply tenant context after auth in 
 app.use('/api/users', userRoutes);  // Apply tenant context after auth in route file
 app.use('/api/contacts', contactsRoutes);  // Apply tenant context after auth in route file
 app.use('/api/companies', companiesRoutes);  // Apply tenant context after auth in route file
+app.use('/api/client-companies', clientCompaniesRoutes);  // Client companies management
 app.use('/api/chat', chatRoutes);  // Apply tenant context after auth in route file
 app.use('/api/2fa', twoFactorRoutes);  // Apply tenant context after auth in route file
 app.use('/api/projects', projectsRoutes);  // Apply tenant context after auth in route file

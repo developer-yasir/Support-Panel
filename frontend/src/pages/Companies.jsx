@@ -2,229 +2,310 @@ import { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
+import { useNavigate } from 'react-router-dom';
 
 const Companies = () => {
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [filters, setFilters] = useState({
-    search: ''
-  });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCompanies, setSelectedCompanies] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchCompanies = async () => {
-      try {
-        setLoading(true);
-        // Admins get all companies from /companies/admin, regular users get current company
-        // For admin view of all companies, use the admin endpoint
-        const response = await api.get('/companies/admin');
-        setCompanies(response.data);
-      } catch (err) {
-        console.error('Failed to fetch companies:', err);
-        setError('Failed to fetch companies');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchCompanies();
   }, []);
 
-  // Filter companies based on search
-  const filteredCompanies = companies.filter(company => {
-    return (
-      filters.search === '' ||
-      company.name.toLowerCase().includes(filters.search.toLowerCase())
+  const fetchCompanies = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/client-companies');
+      setCompanies(response.data);
+      setError('');
+    } catch (err) {
+      console.error('Failed to fetch client companies:', err);
+      setError('Failed to fetch client companies');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredCompanies = companies.filter(company =>
+    company.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    company.domain?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    company.industry?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedCompanies(filteredCompanies.map(c => c.id));
+    } else {
+      setSelectedCompanies([]);
+    }
+  };
+
+  const handleSelectCompany = (companyId) => {
+    setSelectedCompanies(prev =>
+      prev.includes(companyId)
+        ? prev.filter(id => id !== companyId)
+        : [...prev, companyId]
     );
-  });
-
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters(prev => ({
-      ...prev,
-      [name]: value
-    }));
   };
 
-  const getStatusBadgeClass = (status) => {
-    switch (status) {
-      case 'active':
-        return 'company-status-badge company-status-badge--active';
-      case 'trial':
-        return 'company-status-badge company-status-badge--trial';
-      case 'inactive':
-        return 'company-status-badge company-status-badge--inactive';
-      default:
-        return 'company-status-badge';
+  const handleDeleteCompany = async (companyId, companyName) => {
+    if (!window.confirm(`Are you sure you want to delete "${companyName}"?`)) {
+      return;
+    }
+
+    try {
+      await api.delete(`/client-companies/${companyId}`);
+      fetchCompanies();
+    } catch (err) {
+      console.error('Failed to delete company:', err);
+      alert('Failed to delete company');
     }
   };
 
-  const getPlanBadgeClass = (plan) => {
-    switch (plan) {
-      case 'Standard':
-        return 'company-plan-badge company-plan-badge--standard';
-      case 'Premium':
-        return 'company-plan-badge company-plan-badge--premium';
-      case 'Enterprise':
-        return 'company-plan-badge company-plan-badge--enterprise';
-      default:
-        return 'company-plan-badge';
-    }
+  const getStatusBadge = (status) => {
+    const statusConfig = {
+      active: { bg: 'bg-green-100', text: 'text-green-800', label: 'Active' },
+      inactive: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Inactive' },
+      suspended: { bg: 'bg-red-100', text: 'text-red-800', label: 'Suspended' }
+    };
+
+    const config = statusConfig[status] || statusConfig.active;
+
+    return (
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
+        {config.label}
+      </span>
+    );
   };
 
   return (
-    <div className="dashboard">
-      <Navbar />
-      <div className="dashboard__layout">
-        <Sidebar />
-        <div className="container dashboard__container">
-          <div className="dashboard__header">
-            <div className="dashboard-header__content">
-              <div className="dashboard-header__title-wrapper">
-                <h1 className="dashboard-header__title">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="icon dashboard-header__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="28" height="28">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+    <div className="flex h-screen bg-gray-50 font-sans text-gray-900 overflow-hidden">
+      <Sidebar />
+
+      <div className="flex flex-col w-full min-w-0 pl-[268px] [.sidebar-collapsed_&]:pl-[72px] transition-all duration-300">
+        <Navbar />
+
+        <main className="flex-1 overflow-y-auto bg-gray-50/50" style={{ marginTop: '65px', marginRight: '12px' }}>
+          <div className="h-full flex flex-col pl-16 pr-10 py-6" style={{ marginLeft: '100px' }}>
+
+            {/* Header */}
+            <div className="flex justify-between items-center mb-6">
+              <h1 className="text-xl font-bold text-gray-900 tracking-tight">Client Companies</h1>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => navigate('/client-companies/new')}
+                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
-                  Companies
-                </h1>
-                <p className="dashboard-header__subtitle">Manage your customer companies</p>
-              </div>
-              <div className="dashboard-header__actions">
-                <button className="btn btn--primary">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="icon dashboard-header__btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  Add Company
+                  New Company
                 </button>
               </div>
             </div>
-          </div>
 
-          {/* Filters */}
-          <div className="card filters-card">
-            <div className="card__body">
-              <form className="filters-card__form">
-                <div className="filters-card__form-group">
-                  <label htmlFor="search" className="form-label filters-card__label">Search</label>
+            {/* Controls */}
+            <div className="flex items-center justify-between bg-white px-4 py-3 border border-gray-200 border-b-0 rounded-t-lg">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedCompanies.length === filteredCompanies.length && filteredCompanies.length > 0}
+                    onChange={handleSelectAll}
+                    className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <span className="text-sm text-gray-600">
+                    {selectedCompanies.length > 0 ? `${selectedCompanies.length} selected` : 'Select all'}
+                  </span>
+                </div>
+                <div className="relative">
+                  <svg className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
                   <input
                     type="text"
-                    id="search"
-                    name="search"
-                    value={filters.search}
-                    onChange={handleFilterChange}
-                    className="form-control"
-                    placeholder="Search companies by name..."
+                    placeholder="Search companies..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 pr-4 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   />
                 </div>
-              </form>
+              </div>
+              <div className="flex items-center gap-2">
+                <button className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded">
+                  Export
+                </button>
+                <button className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded">
+                  Import
+                </button>
+              </div>
             </div>
-          </div>
 
-          {/* Companies List */}
-          <div className="space-y-4">
-            {error && (
-              <div className="alert alert--danger">
-                <div className="alert__icon">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16">
+            {/* Table */}
+            <div className="bg-white border border-gray-200 rounded-b-lg overflow-hidden">
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                </div>
+              ) : error ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <svg className="w-12 h-12 text-red-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
+                  <p className="text-gray-600">{error}</p>
+                  <button
+                    onClick={fetchCompanies}
+                    className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700"
+                  >
+                    Try Again
+                  </button>
                 </div>
-                {error}
+              ) : filteredCompanies.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <svg className="w-16 h-16 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    {searchTerm ? 'No companies found' : 'No companies yet'}
+                  </h3>
+                  <p className="text-gray-500 mb-4">
+                    {searchTerm ? 'Try adjusting your search' : 'Get started by creating your first client company'}
+                  </p>
+                  {!searchTerm && (
+                    <button
+                      onClick={() => navigate('/client-companies/new')}
+                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700"
+                    >
+                      Create Company
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="w-12 px-4 py-3"></th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Industry</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contacts</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Projects</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tickets</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filteredCompanies.map((company) => (
+                      <tr
+                        key={company.id}
+                        className="hover:bg-gray-50 cursor-pointer transition-colors"
+                        onClick={() => navigate(`/client-companies/${company.id}`)}
+                      >
+                        <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={selectedCompanies.includes(company.id)}
+                            onChange={() => handleSelectCompany(company.id)}
+                            className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                          />
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-10 w-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+                              <span className="text-indigo-600 font-semibold text-sm">{company.avatar}</span>
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">{company.name}</div>
+                              {company.domain && (
+                                <div className="text-sm text-gray-500">{company.domain}</div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{company.industry || '-'}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/users?company=${company.id}`);
+                            }}
+                            className="text-sm text-indigo-600 hover:text-indigo-900 font-medium"
+                          >
+                            {company.contacts}
+                          </button>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/projects?company=${company.id}`);
+                            }}
+                            className="text-sm text-indigo-600 hover:text-indigo-900 font-medium"
+                          >
+                            {company.projects}
+                          </button>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm text-gray-900">{company.tickets}</span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {getStatusBadge(company.status)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => navigate(`/client-companies/${company.id}/edit`)}
+                              className="text-indigo-600 hover:text-indigo-900"
+                              title="Edit"
+                            >
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => handleDeleteCompany(company.id, company.name)}
+                              className="text-red-600 hover:text-red-900"
+                              title="Delete"
+                            >
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* Pagination */}
+            {filteredCompanies.length > 0 && (
+              <div className="flex items-center justify-between bg-white px-4 py-3 border-t border-gray-200 mt-4 rounded-lg">
+                <div className="text-sm text-gray-700">
+                  Showing <span className="font-medium">{filteredCompanies.length}</span> of{' '}
+                  <span className="font-medium">{companies.length}</span> companies
+                </div>
+                <div className="flex gap-2">
+                  <button className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50" disabled>
+                    Previous
+                  </button>
+                  <button className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50" disabled>
+                    Next
+                  </button>
+                </div>
               </div>
             )}
-            
-            {loading ? (
-              <div className="tickets-table__loading">
-                <div className="spinner spinner--primary"></div>
-                <p>Loading companies...</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredCompanies.length === 0 ? (
-                  <div className="card">
-                    <div className="card__body">
-                      <div className="empty-state">
-                        <div className="empty-state__icon-wrapper">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="empty-state__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="48" height="48">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                          </svg>
-                        </div>
-                        <h3 className="empty-state__title">No companies found</h3>
-                        <p className="empty-state__description">
-                          {filters.search ? 'Try adjusting your search' : 'No companies available yet'}
-                        </p>
-                        {filters.search ? (
-                          <button className="btn btn--primary" onClick={() => setFilters({search: ''})}>
-                            Clear Search
-                          </button>
-                        ) : (
-                          <button className="btn btn--primary">
-                            Add Company
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  filteredCompanies.map(company => (
-                    <div key={company.id} className="company-card">
-                      <div className="company-card__header">
-                        <div className="company-avatar">
-                          <span className="company-initial">{company.avatar}</span>
-                        </div>
-                        <div className="company-info">
-                          <h3 className="company-name">{company.name}</h3>
-                          <span className={getStatusBadgeClass(company.status)}>
-                            {company.status?.toUpperCase()}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className="company-card__body">
-                        <div className="company-details">
-                          <div className="company-detail-item">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="company-detail-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                            </svg>
-                            <span className="company-detail-text">{company.contacts} contacts</span>
-                          </div>
-                          
-                          <div className="company-detail-item">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="company-detail-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                            </svg>
-                            <span className="company-detail-text">{company.tickets} tickets</span>
-                          </div>
-                        </div>
-                        
-                        <div className="company-plan-section">
-                          <span className={getPlanBadgeClass(company.plan)}>
-                            {company.plan} Plan
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className="company-card__footer">
-                        <button className="btn btn--outline btn--small company-card-btn">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                          </svg>
-                          View Contacts
-                        </button>
-                        <button className="btn btn--outline btn--small company-card-btn">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          View Tickets
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
+
           </div>
-        </div>
+        </main>
       </div>
     </div>
   );

@@ -28,6 +28,11 @@ import ProtectedRoute from './components/ProtectedRoute';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
 import Design1 from './pages/ticketDetailDesigns/Design1';
 import TicketDetails from './pages/TicketDetails';
+import ComposeEmail from './pages/ComposeEmail';
+import CreateContact from './pages/CreateContact';
+import CreateCompany from './pages/CreateCompany';
+import CreateProject from './pages/CreateProject';
+import CompanyDetails from './pages/CompanyDetails';
 import UserManagement from './pages/UserManagement';
 import ErrorBoundary from './components/ErrorBoundary';
 
@@ -114,6 +119,36 @@ function App() {
               <Route path="/ticket/:ticketId" element={
                 <ProtectedRoute>
                   <TicketDetails />
+                </ProtectedRoute>
+              } />
+              <Route path="/ticket/:ticketId" element={
+                <ProtectedRoute>
+                  <TicketDetails />
+                </ProtectedRoute>
+              } />
+              <Route path="/new-email" element={
+                <ProtectedRoute>
+                  <ComposeEmail />
+                </ProtectedRoute>
+              } />
+              <Route path="/contacts/new" element={
+                <ProtectedRoute>
+                  <CreateContact />
+                </ProtectedRoute>
+              } />
+              <Route path="/client-companies/new" element={
+                <ProtectedRoute>
+                  <CreateCompany />
+                </ProtectedRoute>
+              } />
+              <Route path="/client-companies/:id" element={
+                <ProtectedRoute>
+                  <CompanyDetails />
+                </ProtectedRoute>
+              } />
+              <Route path="/projects/new" element={
+                <ProtectedRoute>
+                  <CreateProject />
                 </ProtectedRoute>
               } />
               <Route path="/testing-new-tickets" element={

@@ -27,6 +27,9 @@ router.get('/check-name/:name', checkCompanyNameAvailability);
 // All other routes require authentication
 router.use(protect);
 
+// Protected route for authenticated users to add companies
+router.post('/add', createCompany);
+
 // Routes that require tenant context
 router.use(tenantMiddleware);
 
