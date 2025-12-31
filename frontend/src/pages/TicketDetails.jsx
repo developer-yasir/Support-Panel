@@ -143,10 +143,10 @@ const TicketDetails = () => {
             const draftKey = `ticket_${ticketId}_draft_${activeTab}`;
             localStorage.removeItem(draftKey);
             setReplyText('');
-        } finally {
-            setIsSubmitting(false);
         } catch (err) {
             console.error('Error submitting comment:', err);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
