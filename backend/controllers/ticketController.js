@@ -217,7 +217,10 @@ exports.updateTicket = async (req, res) => {
       return res.status(400).json({ message: 'Company context required to update ticket' });
     }
 
-    const { title, description, priority, status, assignedTo, dueDate, escalationLevel, type, source } = req.body;
+    const {
+      title, description, priority, status, assignedTo, dueDate, escalationLevel, type, source,
+      company, category, group, tags, country, city, storeLocation, types, specificVersion
+    } = req.body;
 
     let ticket;
 
@@ -250,9 +253,10 @@ exports.updateTicket = async (req, res) => {
 
     const isTicketCreator = ticket.createdBy.toString() === req.user.id;
     const isSuperAdmin = req.user.role === 'superadmin';
+    const isCompanyManager = req.user.role === 'company_manager';
     const isSupportAgent = req.user.role === 'support_agent';
 
-    if (!(isSuperAdmin || (isSupportAgent && isOnlyAssignmentUpdate) || isTicketCreator)) {
+    if (!(isSuperAdmin || isCompanyManager || (isSupportAgent && isOnlyAssignmentUpdate) || isTicketCreator)) {
       console.log('Unauthorized update attempt:', req.user.id, ticket.createdBy.toString(), fieldsBeingUpdated);
       return res.status(403).json({ message: 'Not authorized to update this ticket' });
     }
@@ -281,10 +285,18 @@ exports.updateTicket = async (req, res) => {
     if (status !== undefined) ticket.status = status;
     if (assignedTo !== undefined) ticket.assignedTo = assignedTo;
     if (dueDate !== undefined) ticket.dueDate = dueDate;
-    if (dueDate !== undefined) ticket.dueDate = dueDate;
     if (escalationLevel !== undefined) ticket.escalationLevel = escalationLevel;
     if (type !== undefined) ticket.type = type;
     if (source !== undefined) ticket.source = source;
+    if (company !== undefined) ticket.company = company;
+    if (category !== undefined) ticket.category = category;
+    if (group !== undefined) ticket.group = group;
+    if (tags !== undefined) ticket.tags = tags;
+    if (country !== undefined) ticket.country = country;
+    if (city !== undefined) ticket.city = city;
+    if (storeLocation !== undefined) ticket.storeLocation = storeLocation;
+    if (types !== undefined) ticket.types = types;
+    if (specificVersion !== undefined) ticket.specificVersion = specificVersion;
 
     console.log('Updating ticket with data:', {
       title: ticket.title,

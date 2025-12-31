@@ -45,6 +45,11 @@ const contactSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Company',
     required: true
+  },
+  clientCompanyId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ClientCompany',
+    default: null
   }
 }, {
   timestamps: true

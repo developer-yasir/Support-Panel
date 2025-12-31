@@ -38,7 +38,7 @@ const getContactById = async (req, res) => {
 
 const createContact = async (req, res) => {
   try {
-    const { name, email, phone, company } = req.body;
+    const { name, email, phone, companyId } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -46,11 +46,22 @@ const createContact = async (req, res) => {
       return res.status(400).json({ message: 'Contact with this email already exists' });
     }
 
+    // If companyId is provided, get the company name
+    let companyName = '';
+    const Company = require('../models/Company');
+    if (companyId) {
+      const companyDoc = await Company.findById(companyId);
+      if (companyDoc) {
+        companyName = companyDoc.name;
+      }
+    }
+
     const user = new User({
       name,
       email,
       phone,
-      company,
+      company: companyName,
+      companyId: companyId, // Explicitly linking to the Tenant/Company
       password: 'default_password' // In real app, you might want to send email verification
     });
 
