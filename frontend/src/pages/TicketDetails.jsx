@@ -152,15 +152,23 @@ const TicketDetails = () => {
                     <div className="px-6 py-3">
                         {/* Breadcrumb */}
                         <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2 text-sm">
+                            <div className="flex items-center gap-3 text-sm">
                                 <button
                                     onClick={() => navigate('/tickets')}
-                                    className="text-indigo-600 hover:underline"
+                                    className="flex items-center gap-1.5 text-indigo-600 hover:text-indigo-700 font-medium transition-colors"
                                 >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                    </svg>
                                     All unresolved tickets
                                 </button>
                                 <span className="text-gray-400">›</span>
-                                <span className="text-gray-700">{ticket.ticketId || ticket._id?.slice(-4)}</span>
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-indigo-100 text-indigo-800">
+                                    {ticket.ticketId || `TK-${ticket._id?.slice(-4)}`}
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button onClick={() => { navigator.clipboard.writeText(window.location.href); alert("Ticket link copied!"); }} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors" title="Copy ticket link"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>Copy Link</button>
                             </div>
                             {ticket.status === 'resolved' && (
                                 <div className="text-right">
@@ -241,7 +249,7 @@ const TicketDetails = () => {
                     {/* Left - Conversation Thread */}
                     <div className="flex-1 p-6">
                         {/* Initial Ticket Message */}
-                        <div className="bg-white border border-gray-200 rounded-lg mb-4 overflow-hidden" style={{ paddingLeft: '15px' }}>
+                        <div className="bg-white border border-gray-200 rounded-lg mb-4 overflow-hidden hover:shadow-md transition-shadow duration-200" style={{ paddingLeft: '15px' }}>
                             {/* Message Header */}
                             <div className="px-6 py-4 bg-gray-50">
                                 <div className="flex items-start gap-3 mb-4">
@@ -264,7 +272,7 @@ const TicketDetails = () => {
                                 </div>
 
                                 {/* Ticket Title */}
-                                <h2 className="text-lg font-semibold text-gray-900 mb-4">{ticket.title}</h2>
+                                <div className="mb-5"><h2 className="text-lg font-semibold text-gray-900 mb-3">{ticket.title}</h2><div className="h-px bg-gradient-to-r from-gray-300 via-gray-200 to-transparent"></div></div>
 
                                 {/* To/Cc - Clean Display */}
                                 <div className="text-xs space-y-1.5 bg-white rounded p-3">
@@ -368,12 +376,12 @@ const TicketDetails = () => {
                         ))}
 
                         {/* Reply/Note Buttons */}
-                        <div className="flex items-center gap-2 mb-4">
+                        <div className="flex flex-wrap items-center gap-2 mb-4">
                             <button
                                 onClick={() => setActiveTab('reply')}
-                                className={`flex items-center gap-2 px-4 py-2 text-sm rounded border ${activeTab === 'reply'
-                                    ? 'bg-white border-gray-300 shadow-sm'
-                                    : 'bg-gray-50 border-gray-200 text-gray-600'
+                                className={`flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg transition-all ${activeTab === 'reply'
+                                    ? 'bg-blue-600 text-white shadow-md hover:bg-blue-700'
+                                    : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-blue-300 hover:text-blue-600'
                                     }`}
                             >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -383,9 +391,9 @@ const TicketDetails = () => {
                             </button>
                             <button
                                 onClick={() => setActiveTab('note')}
-                                className={`flex items-center gap-2 px-4 py-2 text-sm rounded border ${activeTab === 'note'
-                                    ? 'bg-white border-gray-300 shadow-sm'
-                                    : 'bg-gray-50 border-gray-200 text-gray-600'
+                                className={`flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg transition-all ${activeTab === 'note'
+                                    ? 'bg-amber-500 text-white shadow-md hover:bg-amber-600'
+                                    : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-amber-300 hover:text-amber-600'
                                     }`}
                             >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -453,7 +461,12 @@ const TicketDetails = () => {
                             <>
                                 {/* Status Section */}
                                 <div className="mb-5">
-                                    <h2 className="text-lg font-normal text-gray-900 mb-4">{ticket.status}</h2>
+                                    <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 mb-4">
+                                        <svg className="w-4 h-4 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                        </svg>
+                                        {ticket.status}
+                                    </div>
 
                                     {/* Resolution Due */}
                                     <div className="pb-4 border-b border-gray-100">
@@ -472,11 +485,11 @@ const TicketDetails = () => {
 
                                 {/* Properties Section */}
                                 <div>
-                                    <h3 className="text-xs font-medium text-gray-500 uppercase mb-3">Properties</h3>
+                                    <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wide mb-4">Properties</h3>
 
-                                    <div className="space-y-3">
+                                    <div className="space-y-5">
                                         <div>
-                                            <label className="block text-sm text-gray-700 mb-1">Tags</label>
+                                            <label className="block text-xs font-medium text-gray-600 mb-1.5">Tags</label>
                                             <input
                                                 type="text"
                                                 value={ticket.tags?.join(', ') || ''}
@@ -486,7 +499,7 @@ const TicketDetails = () => {
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm text-gray-700 mb-1">Type</label>
+                                            <label className="block text-xs font-medium text-gray-600 mb-1.5">Type</label>
                                             <CustomSelect
                                                 value={ticket.type}
                                                 onChange={(value) => handlePropertyChange('type', value)}
@@ -500,7 +513,7 @@ const TicketDetails = () => {
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm text-gray-700 mb-1">Status <span className="text-red-500">*</span></label>
+                                            <label className="block text-xs font-medium text-gray-600 mb-1.5">Status <span className="text-red-500">*</span></label>
                                             <CustomSelect
                                                 value={ticket.status}
                                                 onChange={(value) => handlePropertyChange('status', value)}
@@ -514,7 +527,7 @@ const TicketDetails = () => {
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm text-gray-700 mb-1">Priority</label>
+                                            <label className="block text-xs font-medium text-gray-600 mb-1.5">Priority</label>
                                             <CustomSelect
                                                 value={ticket.priority}
                                                 onChange={(value) => handlePropertyChange('priority', value)}
@@ -528,7 +541,7 @@ const TicketDetails = () => {
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm text-gray-700 mb-1">Group</label>
+                                            <label className="block text-xs font-medium text-gray-600 mb-1.5">Group</label>
                                             <CustomSelect
                                                 value={ticket.group}
                                                 onChange={(value) => handlePropertyChange('group', value)}
@@ -541,7 +554,7 @@ const TicketDetails = () => {
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm text-gray-700 mb-1">Agent</label>
+                                            <label className="block text-xs font-medium text-gray-600 mb-1.5">Agent</label>
                                             <CustomSelect
                                                 value={ticket.assignedTo?._id}
                                                 onChange={(value) => handlePropertyChange('assignedTo', value)}
@@ -553,7 +566,7 @@ const TicketDetails = () => {
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm text-gray-700 mb-1">Company <span className="text-red-500">*</span></label>
+                                            <label className="block text-xs font-medium text-gray-600 mb-1.5">Company <span className="text-red-500">*</span></label>
                                             <CustomSelect
                                                 value={ticket.company}
                                                 onChange={(value) => handlePropertyChange('company', value)}
@@ -565,7 +578,7 @@ const TicketDetails = () => {
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm text-gray-700 mb-1">Category <span className="text-red-500">*</span></label>
+                                            <label className="block text-xs font-medium text-gray-600 mb-1.5">Category <span className="text-red-500">*</span></label>
                                             <CustomSelect
                                                 value={ticket.category}
                                                 onChange={(value) => handlePropertyChange('category', value)}
@@ -602,7 +615,7 @@ const TicketDetails = () => {
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm text-gray-700 mb-1">Store/Location/Site Code <span className="text-red-500">*</span></label>
+                                            <label className="block text-xs font-medium text-gray-600 mb-1.5">Store/Location/Site Code <span className="text-red-500">*</span></label>
                                             <input
                                                 type="text"
                                                 value={ticket.storeLocation || ''}
@@ -612,7 +625,7 @@ const TicketDetails = () => {
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm text-gray-700 mb-1">City</label>
+                                            <label className="block text-xs font-medium text-gray-600 mb-1.5">City</label>
                                             <input
                                                 type="text"
                                                 value={ticket.city || ''}
@@ -622,7 +635,7 @@ const TicketDetails = () => {
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm text-gray-700 mb-1">Country <span className="text-red-500">*</span></label>
+                                            <label className="block text-xs font-medium text-gray-600 mb-1.5">Country <span className="text-red-500">*</span></label>
                                             <CustomSelect
                                                 value={ticket.country}
                                                 onChange={(value) => handlePropertyChange('country', value)}
@@ -636,9 +649,12 @@ const TicketDetails = () => {
 
                                         <button
                                             onClick={() => handlePropertyChange('updated', true)}
-                                            className="w-full mt-2 px-4 py-2.5 bg-slate-400 hover:bg-slate-500 text-white text-sm font-medium rounded transition-colors"
+                                            className="w-full mt-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2"
                                         >
-                                            Update
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                            </svg>
+                                            Update Properties
                                         </button>
                                     </div>
                                 </div>
