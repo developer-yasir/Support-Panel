@@ -105,6 +105,17 @@ const TicketDetails = () => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [activeTab, replyText]);
 
+    // Sprint 2 Feature 9: Priority Visual Indicators Helper
+    const getPriorityStyle = (priority) => {
+        const styles = {
+            urgent: { bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-200', icon: '🔥' },
+            high: { bg: 'bg-orange-100', text: 'text-orange-800', border: 'border-orange-200', icon: '⬆️' },
+            medium: { bg: 'bg-yellow-100', text: 'text-yellow-800', border: 'border-yellow-200', icon: '➡️' },
+            low: { bg: 'bg-gray-100', text: 'text-gray-800', border: 'border-gray-200', icon: '⬇️' }
+        };
+        return styles[priority] || styles.medium;
+    };
+
     const handlePropertyChange = async (field, value) => {
         try {
             await api.patch(`/tickets/${ticketId}`, { [field]: value });
@@ -483,8 +494,8 @@ const TicketDetails = () => {
                                     <div className="mt-2 flex items-center justify-between text-xs">
                                         <div className="flex items-center gap-3">
                                             <span className={`font-medium ${replyText.length > 5000 ? 'text-red-600' :
-                                                    replyText.length > 4500 ? 'text-yellow-600' :
-                                                        'text-gray-500'
+                                                replyText.length > 4500 ? 'text-yellow-600' :
+                                                    'text-gray-500'
                                                 }`}>
                                                 {replyText.length}/5000 characters
                                             </span>
@@ -530,8 +541,8 @@ const TicketDetails = () => {
                                                     onClick={handleSubmit}
                                                     disabled={isSubmitting || replyText.length > 5000 || !replyText.trim()}
                                                     className={`px-4 py-2 rounded-md text-sm font-medium text-white transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${activeTab === 'note'
-                                                            ? 'bg-yellow-500 hover:bg-yellow-600'
-                                                            : 'bg-indigo-600 hover:bg-indigo-700'
+                                                        ? 'bg-yellow-500 hover:bg-yellow-600'
+                                                        : 'bg-indigo-600 hover:bg-indigo-700'
                                                         }`}
                                                 >
                                                     {isSubmitting && (
@@ -627,10 +638,10 @@ const TicketDetails = () => {
                                                 value={ticket.priority}
                                                 onChange={(value) => handlePropertyChange('priority', value)}
                                                 options={[
-                                                    { value: 'low', label: 'Low' },
-                                                    { value: 'medium', label: 'Medium' },
-                                                    { value: 'high', label: 'High' },
-                                                    { value: 'urgent', label: 'Urgent' }
+                                                    { value: 'low', label: '⬇️ Low' },
+                                                    { value: 'medium', label: '➡️ Medium' },
+                                                    { value: 'high', label: '⬆️ High' },
+                                                    { value: 'urgent', label: '🔥 Urgent' }
                                                 ]}
                                             />
                                         </div>
