@@ -379,9 +379,9 @@ const TicketDetails = () => {
                         <div className="flex flex-wrap items-center gap-2 mb-4">
                             <button
                                 onClick={() => setActiveTab('reply')}
-                                className={`flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg transition-all ${activeTab === 'reply'
-                                    ? 'bg-blue-600 text-white shadow-md hover:bg-blue-700'
-                                    : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-blue-300 hover:text-blue-600'
+                                className={`flex items-center gap-2 px-4 py-2 text-sm rounded border transition-all ${activeTab === 'reply'
+                                    ? 'bg-white border-gray-300 shadow-sm text-gray-900'
+                                    : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-white hover:border-gray-300'
                                     }`}
                             >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -391,9 +391,9 @@ const TicketDetails = () => {
                             </button>
                             <button
                                 onClick={() => setActiveTab('note')}
-                                className={`flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg transition-all ${activeTab === 'note'
-                                    ? 'bg-amber-500 text-white shadow-md hover:bg-amber-600'
-                                    : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-amber-300 hover:text-amber-600'
+                                className={`flex items-center gap-2 px-4 py-2 text-sm rounded border transition-all ${activeTab === 'note'
+                                    ? 'bg-white border-gray-300 shadow-sm text-gray-900'
+                                    : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-white hover:border-gray-300'
                                     }`}
                             >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -401,7 +401,7 @@ const TicketDetails = () => {
                                 </svg>
                                 Add note
                             </button>
-                            <button className="flex items-center gap-2 px-4 py-2 text-sm rounded border bg-gray-50 border-gray-200 text-gray-600">
+                            <button onClick={() => setActiveTab('forward')} className={`flex items-center gap-2 px-4 py-2 text-sm rounded border transition-all ${activeTab === 'forward' ? 'bg-white border-gray-300 shadow-sm text-gray-900' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-white hover:border-gray-300'}`}>
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                                 </svg>
