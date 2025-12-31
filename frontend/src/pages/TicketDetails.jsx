@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import Navbar from '../components/Navbar';
@@ -23,6 +23,12 @@ const TicketDetails = () => {
     const [activeTab, setActiveTab] = useState(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [propertiesSidebarCollapsed, setPropertiesSidebarCollapsed] = useState(false);
+
+    // Sprint 1: New state variables
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [draftSaved, setDraftSaved] = useState(false);
+    const [forwardTo, setForwardTo] = useState('');
+    const [forwardCc, setForwardCc] = useState('');
 
     useEffect(() => {
         const fetchData = async () => {
@@ -50,6 +56,55 @@ const TicketDetails = () => {
         fetchData();
     }, [ticketId]);
 
+    // Sprint 1 Feature 3: Auto-save Draft
+    useEffect(() => {
+        const draftKey = `ticket_${ticketId}_draft_${activeTab}`;
+        const savedDraft = localStorage.getItem(draftKey);
+        if (savedDraft && !replyText) {
+            setReplyText(savedDraft);
+        }
+    }, [ticketId, activeTab]);
+
+    useEffect(() => {
+        if (!replyText || !activeTab) return;
+
+        const draftKey = `ticket_${ticketId}_draft_${activeTab}`;
+        const timeoutId = setTimeout(() => {
+            localStorage.setItem(draftKey, replyText);
+            setDraftSaved(true);
+            setTimeout(() => setDraftSaved(false), 2000);
+        }, 500);
+
+        return () => clearTimeout(timeoutId);
+    }, [replyText, ticketId, activeTab]);
+
+    // Sprint 1 Feature 4: Keyboard Shortcuts
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            // Cmd/Ctrl + Enter to submit
+            if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && activeTab) {
+                e.preventDefault();
+                handleSubmit(e);
+            }
+            // Esc to close editor
+            if (e.key === 'Escape' && activeTab) {
+                setActiveTab(null);
+                setReplyText('');
+            }
+            // R for Reply (when not in input)
+            if (e.key === 'r' && !activeTab && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                setActiveTab('reply');
+            }
+            // N for Note (when not in input)
+            if (e.key === 'n' && !activeTab && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                setActiveTab('note');
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [activeTab, replyText]);
+
     const handlePropertyChange = async (field, value) => {
         try {
             await api.patch(`/tickets/${ticketId}`, { [field]: value });
@@ -61,6 +116,7 @@ const TicketDetails = () => {
 
     const handleSubmit = async () => {
         if (!replyText.trim()) return;
+        setIsSubmitting(true);
 
         try {
             const response = await api.post(`/comments`, {
@@ -73,7 +129,11 @@ const TicketDetails = () => {
                 ...prev,
                 comments: [...(prev.comments || []), response.data]
             }));
+            const draftKey = `ticket_${ticketId}_draft_${activeTab}`;
+            localStorage.removeItem(draftKey);
             setReplyText('');
+                } finally {
+            setIsSubmitting(false);
         } catch (err) {
             console.error('Error submitting comment:', err);
         }
