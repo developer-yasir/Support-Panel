@@ -18,7 +18,8 @@ const {
   getResponseTimeMetrics,
   getTicketAgeAnalysis,
   getTicketCategories,
-  getUpcomingBreaches
+  getUpcomingBreaches,
+  forwardTicket
 } = require('../controllers/ticketController');
 const { protect, authorize } = require('../middlewares/authMiddleware');
 const { tenantMiddleware } = require('../middlewares/tenantMiddleware');
@@ -78,5 +79,8 @@ router.route('/:id')
 
 router.route('/:id/escalate')
   .post(checkPermission('write:tickets'), escalateTicket);
+
+router.route('/:id/forward')
+  .post(checkPermission('write:tickets'), forwardTicket);
 
 module.exports = router;

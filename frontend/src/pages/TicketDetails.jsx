@@ -22,6 +22,7 @@ const TicketDetails = () => {
     const [replyText, setReplyText] = useState('');
     const [activeTab, setActiveTab] = useState(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [propertiesSidebarCollapsed, setPropertiesSidebarCollapsed] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -204,6 +205,18 @@ const TicketDetails = () => {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                                 Show activities
+                            </button>
+                            <button
+                                onClick={() => setPropertiesSidebarCollapsed(!propertiesSidebarCollapsed)}
+                                className={`flex items-center gap-2 px-3 py-2 text-sm border rounded transition-colors ${propertiesSidebarCollapsed
+                                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                    : 'border-gray-300 hover:bg-gray-50'
+                                    }`}
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                                </svg>
+                                Properties
                             </button>
                         </div>
                     </div>
@@ -435,198 +448,202 @@ const TicketDetails = () => {
                     </div>
 
                     {/* Right - Properties Sidebar */}
-                    <div className="w-80 border-l border-gray-200 bg-white p-5">
-                        {/* Status Section */}
-                        <div className="mb-5">
-                            <h2 className="text-lg font-normal text-gray-900 mb-4">{ticket.status}</h2>
+                    <div className={`border-l border-gray-200 bg-white transition-all duration-300 ${propertiesSidebarCollapsed ? 'w-0 overflow-hidden' : 'w-80 p-5'}`}>
+                        {!propertiesSidebarCollapsed && (
+                            <>
+                                {/* Status Section */}
+                                <div className="mb-5">
+                                    <h2 className="text-lg font-normal text-gray-900 mb-4">{ticket.status}</h2>
 
-                            {/* Resolution Due */}
-                            <div className="pb-4 border-b border-gray-100">
-                                <div className="flex items-center justify-between mb-1">
-                                    <div className="flex items-center gap-1">
-                                        <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                                        <span className="text-xs font-medium text-gray-500 uppercase">Resolution Due</span>
+                                    {/* Resolution Due */}
+                                    <div className="pb-4 border-b border-gray-100">
+                                        <div className="flex items-center justify-between mb-1">
+                                            <div className="flex items-center gap-1">
+                                                <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                                                <span className="text-xs font-medium text-gray-500 uppercase">Resolution Due</span>
+                                            </div>
+                                            <button className="text-xs text-blue-600 hover:underline">Edit</button>
+                                        </div>
+                                        <p className="text-sm text-gray-700 pl-3">
+                                            by {ticket.dueDate ? formatTime(ticket.dueDate) : 'Not set'}
+                                        </p>
                                     </div>
-                                    <button className="text-xs text-blue-600 hover:underline">Edit</button>
                                 </div>
-                                <p className="text-sm text-gray-700 pl-3">
-                                    by {ticket.dueDate ? formatTime(ticket.dueDate) : 'Not set'}
-                                </p>
-                            </div>
-                        </div>
 
-                        {/* Properties Section */}
-                        <div>
-                            <h3 className="text-xs font-medium text-gray-500 uppercase mb-3">Properties</h3>
-
-                            <div className="space-y-3">
+                                {/* Properties Section */}
                                 <div>
-                                    <label className="block text-sm text-gray-700 mb-1">Tags</label>
-                                    <input
-                                        type="text"
-                                        value={ticket.tags?.join(', ') || ''}
-                                        onChange={(e) => handlePropertyChange('tags', e.target.value.split(',').map(t => t.trim()))}
-                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                                    />
-                                </div>
+                                    <h3 className="text-xs font-medium text-gray-500 uppercase mb-3">Properties</h3>
 
-                                <div>
-                                    <label className="block text-sm text-gray-700 mb-1">Type</label>
-                                    <CustomSelect
-                                        value={ticket.type}
-                                        onChange={(value) => handlePropertyChange('type', value)}
-                                        options={[
-                                            { value: 'question', label: 'Question' },
-                                            { value: 'incident', label: 'Incident' },
-                                            { value: 'problem', label: 'Problem' },
-                                            { value: 'feature', label: 'Feature Request' }
-                                        ]}
-                                    />
-                                </div>
+                                    <div className="space-y-3">
+                                        <div>
+                                            <label className="block text-sm text-gray-700 mb-1">Tags</label>
+                                            <input
+                                                type="text"
+                                                value={ticket.tags?.join(', ') || ''}
+                                                onChange={(e) => handlePropertyChange('tags', e.target.value.split(',').map(t => t.trim()))}
+                                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                            />
+                                        </div>
 
-                                <div>
-                                    <label className="block text-sm text-gray-700 mb-1">Status <span className="text-red-500">*</span></label>
-                                    <CustomSelect
-                                        value={ticket.status}
-                                        onChange={(value) => handlePropertyChange('status', value)}
-                                        options={[
-                                            { value: 'open', label: 'Open' },
-                                            { value: 'pending', label: 'Pending' },
-                                            { value: 'resolved', label: 'Resolved' },
-                                            { value: 'closed', label: 'Closed' }
-                                        ]}
-                                    />
-                                </div>
+                                        <div>
+                                            <label className="block text-sm text-gray-700 mb-1">Type</label>
+                                            <CustomSelect
+                                                value={ticket.type}
+                                                onChange={(value) => handlePropertyChange('type', value)}
+                                                options={[
+                                                    { value: 'question', label: 'Question' },
+                                                    { value: 'incident', label: 'Incident' },
+                                                    { value: 'problem', label: 'Problem' },
+                                                    { value: 'feature', label: 'Feature Request' }
+                                                ]}
+                                            />
+                                        </div>
 
-                                <div>
-                                    <label className="block text-sm text-gray-700 mb-1">Priority</label>
-                                    <CustomSelect
-                                        value={ticket.priority}
-                                        onChange={(value) => handlePropertyChange('priority', value)}
-                                        options={[
-                                            { value: 'low', label: 'Low' },
-                                            { value: 'medium', label: 'Medium' },
-                                            { value: 'high', label: 'High' },
-                                            { value: 'urgent', label: 'Urgent' }
-                                        ]}
-                                    />
-                                </div>
+                                        <div>
+                                            <label className="block text-sm text-gray-700 mb-1">Status <span className="text-red-500">*</span></label>
+                                            <CustomSelect
+                                                value={ticket.status}
+                                                onChange={(value) => handlePropertyChange('status', value)}
+                                                options={[
+                                                    { value: 'open', label: 'Open' },
+                                                    { value: 'pending', label: 'Pending' },
+                                                    { value: 'resolved', label: 'Resolved' },
+                                                    { value: 'closed', label: 'Closed' }
+                                                ]}
+                                            />
+                                        </div>
 
-                                <div>
-                                    <label className="block text-sm text-gray-700 mb-1">Group</label>
-                                    <CustomSelect
-                                        value={ticket.group}
-                                        onChange={(value) => handlePropertyChange('group', value)}
-                                        options={[
-                                            { value: 'customer_support', label: 'Customer Support' },
-                                            { value: 'technical', label: 'Technical' },
-                                            { value: 'billing', label: 'Billing' }
-                                        ]}
-                                    />
-                                </div>
+                                        <div>
+                                            <label className="block text-sm text-gray-700 mb-1">Priority</label>
+                                            <CustomSelect
+                                                value={ticket.priority}
+                                                onChange={(value) => handlePropertyChange('priority', value)}
+                                                options={[
+                                                    { value: 'low', label: 'Low' },
+                                                    { value: 'medium', label: 'Medium' },
+                                                    { value: 'high', label: 'High' },
+                                                    { value: 'urgent', label: 'Urgent' }
+                                                ]}
+                                            />
+                                        </div>
 
-                                <div>
-                                    <label className="block text-sm text-gray-700 mb-1">Agent</label>
-                                    <CustomSelect
-                                        value={ticket.assignedTo?._id}
-                                        onChange={(value) => handlePropertyChange('assignedTo', value)}
-                                        options={[
-                                            { value: '', label: '-- Unassigned --' },
-                                            ...agents.map(agent => ({ value: agent._id, label: agent.name }))
-                                        ]}
-                                    />
-                                </div>
+                                        <div>
+                                            <label className="block text-sm text-gray-700 mb-1">Group</label>
+                                            <CustomSelect
+                                                value={ticket.group}
+                                                onChange={(value) => handlePropertyChange('group', value)}
+                                                options={[
+                                                    { value: 'customer_support', label: 'Customer Support' },
+                                                    { value: 'technical', label: 'Technical' },
+                                                    { value: 'billing', label: 'Billing' }
+                                                ]}
+                                            />
+                                        </div>
 
-                                <div>
-                                    <label className="block text-sm text-gray-700 mb-1">Company <span className="text-red-500">*</span></label>
-                                    <CustomSelect
-                                        value={ticket.company}
-                                        onChange={(value) => handlePropertyChange('company', value)}
-                                        options={[
-                                            { value: 'RAK', label: 'RAK' },
-                                            { value: 'innovent', label: 'Innovent' }
-                                        ]}
-                                    />
-                                </div>
+                                        <div>
+                                            <label className="block text-sm text-gray-700 mb-1">Agent</label>
+                                            <CustomSelect
+                                                value={ticket.assignedTo?._id}
+                                                onChange={(value) => handlePropertyChange('assignedTo', value)}
+                                                options={[
+                                                    { value: '', label: '-- Unassigned --' },
+                                                    ...agents.map(agent => ({ value: agent._id, label: agent.name }))
+                                                ]}
+                                            />
+                                        </div>
 
-                                <div>
-                                    <label className="block text-sm text-gray-700 mb-1">Category <span className="text-red-500">*</span></label>
-                                    <CustomSelect
-                                        value={ticket.category}
-                                        onChange={(value) => handlePropertyChange('category', value)}
-                                        options={[
-                                            { value: 'software', label: 'Software/Solutions' },
-                                            { value: 'hardware', label: 'Hardware/Devices' },
-                                            { value: 'network', label: 'Network' }
-                                        ]}
-                                    />
-                                </div>
+                                        <div>
+                                            <label className="block text-sm text-gray-700 mb-1">Company <span className="text-red-500">*</span></label>
+                                            <CustomSelect
+                                                value={ticket.company}
+                                                onChange={(value) => handlePropertyChange('company', value)}
+                                                options={[
+                                                    { value: 'RAK', label: 'RAK' },
+                                                    { value: 'innovent', label: 'Innovent' }
+                                                ]}
+                                            />
+                                        </div>
 
-                                <div>
-                                    <label className="block text-xs text-gray-600 mb-1">Types *</label>
-                                    <CustomSelect
-                                        value={ticket.types}
-                                        onChange={(value) => handlePropertyChange('types', value)}
-                                        options={[
-                                            { value: 'forkeye', label: 'Forkeye' },
-                                            { value: 'other', label: 'Other' }
-                                        ]}
-                                    />
-                                </div>
+                                        <div>
+                                            <label className="block text-sm text-gray-700 mb-1">Category <span className="text-red-500">*</span></label>
+                                            <CustomSelect
+                                                value={ticket.category}
+                                                onChange={(value) => handlePropertyChange('category', value)}
+                                                options={[
+                                                    { value: 'software', label: 'Software/Solutions' },
+                                                    { value: 'hardware', label: 'Hardware/Devices' },
+                                                    { value: 'network', label: 'Network' }
+                                                ]}
+                                            />
+                                        </div>
 
-                                <div>
-                                    <label className="block text-xs text-gray-600 mb-1">Specific Version *</label>
-                                    <CustomSelect
-                                        value={ticket.specificVersion}
-                                        onChange={(value) => handlePropertyChange('specificVersion', value)}
-                                        options={[
-                                            { value: 'v1', label: 'Version 1' },
-                                            { value: 'v2', label: 'Version 2' }
-                                        ]}
-                                    />
-                                </div>
+                                        <div>
+                                            <label className="block text-xs text-gray-600 mb-1">Types *</label>
+                                            <CustomSelect
+                                                value={ticket.types}
+                                                onChange={(value) => handlePropertyChange('types', value)}
+                                                options={[
+                                                    { value: 'forkeye', label: 'Forkeye' },
+                                                    { value: 'other', label: 'Other' }
+                                                ]}
+                                            />
+                                        </div>
 
-                                <div>
-                                    <label className="block text-sm text-gray-700 mb-1">Store/Location/Site Code <span className="text-red-500">*</span></label>
-                                    <input
-                                        type="text"
-                                        value={ticket.storeLocation || ''}
-                                        onChange={(e) => handlePropertyChange('storeLocation', e.target.value)}
-                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                                    />
-                                </div>
+                                        <div>
+                                            <label className="block text-xs text-gray-600 mb-1">Specific Version *</label>
+                                            <CustomSelect
+                                                value={ticket.specificVersion}
+                                                onChange={(value) => handlePropertyChange('specificVersion', value)}
+                                                options={[
+                                                    { value: 'v1', label: 'Version 1' },
+                                                    { value: 'v2', label: 'Version 2' }
+                                                ]}
+                                            />
+                                        </div>
 
-                                <div>
-                                    <label className="block text-sm text-gray-700 mb-1">City</label>
-                                    <input
-                                        type="text"
-                                        value={ticket.city || ''}
-                                        onChange={(e) => handlePropertyChange('city', e.target.value)}
-                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                                    />
-                                </div>
+                                        <div>
+                                            <label className="block text-sm text-gray-700 mb-1">Store/Location/Site Code <span className="text-red-500">*</span></label>
+                                            <input
+                                                type="text"
+                                                value={ticket.storeLocation || ''}
+                                                onChange={(e) => handlePropertyChange('storeLocation', e.target.value)}
+                                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                            />
+                                        </div>
 
-                                <div>
-                                    <label className="block text-sm text-gray-700 mb-1">Country <span className="text-red-500">*</span></label>
-                                    <CustomSelect
-                                        value={ticket.country}
-                                        onChange={(value) => handlePropertyChange('country', value)}
-                                        options={[
-                                            { value: 'uae', label: 'United Arab Emirates' },
-                                            { value: 'saudi', label: 'Saudi Arabia' },
-                                            { value: 'qatar', label: 'Qatar' }
-                                        ]}
-                                    />
-                                </div>
+                                        <div>
+                                            <label className="block text-sm text-gray-700 mb-1">City</label>
+                                            <input
+                                                type="text"
+                                                value={ticket.city || ''}
+                                                onChange={(e) => handlePropertyChange('city', e.target.value)}
+                                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                            />
+                                        </div>
 
-                                <button
-                                    onClick={() => handlePropertyChange('updated', true)}
-                                    className="w-full mt-2 px-4 py-2.5 bg-slate-400 hover:bg-slate-500 text-white text-sm font-medium rounded transition-colors"
-                                >
-                                    Update
-                                </button>
-                            </div>
-                        </div>
+                                        <div>
+                                            <label className="block text-sm text-gray-700 mb-1">Country <span className="text-red-500">*</span></label>
+                                            <CustomSelect
+                                                value={ticket.country}
+                                                onChange={(value) => handlePropertyChange('country', value)}
+                                                options={[
+                                                    { value: 'uae', label: 'United Arab Emirates' },
+                                                    { value: 'saudi', label: 'Saudi Arabia' },
+                                                    { value: 'qatar', label: 'Qatar' }
+                                                ]}
+                                            />
+                                        </div>
+
+                                        <button
+                                            onClick={() => handlePropertyChange('updated', true)}
+                                            className="w-full mt-2 px-4 py-2.5 bg-slate-400 hover:bg-slate-500 text-white text-sm font-medium rounded transition-colors"
+                                        >
+                                            Update
+                                        </button>
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>

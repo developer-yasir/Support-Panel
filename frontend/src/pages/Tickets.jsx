@@ -14,13 +14,22 @@ const Tickets = () => {
   const [sortOption, setSortOption] = useState('latest');
   const [viewMode, setViewMode] = useState('card');
   const [filters, setFilters] = useState({});
-  const [filtersCollapsed, setFiltersCollapsed] = useState(true);
+  // Initialize filtersCollapsed from localStorage, default to true if not set
+  const [filtersCollapsed, setFiltersCollapsed] = useState(() => {
+    const saved = localStorage.getItem('ticketsFiltersCollapsed');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
   const [selectedTickets, setSelectedTickets] = useState(new Set());
   const [showAppliedFilters, setShowAppliedFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const navigate = useNavigate();
   const { isCollapsed } = useSidebar();
+
+  // Persist filtersCollapsed state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('ticketsFiltersCollapsed', JSON.stringify(filtersCollapsed));
+  }, [filtersCollapsed]);
 
   useEffect(() => {
     const fetchTickets = async () => {
@@ -283,7 +292,6 @@ const Tickets = () => {
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
     setCurrentPage(1); // Reset to first page when filters change
-    setFiltersCollapsed(true); // Close the sidebar on apply (for mobile/overlay)
   };
 
   const handleClearFilters = () => {

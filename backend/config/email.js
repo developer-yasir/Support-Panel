@@ -168,6 +168,130 @@ const getPriorityBgColor = (priority) => {
   }
 };
 
+const sendForwardedTicket = async (toEmail, ccEmails, ticket, message, forwarderName) => {
+  const transporter = createTransporter();
+
+  // Format comments HTML
+  let commentsHtml = '';
+  if (ticket.comments && ticket.comments.length > 0) {
+    commentsHtml = ticket.comments.map(comment => `
+      <div style="margin: 20px 0; padding: 15px; background-color: #f9fafb; border-left: 3px solid #3b82f6; border-radius: 4px;">
+        <div style="margin-bottom: 8px;">
+          <strong style="color: #1f2937;">${comment.author?.name || 'Unknown'}</strong>
+          <span style="color: #6b7280; font-size: 12px; margin-left: 8px;">
+            ${new Date(comment.createdAt).toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    })}
+          </span>
+          ${comment.isInternal ? '<span style="background-color: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 3px; font-size: 11px; margin-left: 8px;">Internal Note</span>' : ''}
+        </div>
+        <div style="color: #374151; white-space: pre-wrap;">${comment.content || ''}</div>
+      </div>
+    `).join('');
+  }
+
+  const mailOptions = {
+    from: process.env.EMAIL_FROM || '"Support Panel" <no-reply@supportpanel.com>',
+    to: toEmail,
+    cc: ccEmails || undefined,
+    subject: `Forwarded Ticket: ${ticket.ticketId} - ${ticket.title}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto; color: #1f2937;">
+        <div style="background-color: #3b82f6; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
+          <h2 style="margin: 0; font-size: 24px;">Forwarded Ticket</h2>
+        </div>
+        
+        <div style="background-color: #ffffff; padding: 20px; border: 1px solid #e5e7eb; border-top: none;">
+          ${message ? `
+            <div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; padding: 12px 16px; margin-bottom: 20px; border-radius: 4px;">
+              <strong style="color: #1e40af;">Message from ${forwarderName}:</strong>
+              <p style="margin: 8px 0 0 0; color: #1f2937; white-space: pre-wrap;">${message}</p>
+            </div>
+          ` : ''}
+          
+          <h3 style="color: #1f2937; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 16px;">
+            Ticket Details
+          </h3>
+          
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+            <tr>
+              <td style="padding: 8px 12px; background-color: #f9fafb; border: 1px solid #e5e7eb; font-weight: bold; width: 150px;">Ticket ID</td>
+              <td style="padding: 8px 12px; border: 1px solid #e5e7eb;">${ticket.ticketId}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 12px; background-color: #f9fafb; border: 1px solid #e5e7eb; font-weight: bold;">Title</td>
+              <td style="padding: 8px 12px; border: 1px solid #e5e7eb;">${ticket.title}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 12px; background-color: #f9fafb; border: 1px solid #e5e7eb; font-weight: bold;">Status</td>
+              <td style="padding: 8px 12px; border: 1px solid #e5e7eb;">${(ticket.status || 'open').toUpperCase()}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 12px; background-color: #f9fafb; border: 1px solid #e5e7eb; font-weight: bold;">Priority</td>
+              <td style="padding: 8px 12px; border: 1px solid #e5e7eb;">
+                <span style="color: ${getPriorityColor(ticket.priority || 'medium')}; font-weight: bold;">
+                  ${(ticket.priority || 'medium').toUpperCase()}
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 12px; background-color: #f9fafb; border: 1px solid #e5e7eb; font-weight: bold;">Created</td>
+              <td style="padding: 8px 12px; border: 1px solid #e5e7eb;">
+                ${new Date(ticket.createdAt).toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    })}
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 12px; background-color: #f9fafb; border: 1px solid #e5e7eb; font-weight: bold;">Created By</td>
+              <td style="padding: 8px 12px; border: 1px solid #e5e7eb;">${ticket.createdBy?.name || ticket.createdBy?.email || 'Unknown'}</td>
+            </tr>
+          </table>
+          
+          <h3 style="color: #1f2937; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 16px;">
+            Original Message
+          </h3>
+          <div style="background-color: #f9fafb; padding: 16px; border-radius: 4px; margin-bottom: 20px;">
+            <div style="color: #374151; white-space: pre-wrap; line-height: 1.6;">${ticket.description || 'No description provided'}</div>
+          </div>
+          
+          ${commentsHtml ? `
+            <h3 style="color: #1f2937; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 16px;">
+              Conversation History
+            </h3>
+            ${commentsHtml}
+          ` : ''}
+        </div>
+        
+        <div style="background-color: #f9fafb; padding: 16px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px; text-align: center;">
+          <p style="margin: 0; font-size: 12px; color: #6b7280;">
+            This ticket was forwarded from Support Panel
+          </p>
+        </div>
+      </div>
+    `
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Forwarded ticket email sent: %s', info.messageId);
+    return info;
+  } catch (error) {
+    console.error('Error sending forwarded ticket email:', error);
+    throw error;
+  }
+};
+
 const sendPasswordResetEmail = async (email, name, resetToken) => {
   const transporter = createTransporter();
 
@@ -215,5 +339,6 @@ module.exports = {
   sendVerificationEmail,
   sendTicketNotification,
   sendTicketUpdateNotification,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  sendForwardedTicket
 };
